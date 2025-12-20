@@ -1,4 +1,4 @@
-import type { AuthOptions } from 'next-auth';
+
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import { loginSchema } from '@/lib/validations/auth';
@@ -7,7 +7,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
-export const authOptions: AuthOptions = {
+const authConfig = {
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -63,3 +63,7 @@ export const authOptions: AuthOptions = {
     },
   },
 };
+
+export default function auth() {
+  return authConfig;
+}
