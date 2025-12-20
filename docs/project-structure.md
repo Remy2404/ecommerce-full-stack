@@ -1,6 +1,7 @@
 # E-commerce MVP Project Plan
 
 ## Project Overview
+
 **Timeline**: 6-8 weeks for MVP
 **Team Size**: 4 developers
 **Tech Stack**: React.js, Node.js/Express, MongoDB/PostgreSQL
@@ -10,12 +11,15 @@
 ## MVP Feature Scope
 
 ### Core Features (Must Have)
+
 1. **User Authentication**
+
    - Register/Login/Logout
    - JWT-based authentication
    - Password recovery
 
 2. **Product Catalog**
+
    - Product listing with pagination
    - Product detail page
    - Category filtering
@@ -23,17 +27,20 @@
    - Sort by price/name
 
 3. **Shopping Cart**
+
    - Add/Remove items
    - Update quantities
    - Cart persistence (localStorage)
    - Cart summary
 
 4. **Checkout Process**
+
    - Shipping information form
    - Order summary
    - Payment integration (Stripe/PayPal sandbox)
 
 5. **Order Management**
+
    - Order history for users
    - Order status tracking
    - Order details view
@@ -165,9 +172,11 @@ ecommerce-mvp/
 ## Team Assignment & Responsibilities
 
 ### **Ramy: Frontend Lead - Product Catalog & UI Foundation**
+
 **Focus**: Product display, filtering, search, and core UI components
 
 **Responsibilities**:
+
 - Set up React project structure (Vite + React Router)
 - Design and implement UI component library (Header, Footer, Buttons, Cards, Input)
 - Build Product Catalog pages (listing with pagination)
@@ -180,6 +189,7 @@ ecommerce-mvp/
 - State management setup (Context API)
 
 **Key Deliverables**:
+
 - Reusable component library
 - Product listing with filters, search, and pagination
 - Product detail page with image gallery
@@ -191,9 +201,11 @@ ecommerce-mvp/
 ---
 
 ### **Rith: Frontend - Authentication & User Profile**
+
 **Focus**: Firebase Authentication integration and user management
 
 **Responsibilities**:
+
 - Firebase Authentication setup and configuration
 - Login page with email/password
 - Registration page with validation
@@ -209,6 +221,7 @@ ecommerce-mvp/
 - Integration with Firestore for user data
 
 **Key Deliverables**:
+
 - Complete authentication system
 - User profile management
 - Protected route implementation
@@ -221,9 +234,11 @@ ecommerce-mvp/
 ---
 
 ### **Tong: Frontend - Shopping Cart & Checkout Flow**
+
 **Focus**: Cart functionality and complete checkout experience
 
 **Responsibilities**:
+
 - Shopping Cart UI and functionality
 - Add to cart, remove, update quantity
 - Cart Context/State management
@@ -239,6 +254,7 @@ ecommerce-mvp/
 - Work with Peaktra on cart-to-order flow
 
 **Key Deliverables**:
+
 - Fully functional shopping cart
 - Multi-step checkout process
 - Payment integration UI
@@ -250,9 +266,11 @@ ecommerce-mvp/
 ---
 
 ### **Peaktra: Backend - Firestore & Order Management**
+
 **Focus**: Firestore database structure, cloud functions, and order processing
 
 **Responsibilities**:
+
 - Firestore database structure design
 - Set up Firestore collections (products, orders, users, carts)
 - Firestore security rules configuration
@@ -269,6 +287,7 @@ ecommerce-mvp/
 - Work with Tong on payment completion flow
 
 **Key Deliverables**:
+
 - Complete Firestore database structure
 - Security rules for all collections
 - Order management system
@@ -283,6 +302,7 @@ ecommerce-mvp/
 ## Technology Stack Recommendations
 
 ### Frontend
+
 - **React 18** with Vite
 - **React Router v6** for routing
 - **Tailwind CSS** or **Material-UI** for styling
@@ -293,6 +313,7 @@ ecommerce-mvp/
 - **Stripe.js** or **PayPal SDK** for payments
 
 ### Backend/Database
+
 - **Firebase Authentication** for user management
 - **Cloud Firestore** for database
 - **Firebase Storage** for product images (optional)
@@ -301,6 +322,7 @@ ecommerce-mvp/
 - **Firebase Security Rules** for data protection
 
 ### DevOps & Tools
+
 - **Git** & **GitHub** for version control
 - **Firebase Console** for database management
 - **ESLint** & **Prettier** for code quality
@@ -311,6 +333,7 @@ ecommerce-mvp/
 ## Development Phases
 
 ### **Week 1-2: Foundation**
+
 - **All**: Firebase project setup, Git workflow, coding standards
 - **Ramy**: UI component library, routing setup, product card designs
 - **Rith**: Firebase Auth setup, login/register pages
@@ -318,18 +341,21 @@ ecommerce-mvp/
 - **Peaktra**: Firestore collections design, security rules, seed data
 
 ### **Week 3-4: Core Features**
+
 - **Ramy**: Product listing with pagination, filters, search functionality
 - **Rith**: Complete auth flow, protected routes, user profile
 - **Tong**: Shopping cart functionality, add/remove/update items
 - **Peaktra**: Product CRUD in Firestore, cart sync with database
 
 ### **Week 5-6: Integration & Advanced Features**
+
 - **Ramy**: Product detail page, API integration, loading states
 - **Rith**: Admin role implementation, Google Sign-In integration
 - **Tong**: Checkout flow, payment UI integration
 - **Peaktra**: Order creation system, payment webhooks, order status
 
 ### **Week 7-8: Testing & Polish**
+
 - **All**: Bug fixes, cross-feature testing, code review
 - **All**: UI/UX improvements, responsive design refinement
 - **All**: Documentation, security rules review
@@ -340,6 +366,7 @@ ecommerce-mvp/
 ## API Endpoints Overview
 
 ### Firebase Authentication (Handled by Firebase SDK)
+
 - `signInWithEmailAndPassword()` - Login
 - `createUserWithEmailAndPassword()` - Register
 - `signInWithPopup(googleProvider)` - Google Sign-In
@@ -350,6 +377,7 @@ ecommerce-mvp/
 ### Firestore Collections & Queries
 
 #### Products Collection (`/products`)
+
 - Get all products with filters
 - Get single product by ID
 - Create product (admin)
@@ -360,17 +388,20 @@ ecommerce-mvp/
 - Search by name/description
 
 #### Users Collection (`/users/{userId}`)
+
 - Get user profile
 - Update user profile
 - Store user preferences
 
 #### Carts Collection (`/carts/{userId}`)
+
 - Get user cart
 - Add item to cart
 - Update item quantity
 - Remove item from cart
 
 #### Orders Collection (`/orders/{orderId}`)
+
 - Create new order
 - Get user orders
 - Get order by ID
@@ -379,6 +410,7 @@ ecommerce-mvp/
 - Query all orders (admin)
 
 ### Payment Processing
+
 - `POST /api/payments/create-intent` - Create Stripe payment intent
 - `POST /api/payments/webhook` - Handle payment webhooks
 
@@ -389,6 +421,7 @@ ecommerce-mvp/
 ### Firestore Collections Structure
 
 #### Collection: `users/{userId}`
+
 ```javascript
 {
   uid: String (from Firebase Auth),
@@ -409,6 +442,7 @@ ecommerce-mvp/
 ```
 
 #### Collection: `products/{productId}`
+
 ```javascript
 {
   id: String (auto-generated),
@@ -428,6 +462,7 @@ ecommerce-mvp/
 ```
 
 #### Collection: `carts/{userId}`
+
 ```javascript
 {
   userId: String,
@@ -447,6 +482,7 @@ ecommerce-mvp/
 ```
 
 #### Collection: `orders/{orderId}`
+
 ```javascript
 {
   id: String (auto-generated),
@@ -484,15 +520,20 @@ ecommerce-mvp/
 ```
 
 ### Firestore Indexes (Peaktra to configure)
+
 ```javascript
 // products collection
-- category (Ascending) + price (Ascending)
-- category (Ascending) + createdAt (Descending)
-- featured (Descending) + createdAt (Descending)
-
-// orders collection
-- userId (Ascending) + createdAt (Descending)
-- status (Ascending) + createdAt (Descending)
+-category(Ascending) +
+  price(Ascending) -
+  category(Ascending) +
+  createdAt(Descending) -
+  featured(Descending) +
+  createdAt(Descending) -
+  // orders collection
+  userId(Ascending) +
+  createdAt(Descending) -
+  status(Ascending) +
+  createdAt(Descending);
 ```
 
 ---
@@ -500,18 +541,21 @@ ecommerce-mvp/
 ## Best Practices
 
 ### Code Organization
+
 - Use feature-based folder structure
 - Keep components small and reusable
 - Implement proper error handling
 - Use environment variables for sensitive data
 
 ### Git Workflow
+
 - Create feature branches from `develop`
 - Use meaningful commit messages
 - Code review before merging
 - Keep `main` branch production-ready
 
 ### Security
+
 - Use Firebase Authentication (built-in security)
 - Configure Firestore security rules properly
 - Validate all user inputs on frontend
@@ -522,6 +566,7 @@ ecommerce-mvp/
 - Sanitize data before storing in Firestore
 
 ### Performance
+
 - Implement pagination for product listings
 - Optimize images
 - Use lazy loading for routes
