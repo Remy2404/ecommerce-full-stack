@@ -1,0 +1,1 @@
+export const ShippingForm = () => null;
