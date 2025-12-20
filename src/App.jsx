@@ -1,17 +1,20 @@
-import { useState } from 'react'
 
-import './App.css'
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
-function App() {
+const App = () => {
   return (
     <>
-      <div className='bg-red-500 text-4xl text-white p-4'>
-        <p>
-          Hello world! This is a Tailwind CSS test.
-        </p>
-      </div>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<h1>Home Page</h1>} />
+        <Route path="/about" element={<h1>About Page</h1>} />
+        <Route path="/contact" element={<h1>Contact Page</h1>} />
+      </Routes>
+      <Footer />
     </>
-  )
-}
+  );
+};
 
-export default App
+export default App;
