@@ -1,10 +1,47 @@
-# E-commerce MVP Project Plan
+# Next.js E-commerce MVP - Full Stack Project Plan
 
 ## Project Overview
 
 **Timeline**: 6-8 weeks for MVP
 **Team Size**: 4 developers
-**Tech Stack**: React.js, Node.js/Express, MongoDB/PostgreSQL
+**Tech Stack**: Next.js 14 (App Router), PostgreSQL, Drizzle ORM, NextAuth.js
+
+---
+
+## Tech Stack
+
+### Core Framework
+- **Next.js 14** (App Router with Server Components)
+- **TypeScript** for type safety
+- **React 18** with Server & Client Components
+
+### Database & ORM
+- **PostgreSQL** for database
+- **Drizzle ORM** for database operations
+- **Drizzle Kit** for migrations
+- **Zod** for schema validation
+
+### Authentication
+- **NextAuth.js v5** for authentication
+- Email/Password + Google OAuth
+- JWT sessions
+
+### UI & Styling
+- **Tailwind CSS** for styling
+- **Radix UI** for accessible components
+- **Framer Motion** for animations
+- **tailwindcss-animate** for Tailwind animations
+- **tailwind-merge** & **clsx** for class management
+- **Lucide React** for icons
+
+### API & Communication
+- **Axios** for API calls (client-side)
+- **WebSocket** for real-time updates
+- **Server Actions** for server-side mutations
+
+### Environment & Config
+- **dotenv** for environment variables
+- **TypeScript** strict mode
 
 ---
 
@@ -13,320 +50,566 @@
 ### Core Features (Must Have)
 
 1. **User Authentication**
-
-   - Register/Login/Logout
-   - JWT-based authentication
+   - Register/Login/Logout (NextAuth.js)
+   - JWT-based sessions
+   - Google OAuth integration
    - Password recovery
+   - Email verification
 
 2. **Product Catalog**
-
    - Product listing with pagination
    - Product detail page
    - Category filtering
-   - Search functionality
+   - Search functionality (full-text search)
    - Sort by price/name
+   - Real-time stock updates (WebSocket)
 
 3. **Shopping Cart**
-
    - Add/Remove items
    - Update quantities
-   - Cart persistence (localStorage)
+   - Cart persistence (database)
+   - Real-time cart updates (WebSocket)
    - Cart summary
 
 4. **Checkout Process**
-
-   - Shipping information form
+   - Shipping information form with Zod validation
    - Order summary
-   - Payment integration (Stripe/PayPal sandbox)
+   - Payment integration (Stripe)
+   - Order confirmation
 
 5. **Order Management**
-
    - Order history for users
-   - Order status tracking
+   - Real-time order status tracking (WebSocket)
    - Order details view
+   - Download invoice (PDF)
 
-6. **Admin Panel (Basic)**
+6. **Admin Panel**
    - Product CRUD operations
-   - Order list view
+   - Order management
    - Order status updates
+   - Real-time dashboard (WebSocket)
+   - Analytics overview
 
 ---
 
 ## Project Structure
 
 ```
-ecommerce-mvp/
-├── client/                          # React Frontend
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/             # Reusable components
-│   │   │   │   ├── Header.jsx
-│   │   │   │   ├── Footer.jsx
-│   │   │   │   ├── Button.jsx
-│   │   │   │   ├── Input.jsx
-│   │   │   │   └── Loader.jsx
+ecommerce-nextjs/
+├── src/
+│   ├── app/                              # Next.js App Router
+│   │   ├── (auth)/                       # Auth group routes
+│   │   │   ├── login/
+│   │   │   │   └── page.tsx
+│   │   │   ├── register/
+│   │   │   │   └── page.tsx
+│   │   │   └── reset-password/
+│   │   │       └── page.tsx
+│   │   ├── (shop)/                       # Shop group routes
 │   │   │   ├── products/
-│   │   │   │   ├── ProductCard.jsx
-│   │   │   │   ├── ProductList.jsx
-│   │   │   │   ├── ProductDetail.jsx
-│   │   │   │   └── ProductFilter.jsx
+│   │   │   │   ├── page.tsx              # Product listing
+│   │   │   │   └── [id]/
+│   │   │   │       └── page.tsx          # Product detail
 │   │   │   ├── cart/
-│   │   │   │   ├── CartItem.jsx
-│   │   │   │   ├── CartSummary.jsx
-│   │   │   │   └── Cart.jsx
+│   │   │   │   └── page.tsx
 │   │   │   ├── checkout/
-│   │   │   │   ├── CheckoutForm.jsx
-│   │   │   │   ├── ShippingForm.jsx
-│   │   │   │   └── PaymentForm.jsx
-│   │   │   ├── auth/
-│   │   │   │   ├── Login.jsx
-│   │   │   │   ├── Register.jsx
-│   │   │   │   └── PrivateRoute.jsx
+│   │   │   │   └── page.tsx
+│   │   │   └── orders/
+│   │   │       ├── page.tsx
+│   │   │       └── [id]/
+│   │   │           └── page.tsx
+│   │   ├── (admin)/                      # Admin group routes
 │   │   │   └── admin/
-│   │   │       ├── ProductForm.jsx
-│   │   │       ├── ProductManagement.jsx
-│   │   │       └── OrderManagement.jsx
-│   │   ├── pages/
-│   │   │   ├── Home.jsx
-│   │   │   ├── Products.jsx
-│   │   │   ├── ProductDetails.jsx
-│   │   │   ├── CartPage.jsx
-│   │   │   ├── Checkout.jsx
-│   │   │   ├── Orders.jsx
-│   │   │   ├── AdminDashboard.jsx
-│   │   │   └── NotFound.jsx
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx
-│   │   │   └── CartContext.jsx
-│   │   ├── services/
-│   │   │   ├── api.js              # Axios configuration
-│   │   │   ├── authService.js
-│   │   │   ├── productService.js
-│   │   │   ├── cartService.js
-│   │   │   └── orderService.js
-│   │   ├── hooks/
-│   │   │   ├── useAuth.js
-│   │   │   ├── useCart.js
-│   │   │   └── useProducts.js
+│   │   │       ├── layout.tsx
+│   │   │       ├── page.tsx              # Dashboard
+│   │   │       ├── products/
+│   │   │       │   ├── page.tsx
+│   │   │       │   ├── new/
+│   │   │       │   │   └── page.tsx
+│   │   │       │   └── [id]/
+│   │   │       │       └── edit/
+│   │   │       │           └── page.tsx
+│   │   │       └── orders/
+│   │   │           ├── page.tsx
+│   │   │           └── [id]/
+│   │   │               └── page.tsx
+│   │   ├── api/                          # API Routes
+│   │   │   ├── auth/
+│   │   │   │   └── [...nextauth]/
+│   │   │   │       └── route.ts
+│   │   │   ├── products/
+│   │   │   │   ├── route.ts
+│   │   │   │   └── [id]/
+│   │   │   │       └── route.ts
+│   │   │   ├── cart/
+│   │   │   │   └── route.ts
+│   │   │   ├── orders/
+│   │   │   │   ├── route.ts
+│   │   │   │   └── [id]/
+│   │   │   │       └── route.ts
+│   │   │   ├── payments/
+│   │   │   │   ├── create-intent/
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── webhook/
+│   │   │   │       └── route.ts
+│   │   │   └── websocket/
+│   │   │       └── route.ts
+│   │   ├── layout.tsx                    # Root layout
+│   │   ├── page.tsx                      # Home page
+│   │   ├── loading.tsx
+│   │   ├── error.tsx
+│   │   └── not-found.tsx
+│   │
+│   ├── components/
+│   │   ├── ui/                           # Radix UI components
+│   │   │   ├── button.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── toast.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── table.tsx
+│   │   │   └── tabs.tsx
+│   │   ├── common/
+│   │   │   ├── header.tsx
+│   │   │   ├── footer.tsx
+│   │   │   ├── navbar.tsx
+│   │   │   ├── search-bar.tsx
+│   │   │   ├── pagination.tsx
+│   │   │   └── loading-spinner.tsx
+│   │   ├── products/
+│   │   │   ├── product-card.tsx
+│   │   │   ├── product-list.tsx
+│   │   │   ├── product-detail.tsx
+│   │   │   ├── product-filters.tsx
+│   │   │   ├── product-search.tsx
+│   │   │   └── product-image-gallery.tsx
+│   │   ├── cart/
+│   │   │   ├── cart-item.tsx
+│   │   │   ├── cart-summary.tsx
+│   │   │   ├── cart-drawer.tsx
+│   │   │   └── cart-badge.tsx
+│   │   ├── checkout/
+│   │   │   ├── checkout-form.tsx
+│   │   │   ├── shipping-form.tsx
+│   │   │   ├── payment-form.tsx
+│   │   │   └── order-summary.tsx
+│   │   ├── auth/
+│   │   │   ├── login-form.tsx
+│   │   │   ├── register-form.tsx
+│   │   │   ├── google-auth-button.tsx
+│   │   │   └── auth-guard.tsx
+│   │   ├── admin/
+│   │   │   ├── product-form.tsx
+│   │   │   ├── product-table.tsx
+│   │   │   ├── order-table.tsx
+│   │   │   ├── order-status-update.tsx
+│   │   │   ├── dashboard-stats.tsx
+│   │   │   └── real-time-indicator.tsx
+│   │   └── animations/
+│   │       ├── fade-in.tsx
+│   │       ├── slide-in.tsx
+│   │       └── scale-in.tsx
+│   │
+│   ├── lib/
+│   │   ├── db/
+│   │   │   ├── index.ts                  # Drizzle client
+│   │   │   ├── schema.ts                 # Database schema
+│   │   │   └── migrations/
+│   │   ├── auth/
+│   │   │   ├── auth.config.ts            # NextAuth config
+│   │   │   └── auth.ts                   # NextAuth setup
+│   │   ├── validations/
+│   │   │   ├── auth.ts                   # Zod schemas for auth
+│   │   │   ├── product.ts                # Zod schemas for products
+│   │   │   ├── order.ts                  # Zod schemas for orders
+│   │   │   └── cart.ts                   # Zod schemas for cart
 │   │   ├── utils/
-│   │   │   ├── constants.js
-│   │   │   ├── helpers.js
-│   │   │   └── validators.js
-│   │   ├── styles/
-│   │   │   └── globals.css
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── package.json
-│   └── vite.config.js
+│   │   │   ├── cn.ts                     # Class name utility
+│   │   │   ├── format.ts                 # Format helpers
+│   │   │   └── validators.ts
+│   │   ├── api/
+│   │   │   ├── client.ts                 # Axios client config
+│   │   │   └── endpoints.ts              # API endpoints
+│   │   ├── websocket/
+│   │   │   ├── client.ts                 # WebSocket client
+│   │   │   └── server.ts                 # WebSocket server
+│   │   └── constants.ts
+│   │
+│   ├── actions/                          # Server Actions
+│   │   ├── auth.actions.ts
+│   │   ├── product.actions.ts
+│   │   ├── cart.actions.ts
+│   │   └── order.actions.ts
+│   │
+│   ├── hooks/
+│   │   ├── use-auth.ts
+│   │   ├── use-cart.ts
+│   │   ├── use-products.ts
+│   │   ├── use-websocket.ts
+│   │   └── use-toast.ts
+│   │
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── auth.ts
+│   │   ├── product.ts
+│   │   ├── order.ts
+│   │   └── cart.ts
+│   │
+│   └── styles/
+│       └── globals.css
 │
-├── server/                          # Node.js Backend
-│   ├── src/
-│   │   ├── config/
-│   │   │   ├── database.js
-│   │   │   └── env.js
-│   │   ├── models/
-│   │   │   ├── User.js
-│   │   │   ├── Product.js
-│   │   │   ├── Order.js
-│   │   │   └── Cart.js
-│   │   ├── controllers/
-│   │   │   ├── authController.js
-│   │   │   ├── productController.js
-│   │   │   ├── cartController.js
-│   │   │   ├── orderController.js
-│   │   │   └── adminController.js
-│   │   ├── routes/
-│   │   │   ├── authRoutes.js
-│   │   │   ├── productRoutes.js
-│   │   │   ├── cartRoutes.js
-│   │   │   ├── orderRoutes.js
-│   │   │   └── adminRoutes.js
-│   │   ├── middleware/
-│   │   │   ├── authMiddleware.js
-│   │   │   ├── errorHandler.js
-│   │   │   ├── validation.js
-│   │   │   └── adminMiddleware.js
-│   │   ├── utils/
-│   │   │   ├── jwt.js
-│   │   │   ├── email.js
-│   │   │   └── helpers.js
-│   │   ├── services/
-│   │   │   ├── paymentService.js
-│   │   │   └── emailService.js
-│   │   └── server.js
-│   ├── package.json
-│   └── .env.example
+├── public/
+│   ├── images/
+│   └── icons/
 │
-├── docs/
-│   ├── API.md
-│   ├── SETUP.md
-│   └── DEPLOYMENT.md
+├── drizzle/
+│   ├── migrations/
+│   └── schema.ts
 │
-├── .gitignore
+├── .env.local.example
+├── .env.local
+├── drizzle.config.ts
+├── next.config.js
+├── tsconfig.json
+├── tailwind.config.ts
+├── package.json
 └── README.md
+```
+
+---
+
+## Database Schema (Drizzle ORM)
+
+### File: `src/lib/db/schema.ts`
+
+```typescript
+import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+// Users Table
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  emailVerified: timestamp('email_verified'),
+  password: varchar('password', { length: 255 }), // Hashed
+  image: text('image'),
+  role: varchar('role', { length: 50 }).default('user'), // 'user' or 'admin'
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Products Table
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
+  description: text('description'),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  category: varchar('category', { length: 100 }),
+  imageUrl: text('image_url'),
+  images: jsonb('images').default([]), // Array of image URLs
+  stock: integer('stock').default(0),
+  rating: decimal('rating', { precision: 3, scale: 2 }).default('0'),
+  numReviews: integer('num_reviews').default(0),
+  featured: boolean('featured').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Carts Table
+export const carts = pgTable('carts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: varchar('session_id', { length: 255 }), // For guest users
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Cart Items Table
+export const cartItems = pgTable('cart_items', {
+  id: serial('id').primaryKey(),
+  cartId: integer('cart_id').references(() => carts.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').references(() => products.id, { onDelete: 'cascade' }),
+  quantity: integer('quantity').default(1),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Orders Table
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  orderNumber: varchar('order_number', { length: 50 }).notNull().unique(),
+  status: varchar('status', { length: 50 }).default('pending'), // pending, processing, shipped, delivered, cancelled
+  paymentStatus: varchar('payment_status', { length: 50 }).default('pending'),
+  paymentId: varchar('payment_id', { length: 255 }),
+  paymentMethod: varchar('payment_method', { length: 50 }),
+  subtotal: decimal('subtotal', { precision: 10, scale: 2 }),
+  shippingCost: decimal('shipping_cost', { precision: 10, scale: 2 }).default('0'),
+  tax: decimal('tax', { precision: 10, scale: 2 }).default('0'),
+  totalPrice: decimal('total_price', { precision: 10, scale: 2 }),
+  shippingAddress: jsonb('shipping_address'), // JSON object
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Order Items Table
+export const orderItems = pgTable('order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').references(() => products.id, { onDelete: 'set null' }),
+  name: varchar('name', { length: 255 }),
+  price: decimal('price', { precision: 10, scale: 2 }),
+  quantity: integer('quantity'),
+  imageUrl: text('image_url'),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  orders: many(orders),
+  carts: many(carts),
+}));
+
+export const productsRelations = relations(products, ({ many }) => ({
+  cartItems: many(cartItems),
+  orderItems: many(orderItems),
+}));
+
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [carts.userId],
+    references: [users.id],
+  }),
+  items: many(cartItems),
+}));
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  items: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
+```
+
+---
+
+## Zod Validation Schemas
+
+### File: `src/lib/validations/product.ts`
+
+```typescript
+import { z } from 'zod';
+
+export const productSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  price: z.number().positive('Price must be positive'),
+  category: z.string().min(2, 'Category is required'),
+  imageUrl: z.string().url('Invalid image URL'),
+  images: z.array(z.string().url()).optional(),
+  stock: z.number().int().nonnegative('Stock cannot be negative'),
+  featured: z.boolean().optional(),
+});
+
+export const productFilterSchema = z.object({
+  category: z.string().optional(),
+  minPrice: z.number().optional(),
+  maxPrice: z.number().optional(),
+  search: z.string().optional(),
+  sortBy: z.enum(['price-asc', 'price-desc', 'name-asc', 'name-desc', 'newest']).optional(),
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().default(12),
+});
+```
+
+### File: `src/lib/validations/auth.ts`
+
+```typescript
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+export const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
+```
+
+### File: `src/lib/validations/order.ts`
+
+```typescript
+import { z } from 'zod';
+
+export const shippingAddressSchema = z.object({
+  fullName: z.string().min(2, 'Full name is required'),
+  street: z.string().min(5, 'Street address is required'),
+  city: z.string().min(2, 'City is required'),
+  state: z.string().min(2, 'State is required'),
+  zipCode: z.string().min(4, 'Zip code is required'),
+  country: z.string().min(2, 'Country is required'),
+  phone: z.string().min(10, 'Valid phone number is required'),
+});
+
+export const createOrderSchema = z.object({
+  items: z.array(z.object({
+    productId: z.number(),
+    quantity: z.number().positive(),
+  })),
+  shippingAddress: shippingAddressSchema,
+  paymentMethod: z.enum(['stripe', 'paypal']),
+});
 ```
 
 ---
 
 ## Team Assignment & Responsibilities
 
-### **Ramy: Frontend Lead - Product Catalog & UI Foundation**
+### **Ramy: Frontend Lead - Product Pages & UI System**
 
-**Focus**: Product display, filtering, search, and core UI components
+**Focus**: Product catalog, UI components with Radix UI, animations with Framer Motion
 
 **Responsibilities**:
-
-- Set up React project structure (Vite + React Router)
-- Design and implement UI component library (Header, Footer, Buttons, Cards, Input)
-- Build Product Catalog pages (listing with pagination)
-- Implement Product Detail page
-- Create responsive design system (mobile-first approach)
-- Product search functionality (client-side + Firestore queries)
-- Product filtering by category, price range
-- Product sorting (price, name, rating)
-- Integrate Firebase for product data fetching
-- State management setup (Context API)
+- Set up Next.js 14 project with App Router
+- Configure Tailwind CSS + Radix UI + Framer Motion
+- Create reusable UI component library (Button, Input, Card, Dialog, etc.)
+- Build product listing page with Server Components
+- Implement product detail page with image gallery
+- Create product filters and search (client components)
+- Implement animations with Framer Motion (page transitions, cards, etc.)
+- Set up responsive design system
+- Product sorting and pagination
+- Loading and error states
 
 **Key Deliverables**:
-
-- Reusable component library
-- Product listing with filters, search, and pagination
-- Product detail page with image gallery
-- Responsive layout system (Tailwind CSS)
-- Loading states and error handling
+- Complete Radix UI component library
+- Product listing with filters, search, pagination
+- Product detail page with animated gallery
+- Responsive layout system
+- Animated transitions and micro-interactions
 
 **Estimated Time**: 2-3 weeks
 
 ---
 
-### **Rith: Frontend - Authentication & User Profile**
+### **Rith: Authentication & User Management**
 
-**Focus**: Firebase Authentication integration and user management
+**Focus**: NextAuth.js setup, user authentication, protected routes
 
 **Responsibilities**:
-
-- Firebase Authentication setup and configuration
-- Login page with email/password
-- Registration page with validation
-- Google Sign-In integration
-- Password reset functionality
-- Protected routes (PrivateRoute component)
-- User profile page (view/edit profile)
-- Authentication Context (AuthContext)
-- User session management
-- Logout functionality
-- Admin role checking and routing
-- Display user info in Header
-- Integration with Firestore for user data
+- NextAuth.js v5 configuration
+- Email/Password authentication with bcrypt
+- Google OAuth integration
+- Protected route middleware
+- User registration with email verification
+- Password reset flow
+- User profile page
+- Role-based access control (admin/user)
+- Session management
+- Auth UI components with Radix UI
+- Integration with Drizzle ORM for user data
 
 **Key Deliverables**:
-
 - Complete authentication system
-- User profile management
-- Protected route implementation
-- Auth state management
 - Google OAuth integration
-- Role-based access control UI
+- Protected routes and middleware
+- User profile management
+- Admin role checking
+- Email verification system
 
 **Estimated Time**: 1.5-2 weeks
 
 ---
 
-### **Tong: Frontend - Shopping Cart & Checkout Flow**
+### **Tong: Shopping Cart & Checkout with WebSocket**
 
-**Focus**: Cart functionality and complete checkout experience
+**Focus**: Cart functionality, checkout flow, real-time updates
 
 **Responsibilities**:
-
-- Shopping Cart UI and functionality
-- Add to cart, remove, update quantity
-- Cart Context/State management
-- Cart persistence (Firestore + localStorage backup)
-- Cart page with item summary
-- Checkout flow (multi-step: Cart → Shipping → Payment → Confirmation)
-- Shipping information form with validation
-- Payment integration UI (Stripe/PayPal)
-- Order summary component
+- Shopping cart with Drizzle ORM
+- Cart CRUD operations (Server Actions)
+- Cart drawer component (Radix UI Dialog)
+- Real-time cart updates with WebSocket
+- Cart badge with item count
+- Multi-step checkout form with Zod validation
+- Shipping form with validation
+- Stripe payment integration
 - Order confirmation page
-- Cart badge in Header (item count)
-- Empty cart state
-- Work with Peaktra on cart-to-order flow
+- Cart persistence in database
+- Work with Peaktra on WebSocket server
 
 **Key Deliverables**:
-
 - Fully functional shopping cart
-- Multi-step checkout process
-- Payment integration UI
-- Order confirmation flow
-- Cart persistence system
+- Real-time cart updates (WebSocket)
+- Multi-step checkout flow
+- Stripe payment integration
+- Order confirmation system
 
 **Estimated Time**: 2-3 weeks
 
 ---
 
-### **Peaktra: Backend - Firestore & Order Management**
+### **Peaktra: Backend - Database, API & WebSocket**
 
-**Focus**: Firestore database structure, cloud functions, and order processing
+**Focus**: Drizzle ORM setup, API routes, WebSocket server, order management
 
 **Responsibilities**:
-
-- Firestore database structure design
-- Set up Firestore collections (products, orders, users, carts)
-- Firestore security rules configuration
-- Product CRUD operations (admin)
-- Product data seeding (initial products)
-- Order creation and storage in Firestore
-- Order status management (pending, processing, shipped, delivered)
-- Order history queries
-- Cart synchronization with Firestore
-- Payment webhook handling (Stripe/PayPal)
-- Cloud Functions for order processing (optional)
-- Admin panel data management
-- Firestore indexes optimization
-- Work with Tong on payment completion flow
+- PostgreSQL database setup
+- Drizzle ORM configuration and migrations
+- Database schema design
+- Seed data for products
+- API routes for products, cart, orders
+- Server Actions for data mutations
+- WebSocket server setup for real-time updates
+- Order creation and management
+- Payment webhook handling (Stripe)
+- Admin API endpoints
+- Database queries optimization
+- Order status updates via WebSocket
 
 **Key Deliverables**:
-
-- Complete Firestore database structure
-- Security rules for all collections
+- Complete database setup with Drizzle
+- All API routes
+- WebSocket server for real-time features
 - Order management system
-- Admin product management
 - Payment processing logic
-- Cloud Functions (if needed)
+- Admin endpoints
 
 **Estimated Time**: 2-3 weeks
-
----
-
-## Technology Stack Recommendations
-
-### Frontend
-
-- **React 18** with Vite
-- **React Router v6** for routing
-- **Tailwind CSS** or **Material-UI** for styling
-- **Firebase SDK v10+** for authentication and Firestore
-- **React Hook Form** for form validation
-- **React Toastify** for notifications
-- **Context API** for state management
-- **Stripe.js** or **PayPal SDK** for payments
-
-### Backend/Database
-
-- **Firebase Authentication** for user management
-- **Cloud Firestore** for database
-- **Firebase Storage** for product images (optional)
-- **Firebase Cloud Functions** for server-side logic (optional for MVP)
-- **Stripe** or **PayPal** for payment processing
-- **Firebase Security Rules** for data protection
-
-### DevOps & Tools
-
-- **Git** & **GitHub** for version control
-- **Firebase Console** for database management
-- **ESLint** & **Prettier** for code quality
-- **Firebase Emulator Suite** for local testing
 
 ---
 
@@ -334,305 +617,295 @@ ecommerce-mvp/
 
 ### **Week 1-2: Foundation**
 
-- **All**: Firebase project setup, Git workflow, coding standards
-- **Ramy**: UI component library, routing setup, product card designs
-- **Rith**: Firebase Auth setup, login/register pages
-- **Tong**: Cart component structure, cart context setup
-- **Peaktra**: Firestore collections design, security rules, seed data
+**All**:
+- Next.js project setup
+- PostgreSQL + Drizzle ORM setup
+- Git workflow and coding standards
+- Environment variables setup
+
+**Ramy**:
+- Tailwind CSS + Radix UI setup
+- UI component library
+- Basic layouts and routing
+- Framer Motion setup
+
+**Rith**:
+- NextAuth.js configuration
+- Auth pages (login, register)
+- Database schema for users
+
+**Tong**:
+- Cart schema design
+- Cart components structure
+- WebSocket client setup
+
+**Peaktra**:
+- Database migrations
+- Product schema and seed data
+- Basic API routes
+- WebSocket server setup
+
+---
 
 ### **Week 3-4: Core Features**
 
-- **Ramy**: Product listing with pagination, filters, search functionality
-- **Rith**: Complete auth flow, protected routes, user profile
-- **Tong**: Shopping cart functionality, add/remove/update items
-- **Peaktra**: Product CRUD in Firestore, cart sync with database
+**Ramy**:
+- Product listing page
+- Product filters and search
+- Product card animations
+- Pagination component
+
+**Rith**:
+- Complete auth flow
+- Google OAuth
+- Protected routes
+- User profile
+
+**Tong**:
+- Shopping cart functionality
+- Add/remove items
+- Cart drawer
+- Cart Server Actions
+
+**Peaktra**:
+- Product API routes
+- Cart API integration
+- WebSocket for cart updates
+- Product queries optimization
+
+---
 
 ### **Week 5-6: Integration & Advanced Features**
 
-- **Ramy**: Product detail page, API integration, loading states
-- **Rith**: Admin role implementation, Google Sign-In integration
-- **Tong**: Checkout flow, payment UI integration
-- **Peaktra**: Order creation system, payment webhooks, order status
+**Ramy**:
+- Product detail page
+- Image gallery with animations
+- Loading states
+- Error handling
+
+**Rith**:
+- Admin role implementation
+- Admin middleware
+- Email verification
+
+**Tong**:
+- Checkout flow
+- Stripe integration
+- Order confirmation
+- Real-time cart updates
+
+**Peaktra**:
+- Order creation system
+- Payment webhooks
+- Order status WebSocket
+- Admin order management
+
+---
 
 ### **Week 7-8: Testing & Polish**
 
-- **All**: Bug fixes, cross-feature testing, code review
-- **All**: UI/UX improvements, responsive design refinement
-- **All**: Documentation, security rules review
-- **All**: Deployment to Firebase Hosting
+**All**:
+- Bug fixes
+- Cross-feature testing
+- Performance optimization
+- Code review
+- UI/UX improvements
+- Documentation
+- Deployment preparation
 
 ---
 
-## API Endpoints Overview
+## Key Configuration Files
 
-### Firebase Authentication (Handled by Firebase SDK)
+### `drizzle.config.ts`
 
-- `signInWithEmailAndPassword()` - Login
-- `createUserWithEmailAndPassword()` - Register
-- `signInWithPopup(googleProvider)` - Google Sign-In
-- `signOut()` - Logout
-- `sendPasswordResetEmail()` - Password reset
-- `updateProfile()` - Update user profile
+```typescript
+import type { Config } from 'drizzle-kit';
+import * as dotenv from 'dotenv';
 
-### Firestore Collections & Queries
+dotenv.config({ path: '.env.local' });
 
-#### Products Collection (`/products`)
-
-- Get all products with filters
-- Get single product by ID
-- Create product (admin)
-- Update product (admin)
-- Delete product (admin)
-- Query by category
-- Query with price range
-- Search by name/description
-
-#### Users Collection (`/users/{userId}`)
-
-- Get user profile
-- Update user profile
-- Store user preferences
-
-#### Carts Collection (`/carts/{userId}`)
-
-- Get user cart
-- Add item to cart
-- Update item quantity
-- Remove item from cart
-
-#### Orders Collection (`/orders/{orderId}`)
-
-- Create new order
-- Get user orders
-- Get order by ID
-- Update order status (admin)
-- Query orders by user
-- Query all orders (admin)
-
-### Payment Processing
-
-- `POST /api/payments/create-intent` - Create Stripe payment intent
-- `POST /api/payments/webhook` - Handle payment webhooks
-
----
-
-## Database Schema
-
-### Firestore Collections Structure
-
-#### Collection: `users/{userId}`
-
-```javascript
-{
-  uid: String (from Firebase Auth),
-  email: String,
-  displayName: String,
-  photoURL: String,
-  role: String (user/admin),
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String
+export default {
+  schema: './src/lib/db/schema.ts',
+  out: './drizzle/migrations',
+  driver: 'pg',
+  dbCredentials: {
+    connectionString: process.env.DATABASE_URL!,
   },
-  createdAt: Timestamp,
-  updatedAt: Timestamp
-}
+} satisfies Config;
 ```
 
-#### Collection: `products/{productId}`
+### `src/lib/auth/auth.config.ts` (NextAuth)
 
-```javascript
-{
-  id: String (auto-generated),
-  name: String,
-  description: String,
-  price: Number,
-  category: String,
-  imageUrl: String,
-  images: [String], // Multiple images
-  stock: Number,
-  rating: Number,
-  numReviews: Number,
-  featured: Boolean,
-  createdAt: Timestamp,
-  updatedAt: Timestamp
-}
-```
+```typescript
+import type { NextAuthConfig } from 'next-auth';
+import Google from 'next-auth/providers/google';
+import Credentials from 'next-auth/providers/credentials';
+import { loginSchema } from '@/lib/validations/auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
-#### Collection: `carts/{userId}`
-
-```javascript
-{
-  userId: String,
-  items: [
-    {
-      productId: String,
-      name: String,
-      price: Number,
-      quantity: Number,
-      imageUrl: String
-    }
+export default {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    Credentials({
+      async authorize(credentials) {
+        const validatedFields = loginSchema.safeParse(credentials);
+        
+        if (validatedFields.success) {
+          const { email, password } = validatedFields.data;
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
+          });
+          
+          if (!user || !user.password) return null;
+          
+          const passwordMatch = await bcrypt.compare(password, user.password);
+          if (passwordMatch) return user;
+        }
+        
+        return null;
+      },
+    }),
   ],
-  totalItems: Number,
-  totalPrice: Number,
-  updatedAt: Timestamp
-}
-```
-
-#### Collection: `orders/{orderId}`
-
-```javascript
-{
-  id: String (auto-generated),
-  userId: String,
-  orderNumber: String,
-  items: [
-    {
-      productId: String,
-      name: String,
-      quantity: Number,
-      price: Number,
-      imageUrl: String
-    }
-  ],
-  shippingAddress: {
-    fullName: String,
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String,
-    phone: String
+  pages: {
+    signIn: '/login',
   },
-  paymentMethod: String,
-  paymentStatus: String (pending/completed/failed),
-  paymentId: String,
-  subtotal: Number,
-  shippingCost: Number,
-  tax: Number,
-  totalPrice: Number,
-  status: String (pending/processing/shipped/delivered/cancelled),
-  createdAt: Timestamp,
-  updatedAt: Timestamp
-}
+  callbacks: {
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+        session.user.role = token.role as string;
+      }
+      return session;
+    },
+    async jwt({ token }) {
+      if (!token.sub) return token;
+      
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, parseInt(token.sub)),
+      });
+      
+      if (user) {
+        token.role = user.role;
+      }
+      
+      return token;
+    },
+  },
+} satisfies NextAuthConfig;
 ```
 
-### Firestore Indexes (Peaktra to configure)
+### `tailwind.config.ts`
 
-```javascript
-// products collection
--category(Ascending) +
-  price(Ascending) -
-  category(Ascending) +
-  createdAt(Descending) -
-  featured(Descending) +
-  createdAt(Descending) -
-  // orders collection
-  userId(Ascending) +
-  createdAt(Descending) -
-  status(Ascending) +
-  createdAt(Descending);
+```typescript
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  darkMode: ['class'],
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        // ... add more Radix UI colors
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+};
+
+export default config;
 ```
 
 ---
 
-## Best Practices
+## WebSocket Implementation
 
-### Code Organization
+### Server: `src/lib/websocket/server.ts`
 
-- Use feature-based folder structure
-- Keep components small and reusable
-- Implement proper error handling
-- Use environment variables for sensitive data
+```typescript
+import { Server as HTTPServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 
-### Git Workflow
+let io: SocketIOServer | null = null;
 
-- Create feature branches from `develop`
-- Use meaningful commit messages
-- Code review before merging
-- Keep `main` branch production-ready
+export const initWebSocket = (server: HTTPServer) => {
+  io = new SocketIOServer(server, {
+    cors: {
+      origin: process.env.NEXT_PUBLIC_APP_URL,
+      methods: ['GET', 'POST'],
+    },
+  });
 
-### Security
+  io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
 
-- Use Firebase Authentication (built-in security)
-- Configure Firestore security rules properly
-- Validate all user inputs on frontend
-- Implement rate limiting in Cloud Functions
-- Use HTTPS in production
-- Never expose Firebase config keys (use .env)
-- Implement admin role checks
-- Sanitize data before storing in Firestore
+    socket.on('join-cart', (userId: string) => {
+      socket.join(`cart-${userId}`);
+    });
 
-### Performance
+    socket.on('join-order', (orderId: string) => {
+      socket.join(`order-${orderId}`);
+    });
 
-- Implement pagination for product listings
-- Optimize images
-- Use lazy loading for routes
-- Implement caching where appropriate
-- Minimize API calls
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
+    });
+  });
 
----
+  return io;
+};
 
-## Deployment Checklist
+export const getIO = () => {
+  if (!io) throw new Error('WebSocket not initialized');
+  return io;
+};
 
-- [ ] Firebase project created and configured
-- [ ] Firebase Authentication enabled (Email/Password + Google)
-- [ ] Firestore database created
-- [ ] Firestore security rules configured and tested
-- [ ] Firestore indexes created
-- [ ] Environment variables configured (.env.local)
-- [ ] Product seed data added to Firestore
-- [ ] Payment gateway configured (Stripe/PayPal production mode)
-- [ ] Frontend deployed (Firebase Hosting or Vercel)
-- [ ] Cloud Functions deployed (if used)
-- [ ] Custom domain configured (optional for MVP)
-- [ ] SSL certificate (automatic with Firebase Hosting)
-- [ ] Error monitoring setup (Firebase Crashlytics)
-- [ ] Analytics setup (Firebase Analytics)
-- [ ] Admin user created in Firestore
+// Emit cart update
+export const emitCartUpdate = (userId: string, cart: any) => {
+  const io = getIO();
+  io.to(`cart-${userId}`).emit('cart-updated', cart);
+};
 
----
-
-## Post-MVP Features (Future Enhancements)
-
-- Product reviews and ratings
-- Wishlist functionality
-- Advanced search with filters
-- Product recommendations
-- Inventory management
-- Discount coupons
-- Email marketing integration
-- Social media login
-- Multi-language support
-- Advanced admin analytics
-- Customer support chat
-
----
-
-## Success Metrics for MVP
-
-- Users can register and login
-- Products display with search and filter
-- Users can add products to cart
-- Checkout process completes successfully
-- Payment processing works (sandbox)
-- Orders are created and visible
-- Admin can manage products and orders
-- Application is responsive on mobile
-- Page load time < 3 seconds
-- No critical bugs
-
----
-
-## Communication & Tools
-
-- **Daily Standup**: 15 min sync
-- **Weekly Review**: Progress check and planning
-- **Tools**: Slack/Discord for communication
-- **Project Management**: Trello, Jira, or GitHub Projects
-- **Documentation**: Notion or Confluence
-- **Code Repository**: GitHub with protected main branch
-
----
+// Emit order status update
+export const emitOrderUpdate = (orderId: string, order: any) => {
+  const io = getIO();
+  io.to(`order-${orderId}`).emit('order-updated', order);
+};
