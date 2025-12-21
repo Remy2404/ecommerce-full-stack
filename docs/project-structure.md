@@ -74,7 +74,7 @@
 4. **Checkout Process**
    - Shipping information form with Zod validation
    - Order summary
-   - Payment integration (Stripe)
+   - Payment processing KHQR 
    - Order confirmation
 
 5. **Order Management**
@@ -82,13 +82,6 @@
    - Real-time order status tracking (WebSocket)
    - Order details view
    - Download invoice (PDF)
-
-6. **Admin Panel**
-   - Product CRUD operations
-   - Order management
-   - Order status updates
-   - Real-time dashboard (WebSocket)
-   - Analytics overview
 
 ---
 
