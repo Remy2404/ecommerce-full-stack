@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
+import { SortSelect } from '@/components/products/sort-select';
 import { getFormattedMockProducts, mockCategories } from '@/lib/mock-data';
 
 export const metadata = {
@@ -153,20 +154,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 Showing {filteredProducts.length} products
               </p>
               <div className="flex items-center gap-2">
-                <select
-                  defaultValue={params.sort || 'newest'}
-                  className="h-10 rounded-design border border-border bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  onChange={(e) => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('sort', e.target.value);
-                    window.location.href = url.toString();
-                  }}
-                >
-                  <option value="newest">Newest</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="rating">Top Rated</option>
-                </select>
+                <SortSelect defaultValue={params.sort || 'newest'} />
               </div>
             </div>
 
