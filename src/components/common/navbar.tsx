@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Menu, 
@@ -40,7 +40,7 @@ interface NavbarProps {
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/products', label: 'Shop' },
-  { href: '/products?category=new', label: 'New Arrivals' },
+  { href: '/products?sort=newest', label: 'New Arrivals' },
   { href: '/products?featured=true', label: 'Featured' },
   { href: '/products?sale=true', label: 'Sale' },
 ];
@@ -54,6 +54,7 @@ export function Navbar({ user }: NavbarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,7 +67,34 @@ export function Navbar({ user }: NavbarProps) {
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
+
+  const isLinkActive = (href: string) => {
+    const [path, query] = href.split('?');
+    
+    if (pathname !== path) {
+      // For Home page, strict match
+      if (href === '/' && pathname === '/') return true;
+      return false;
+    }
+
+    // Special case for Home link when path is just /
+    if (href === '/' && pathname === '/') return true;
+
+    const linkParams = new URLSearchParams(query || '');
+    const linkParamKeys = Array.from(linkParams.keys());
+    
+    if (linkParamKeys.length === 0) {
+      // For "Shop" (/products), it should only be active if no other nav link params are present
+      const hasSpecialFilter = searchParams.get('featured') === 'true' || 
+                               searchParams.get('sale') === 'true' || 
+                               searchParams.get('sort') === 'newest';
+      return !hasSpecialFilter;
+    }
+    
+    // For links with query params, check if they all match
+    return linkParamKeys.every(key => searchParams.get(key) === linkParams.get(key));
+  };
 
   return (
     <>
@@ -99,7 +127,7 @@ export function Navbar({ user }: NavbarProps) {
                   href={link.href}
                   className={cn(
                     'text-sm font-medium transition-colors hover:text-primary',
-                    pathname === link.href
+                    isLinkActive(link.href)
                       ? 'text-primary'
                       : 'text-muted-foreground'
                   )}
@@ -304,7 +332,7 @@ export function Navbar({ user }: NavbarProps) {
                     href={link.href}
                     className={cn(
                       'block rounded-design px-4 py-3 text-base font-medium transition-colors',
-                      pathname === link.href
+                      isLinkActive(link.href)
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-accent'
                     )}

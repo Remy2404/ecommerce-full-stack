@@ -14,8 +14,11 @@ interface ProductsPageProps {
   searchParams: Promise<{
     category?: string;
     featured?: string;
+    sale?: string;
     sort?: string;
     page?: string;
+    minPrice?: string;
+    maxPrice?: string;
   }>;
 }
 
@@ -27,6 +30,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     getProducts({
       category: params.category,
       featured: params.featured === 'true',
+      sale: params.sale === 'true',
+      minPrice: params.minPrice ? parseFloat(params.minPrice) : undefined,
+      maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
       sortBy: (params.sort as any) || 'newest',
       page: parseInt(params.page || '1'),
       limit: 12,
@@ -54,11 +60,18 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       <section className="border-b border-border bg-muted/30 py-12 lg:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
-            {params.featured === 'true' ? 'Featured Products' : 'All Products'}
+            {params.featured === 'true' ? 'Featured Products' : 
+             params.sort === 'newest' ? 'New Arrivals' :
+             params.sale === 'true' ? 'Products on Sale' :
+             'All Products'}
           </h1>
           <p className="mt-2 text-muted-foreground">
             {params.featured === 'true' 
               ? 'Hand-picked selections from our collection'
+              : params.sort === 'newest'
+              ? 'Check out our latest collection of premium products'
+              : params.sale === 'true'
+              ? 'Great deals on high-quality products'
               : 'Browse our complete collection of premium products'}
           </p>
         </div>

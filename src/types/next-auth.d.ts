@@ -6,16 +6,19 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: 'customer' | 'merchant' | 'admin' | 'delivery';
+      createdAt?: Date | string | null;
     } & DefaultSession['user'];
   }
 
   interface User extends DefaultUser {
     role: 'customer' | 'merchant' | 'admin' | 'delivery';
+    createdAt?: Date | string | null;
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT extends DefaultJWT {
     role: 'customer' | 'merchant' | 'admin' | 'delivery';
+    createdAt?: Date | string | null;
   }
 }

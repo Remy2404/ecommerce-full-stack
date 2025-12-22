@@ -26,6 +26,7 @@ export interface GetProductsParams {
   limit?: number;
   category?: string;
   featured?: boolean;
+  sale?: boolean;
   minPrice?: number;
   maxPrice?: number;
   search?: string;
@@ -38,6 +39,7 @@ export async function getProducts(params: GetProductsParams = {}) {
     limit = 12,
     category,
     featured,
+    sale,
     minPrice,
     maxPrice,
     search,
@@ -61,6 +63,10 @@ export async function getProducts(params: GetProductsParams = {}) {
 
     if (featured !== undefined) {
       conditions.push(eq(products.isFeatured, featured));
+    }
+
+    if (sale === true) {
+      conditions.push(sql`${products.comparePrice} IS NOT NULL AND ${products.comparePrice} > ${products.price}`);
     }
 
     if (minPrice !== undefined) {

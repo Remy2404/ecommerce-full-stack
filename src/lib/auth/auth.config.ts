@@ -39,6 +39,7 @@ export const authConfig: NextAuthConfig = {
                 name: `${user.firstName} ${user.lastName}`,
                 role: user.role,
                 image: user.avatar,
+                createdAt: user.createdAt,
               };
             }
           }
@@ -80,6 +81,7 @@ export const authConfig: NextAuthConfig = {
 
             user.id = newUser.id;
             (user as any).role = newUser.role;
+            (user as any).createdAt = newUser.createdAt;
           } else {
             // Update existing user with Google info if needed (like avatar or names)
             const updates: any = {};
@@ -120,6 +122,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub;
         session.user.role = token.role as any;
         session.user.image = token.image as string;
+        session.user.createdAt = token.createdAt as any;
       }
       return session;
     },
@@ -127,6 +130,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.role = (user as any).role;
         token.image = (user as any).image;
+        token.createdAt = (user as any).createdAt;
       }
       return token;
     },
