@@ -1,52 +1,28 @@
-export type UserRole = 'customer' | 'merchant' | 'admin' | 'delivery';
+import { users, addresses, merchants, wingPoints, wingPointsTransactions, notifications, userRoleEnum } from '../lib/db/schema';
 
-export type User = {
-  id: string;
-  email: string;
-  phone: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  avatar?: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
+// Enums
+export type UserRole = typeof userRoleEnum.enumValues[number];
 
-export type Address = {
-  id: string;
-  userId: string;
-  label?: string;
-  street: string;
-  city: string;
-  district?: string;
-  province: string;
-  postalCode?: string;
-  latitude?: number;
-  longitude?: number;
-  isDefault: boolean;
-  createdAt: Date;
-};
+// Inferred types from schema
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
 
-export type Merchant = {
-  id: string;
-  userId: string;
-  storeName: string;
-  description?: string;
-  logo?: string;
-  banner?: string;
-  phoneNumber: string;
-  email?: string;
-  addressId?: string;
-  isVerified: boolean;
-  rating: number;
-  totalOrders: number;
-  commission: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type Address = typeof addresses.$inferSelect;
+export type InsertAddress = typeof addresses.$inferInsert;
 
+export type Merchant = typeof merchants.$inferSelect;
+export type InsertMerchant = typeof merchants.$inferInsert;
+
+export type WingPoints = typeof wingPoints.$inferSelect;
+export type InsertWingPoints = typeof wingPoints.$inferInsert;
+
+export type WingPointsTransaction = typeof wingPointsTransactions.$inferSelect;
+export type InsertWingPointsTransaction = typeof wingPointsTransactions.$inferInsert;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
+// Auth-specific types
 export type LoginCredentials = {
   email: string;
   password: string;
@@ -67,35 +43,4 @@ export type AuthUser = {
   lastName: string;
   role: UserRole;
   avatar?: string;
-};
-
-export type WingPoints = {
-  id: string;
-  userId: string;
-  points: number;
-  totalEarned: number;
-  totalSpent: number;
-  updatedAt: Date;
-};
-
-export type WingPointsTransaction = {
-  id: string;
-  userId: string;
-  orderId?: string;
-  points: number;
-  type: string;
-  description?: string;
-  expiresAt?: Date;
-  createdAt: Date;
-};
-
-export type Notification = {
-  id: string;
-  userId: string;
-  title: string;
-  message: string;
-  type: string;
-  relatedId?: string;
-  isRead: boolean;
-  createdAt: Date;
 };

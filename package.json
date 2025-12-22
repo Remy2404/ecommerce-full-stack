@@ -13,6 +13,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
     "@types/qrcode": "^1.5.6",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",

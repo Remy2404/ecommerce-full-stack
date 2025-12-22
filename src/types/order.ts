@@ -1,100 +1,26 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled';
+import { orders, orderItems, payments, deliveries, promotions, promotionUsage, orderStatusEnum, paymentStatusEnum, paymentMethodEnum, deliveryStatusEnum } from '../lib/db/schema';
 
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+// Enums
+export type OrderStatus = typeof orderStatusEnum.enumValues[number];
+export type PaymentStatus = typeof paymentStatusEnum.enumValues[number];
+export type PaymentMethod = typeof paymentMethodEnum.enumValues[number];
+export type DeliveryStatus = typeof deliveryStatusEnum.enumValues[number];
 
-export type PaymentMethod = 'wing' | 'card' | 'cash';
+// Inferred types
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
 
-export type DeliveryStatus = 'pending' | 'assigned' | 'picked_up' | 'in_transit' | 'delivered' | 'failed';
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = typeof orderItems.$inferInsert;
 
-export type Order = {
-  id: string;
-  orderNumber: string;
-  userId: string;
-  merchantId: string;
-  status: OrderStatus;
-  subtotal: number;
-  deliveryFee: number;
-  discount: number;
-  tax: number;
-  total: number;
-  deliveryAddressId: string;
-  deliveryInstructions?: string;
-  estimatedDeliveryTime?: Date;
-  deliveredAt?: Date;
-  cancelledAt?: Date;
-  cancelReason?: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
 
-export type OrderItem = {
-  id: string;
-  orderId: string;
-  productId: string;
-  variantId?: string;
-  productName: string;
-  productImage?: string;
-  variantName?: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  createdAt: Date;
-};
+export type Delivery = typeof deliveries.$inferSelect;
+export type InsertDelivery = typeof deliveries.$inferInsert;
 
-export type Payment = {
-  id: string;
-  orderId: string;
-  transactionId?: string;
-  method: PaymentMethod;
-  status: PaymentStatus;
-  amount: number;
-  currency: string;
-  gatewayResponse?: Record<string, any>;
-  paidAt?: Date;
-  createdAt: Date;
-};
+export type Promotion = typeof promotions.$inferSelect;
+export type InsertPromotion = typeof promotions.$inferInsert;
 
-export type Delivery = {
-  id: string;
-  orderId: string;
-  driverId?: string;
-  status: DeliveryStatus;
-  pickupTime?: Date;
-  deliveredTime?: Date;
-  currentLatitude?: number;
-  currentLongitude?: number;
-  driverNotes?: string;
-  photoProof?: string;
-  signature?: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type Promotion = {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  type: string;
-  value: number;
-  minOrderAmount?: number;
-  maxDiscount?: number;
-  usageLimit?: number;
-  usedCount: number;
-  perUserLimit: number;
-  startDate: Date;
-  endDate: Date;
-  isActive: boolean;
-  applicableCategories?: string[];
-  applicableMerchants?: string[];
-  createdAt: Date;
-};
-
-export type PromotionUsage = {
-  id: string;
-  promotionId: string;
-  userId: string;
-  orderId: string;
-  discountAmount: number;
-  createdAt: Date;
-};
+export type PromotionUsage = typeof promotionUsage.$inferSelect;
+export type InsertPromotionUsage = typeof promotionUsage.$inferInsert;

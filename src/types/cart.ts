@@ -1,16 +1,7 @@
-export type Cart = {
-  id: string;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import { carts, cartItems } from '../lib/db/schema';
 
-export type CartItem = {
-  id: string;
-  cartId: string;
-  productId: string;
-  variantId?: string;
-  quantity: number;
-  price: number;
-  createdAt: Date;
-};
+export type Cart = typeof carts.$inferSelect;
+export type InsertCart = typeof carts.$inferInsert;
+
+export type CartItem = typeof cartItems.$inferSelect;
+export type InsertCartItem = typeof cartItems.$inferInsert;

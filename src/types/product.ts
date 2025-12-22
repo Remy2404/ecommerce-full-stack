@@ -1,76 +1,16 @@
-export type Category = {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  icon?: string;
-  image?: string;
-  parentId?: string;
-  sortOrder: number;
-  isActive: boolean;
-  createdAt: Date;
-};
+import { categories, products, productVariants, reviews, wishlists } from '../lib/db/schema';
 
-export type Product = {
-  id: string;
-  merchantId: string;
-  categoryId: string;
-  name: string;
-  slug: string;
-  description?: string;
-  price: number;
-  comparePrice?: number;
-  costPrice?: number;
-  stock: number;
-  lowStockThreshold: number;
-  images?: string[];
-  isActive: boolean;
-  isFeatured: boolean;
-  weight?: number;
-  dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
-  };
-  sku?: string;
-  barcode?: string;
-  rating: number;
-  reviewCount: number;
-  soldCount: number;
-  viewCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = typeof categories.$inferInsert;
 
-export type ProductVariant = {
-  id: string;
-  productId: string;
-  name: string;
-  sku?: string;
-  price: number;
-  stock: number;
-  image?: string;
-  attributes?: Record<string, any>;
-  isActive: boolean;
-};
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
 
-export type Review = {
-  id: string;
-  userId: string;
-  productId: string;
-  orderId: string;
-  rating: number;
-  comment?: string;
-  images?: string[];
-  isVerifiedPurchase: boolean;
-  helpfulCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type ProductVariant = typeof productVariants.$inferSelect;
+export type InsertProductVariant = typeof productVariants.$inferInsert;
 
-export type WishlistItem = {
-  id: string;
-  userId: string;
-  productId: string;
-  createdAt: Date;
-};
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;
+
+export type WishlistItem = typeof wishlists.$inferSelect;
+export type InsertWishlistItem = typeof wishlists.$inferInsert;
