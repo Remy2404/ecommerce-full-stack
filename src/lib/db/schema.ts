@@ -330,6 +330,10 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   orderItems: many(orderItems),
   payment: one(payments),
   delivery: one(deliveries),
+  deliveryAddress: one(addresses, {
+    fields: [orders.deliveryAddressId],
+    references: [addresses.id],
+  }),
 }));
 
 // Additional relations for proper Drizzle Studio support

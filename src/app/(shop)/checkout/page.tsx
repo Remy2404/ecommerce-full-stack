@@ -11,6 +11,7 @@ import { PaymentForm, PaymentData } from '@/components/checkout/payment-form';
 import { OrderSummary } from '@/components/checkout/order-summary';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
+import { createOrder } from '@/actions/order.actions';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -97,19 +98,42 @@ export default function CheckoutPage() {
   };
 
   const handleConfirmOrder = async () => {
+    if (!shippingAddress || !paymentData) return;
+    
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    // Generate order number
-    const orderNum = `ORD-${Date.now().toString(36).toUpperCase()}`;
-    setOrderNumber(orderNum);
-    
-    // Clear cart and show success
-    clearCart();
-    setIsComplete(true);
-    setIsLoading(false);
+    try {
+      const shippingFee = subtotal >= 100 ? 0 : 10;
+      const discount = 0; // To be implemented with promo codes
+      const tax = subtotal * 0.1; // 10% tax
+      const total = subtotal + shippingFee + tax - discount;
+
+      const response = await createOrder({
+        items,
+        shippingAddress,
+        paymentData,
+        subtotal,
+        deliveryFee: shippingFee,
+        discount,
+        tax,
+        total,
+      });
+
+      if (response.success && response.data) {
+        setOrderNumber(response.data.orderNumber);
+        clearCart();
+        setIsComplete(true);
+      } else {
+        // Handle error (could add a toast or error state)
+        console.error('Order creation failed:', response.error);
+        alert(`Order creation failed: ${response.error}`);
+      }
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      alert('An unexpected error occurred during checkout. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

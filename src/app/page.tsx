@@ -222,6 +222,7 @@ export default async function HomePage() {
                 type="email"
                 placeholder="Enter your email"
                 className="h-12 w-full rounded-design border-0 bg-white/10 px-4 text-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 sm:max-w-xs"
+                suppressHydrationWarning
               />
               <Button 
                 variant="secondary" 

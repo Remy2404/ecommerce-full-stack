@@ -54,6 +54,7 @@ export default function RegisterPage() {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
       });
 
       if (!result.success && result.error) {

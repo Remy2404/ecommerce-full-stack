@@ -72,6 +72,7 @@ export async function registerUser(data: {
   email: string;
   phone: string;
   password: string;
+  confirmPassword: string;
 }): Promise<AuthResult> {
   try {
     const validatedFields = registerSchema.safeParse(data);

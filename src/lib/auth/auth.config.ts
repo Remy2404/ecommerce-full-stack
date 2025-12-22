@@ -118,16 +118,19 @@ export const authConfig: NextAuthConfig = {
       return true;
     },
     async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
+      if (token.id && session.user) {
+        session.user.id = token.id as string;
         session.user.role = token.role as any;
         session.user.image = token.image as string;
         session.user.createdAt = token.createdAt as any;
+      } else if (token.sub && session.user) {
+        session.user.id = token.sub;
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.role = (user as any).role;
         token.image = (user as any).image;
         token.createdAt = (user as any).createdAt;
