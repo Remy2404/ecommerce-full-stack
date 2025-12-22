@@ -17,6 +17,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { signOutUser } from '@/actions/auth.actions';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -203,9 +204,9 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
                           </Link>
                           <button
                             className="flex w-full items-center gap-2 rounded-design-sm px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
-                            onClick={() => {
+                            onClick={async () => {
                               setIsUserMenuOpen(false);
-                              // TODO: Sign out action
+                              await signOutUser();
                             }}
                           >
                             <LogOut className="h-4 w-4" />

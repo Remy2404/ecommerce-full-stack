@@ -54,10 +54,49 @@ export const authConfig: NextAuthConfig = {
     newUser: '/register',
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Handle Google OAuth sign in
+      if (account?.provider === 'google' && user.email) {
+        try {
+          const existingUser = await db.query.users.findFirst({
+            where: eq(users.email, user.email),
+          });
+
+          if (!existingUser) {
+            // Create new user from Google OAuth
+            const nameParts = (user.name || 'User').split(' ');
+            const firstName = nameParts[0] || 'User';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const [newUser] = await db.insert(users).values({
+              email: user.email,
+              phone: '', // OAuth users don't have phone initially
+              password: '', // OAuth users don't have password
+              firstName,
+              lastName,
+              avatar: user.image || null,
+              role: 'customer',
+              isActive: true,
+            }).returning();
+
+            user.id = newUser.id;
+            (user as any).role = newUser.role;
+          } else {
+            // Update existing user with Google info if needed
+            user.id = existingUser.id;
+            (user as any).role = existingUser.role;
+          }
+        } catch (error) {
+          console.error('OAuth user sync error:', error);
+          return false;
+        }
+      }
+      return true;
+    },
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
-        (session.user as any).role = token.role as string;
+        session.user.role = token.role as any;
       }
       return session;
     },
