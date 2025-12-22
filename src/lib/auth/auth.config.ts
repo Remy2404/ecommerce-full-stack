@@ -52,7 +52,7 @@ const authConfig = {
       if (!token.sub) return token;
       
       const user = await db.query.users.findFirst({
-        where: eq(users.id, parseInt(token.sub)),
+        where: eq(users.id, token.sub),
       });
       
       if (user) {

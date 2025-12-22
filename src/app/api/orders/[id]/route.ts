@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  return NextResponse.json({ message: `Order API: ${params.id}` });
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return NextResponse.json({ message: `Order API: ${id}` });
 }

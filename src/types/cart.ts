@@ -1,11 +1,16 @@
 export type Cart = {
-  id: number;
-  userId: number | null;
-  items: CartItem[];
+  id: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CartItem = {
-  id: number;
-  productId: number;
+  id: string;
+  cartId: string;
+  productId: string;
+  variantId?: string;
   quantity: number;
+  price: number;
+  createdAt: Date;
 };
