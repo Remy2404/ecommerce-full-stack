@@ -15,6 +15,7 @@ import {
   SaleBadge 
 } from '@/components/ui/badge';
 import { useCart } from '@/hooks/cart-context';
+import { useWishlist } from '@/hooks/wishlist-context';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -44,6 +45,9 @@ interface ProductCardProps {
 
 export function ProductCard({ product, index = 0, size = 'default' }: ProductCardProps) {
   const { addItem, openCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  const inWishlist = isInWishlist(product.id);
 
   const discount = product.comparePrice 
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -67,6 +71,18 @@ export function ProductCard({ product, index = 0, size = 'default' }: ProductCar
       image: product.images[0] || '/placeholder.jpg',
       quantity: 1,
       maxStock: product.stock,
+    });
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0] || '/placeholder.jpg',
+      stock: product.stock,
     });
   };
 
@@ -115,14 +131,13 @@ export function ProductCard({ product, index = 0, size = 'default' }: ProductCar
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-9 w-9 rounded-full bg-background/90 backdrop-blur-sm hover:bg-background"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // TODO: Add to wishlist
-                }}
+                className={cn(
+                  "h-9 w-9 rounded-full bg-background/90 backdrop-blur-sm transition-colors hover:bg-background",
+                  inWishlist && "text-destructive"
+                )}
+                onClick={handleToggleWishlist}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={cn("h-4 w-4", inWishlist && "fill-current")} />
                 <span className="sr-only">Add to wishlist</span>
               </Button>
             </div>

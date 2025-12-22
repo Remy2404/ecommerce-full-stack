@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge, LowStockBadge, FeaturedBadge, SaleBadge } from '@/components/ui/badge';
 import { useCart } from '@/hooks/cart-context';
+import { useWishlist } from '@/hooks/wishlist-context';
 import { ProductImageGallery } from './product-image-gallery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -55,6 +56,9 @@ interface ProductDetailProps {
 
 export function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  
+  const inWishlist = isInWishlist(product.id);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     product.variants?.[0] || null
@@ -248,8 +252,19 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </Button>
 
               {/* Wishlist Button */}
-              <Button variant="outline" size="lg" className="w-12 px-0">
-                <Heart className="h-5 w-5" />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className={cn("w-12 px-0 transition-colors", inWishlist && "text-destructive border-destructive")}
+                onClick={() => toggleWishlist({
+                  productId: product.id,
+                  name: product.name,
+                  price: currentPrice,
+                  image: product.images[0] || '/placeholder.jpg',
+                  stock: currentStock,
+                })}
+              >
+                <Heart className={cn("h-5 w-5", inWishlist && "fill-current")} />
                 <span className="sr-only">Add to wishlist</span>
               </Button>
             </div>

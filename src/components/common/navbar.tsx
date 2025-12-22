@@ -26,8 +26,10 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+import { useCart } from '@/hooks/cart-context';
+import { useWishlist } from '@/hooks/wishlist-context';
+
 interface NavbarProps {
-  cartItemCount?: number;
   user?: {
     name: string;
     email: string;
@@ -40,9 +42,12 @@ const navLinks = [
   { href: '/products', label: 'Shop' },
   { href: '/products?category=new', label: 'New Arrivals' },
   { href: '/products?featured=true', label: 'Featured' },
+  { href: '/products?sale=true', label: 'Sale' },
 ];
 
-export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
+export function Navbar({ user }: NavbarProps) {
+  const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
+  const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -121,11 +126,16 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                className="relative hidden sm:flex"
                 asChild
-                className="hidden sm:flex"
               >
                 <Link href="/wishlist">
                   <Heart className="h-5 w-5" />
+                  {isWishlistHydrated && wishlistCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
                   <span className="sr-only">Wishlist</span>
                 </Link>
               </Button>
@@ -139,7 +149,7 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
               >
                 <Link href="/cart">
                   <ShoppingCart className="h-5 w-5" />
-                  {cartItemCount > 0 && (
+                  {isCartHydrated && cartItemCount > 0 && (
                     <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                       {cartItemCount > 99 ? '99+' : cartItemCount}
                     </span>

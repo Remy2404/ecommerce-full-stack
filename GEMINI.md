@@ -3,6 +3,7 @@
 ## Overview
 This is a modern, responsive E-commerce frontend built with **Next.js 16 (App Router)**. It features a "Minimalist 2.0" design, real-time functionality via WebSockets, and a robust backend integration using Server Actions and Drizzle ORM.
 
+
 ## Tech Stack
 - **Framework:** Next.js 16 (App Router, Server & Client Components)
 - **Language:** TypeScript
@@ -62,4 +63,4 @@ Defined in `src/lib/db/schema.ts`.
 - **Strict TypeScript:** No `any`.
 - **Validation:** All inputs (API & Forms) must be validated with Zod schemas in `src/lib/validations`.
 - **Mobile-First:** Tailwind classes should prioritize mobile layouts.
-- **Security:** Protected routes via Middleware (`src/middleware.ts`) and Auth Guard components.
+- **Security:** Protected routes via Proxy (`src/proxy.ts`) and Auth Guard components.

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, ReactNode, useState } from 'react';
 
 // Cart Item Type
 export interface CartItem {
@@ -105,6 +105,7 @@ interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   itemCount: number;
   subtotal: number;
   addItem: (item: Omit<CartItem, 'id'>) => void;
@@ -122,6 +123,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // Provider Component
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Calculate derived values
   const itemCount = state.items.reduce((total, item) => total + item.quantity, 0);
@@ -138,12 +140,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error('Failed to parse cart from localStorage:', e);
       }
     }
+    setIsHydrated(true);
   }, []);
 
   // Save cart to localStorage on change
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state.items));
-  }, [state.items]);
+    if (isHydrated) {
+      localStorage.setItem('cart', JSON.stringify(state.items));
+    }
+  }, [state.items, isHydrated]);
+
+  // Cross-tab synchronization
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'cart' && e.newValue) {
+        try {
+          dispatch({ type: 'SET_ITEMS', payload: JSON.parse(e.newValue) });
+        } catch (err) {
+          console.error('Failed to sync cart across tabs', err);
+        }
+      } else if (e.key === 'cart' && !e.newValue) {
+        dispatch({ type: 'CLEAR_CART' });
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Actions
   const addItem = (item: Omit<CartItem, 'id'>) => {
@@ -181,6 +204,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items: state.items,
         isOpen: state.isOpen,
         isLoading: state.isLoading,
+        isHydrated,
         itemCount,
         subtotal,
         addItem,

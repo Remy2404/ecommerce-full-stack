@@ -4,15 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Home, Search, Heart, ShoppingCart, User } from 'lucide-react';
+import { useCart } from '@/hooks/cart-context';
+import { useWishlist } from '@/hooks/wishlist-context';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
-}
-
-interface MobileNavProps {
-  cartItemCount?: number;
 }
 
 const navItems = [
@@ -23,8 +21,10 @@ const navItems = [
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 
-export function MobileNav({ cartItemCount = 0 }: MobileNavProps) {
+export function MobileNav() {
   const pathname = usePathname();
+  const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
+  const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
 
   // Hide on desktop and on checkout pages
   if (pathname.startsWith('/checkout')) {
@@ -39,6 +39,12 @@ export function MobileNav({ cartItemCount = 0 }: MobileNavProps) {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
             
+            const count = item.label === 'Cart' 
+              ? (isCartHydrated ? cartItemCount : 0)
+              : item.label === 'Wishlist'
+              ? (isWishlistHydrated ? wishlistCount : 0)
+              : 0;
+
             return (
               <Link
                 key={item.href}
@@ -50,9 +56,9 @@ export function MobileNav({ cartItemCount = 0 }: MobileNavProps) {
               >
                 <div className="relative">
                   <item.icon className="h-5 w-5" />
-                  {item.label === 'Cart' && cartItemCount > 0 && (
+                  {count > 0 && (
                     <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                      {count > 9 ? '9+' : count}
                     </span>
                   )}
                 </div>
