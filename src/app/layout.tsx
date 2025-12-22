@@ -4,7 +4,9 @@ import "../styles/globals.css";
 import { Navbar } from "@/components/common/navbar";
 import { Footer } from "@/components/common/footer";
 import { MobileNav } from "@/components/common/mobile-nav";
+import { auth } from "@/lib/auth/auth";
 import { CartProvider } from "@/hooks/cart-context";
+import { WishlistProvider } from "@/hooks/wishlist-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 
 const inter = Inter({
@@ -64,24 +66,28 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-            <MobileNav />
-            <CartDrawer />
-          </div>
+          <WishlistProvider>
+            <div className="flex min-h-screen flex-col">
+              <Navbar user={session?.user as any} />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+              <MobileNav />
+              <CartDrawer />
+            </div>
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

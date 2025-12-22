@@ -12,8 +12,8 @@ export const deliveryStatusEnum = pgEnum('delivery_status', ['pending', 'assigne
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).unique().notNull(),
-  phone: varchar('phone', { length: 50 }).unique().notNull(),
-  password: varchar('password', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }).unique(),
+  password: varchar('password', { length: 255 }),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
   role: userRoleEnum('role').default('customer').notNull(),
@@ -226,7 +226,7 @@ export const reviews = pgTable('reviews', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id).notNull(),
   productId: uuid('product_id').references(() => products.id).notNull(),
-  orderId: uuid('order_id').references(() => orders.id).notNull(),
+  orderId: uuid('order_id').references(() => orders.id),
   rating: integer('rating').notNull(), // 1-5
   comment: text('comment'),
   images: jsonb('images'), // Array of review photos

@@ -14,7 +14,8 @@ import {
   Package,
   LogOut,
   Settings,
-  ChevronDown
+  ChevronDown,
+  UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { signOutUser } from '@/actions/auth.actions';
@@ -30,7 +31,7 @@ interface NavbarProps {
   user?: {
     name: string;
     email: string;
-    avatar?: string;
+    image?: string;
   } | null;
 }
 
@@ -46,6 +47,7 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -155,15 +157,16 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="relative"
                   >
-                    {user.avatar ? (
+                    {user.image && !imageError ? (
                       <img
-                        src={user.avatar}
+                        src={user.image}
                         alt={user.name}
                         className="h-8 w-8 rounded-full object-cover"
+                        onError={() => setImageError(true)}
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name && user.name.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </Button>
@@ -186,6 +189,14 @@ export function Navbar({ cartItemCount = 0, user }: NavbarProps) {
                             <p className="text-sm font-medium">{user.name}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <UserCircle className="h-4 w-4" />
+                            My Profile
+                          </Link>
                           <Link
                             href="/orders"
                             className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"

@@ -3,7 +3,7 @@ import { ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
 import { SortSelect } from '@/components/products/sort-select';
-import { getFormattedMockProducts, mockCategories } from '@/lib/mock-data';
+import { getProducts, getCategories } from '@/actions/product.actions';
 
 export const metadata = {
   title: 'Shop All Products',
@@ -21,20 +21,32 @@ interface ProductsPageProps {
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
-  const allProducts = getFormattedMockProducts();
   
-  // Apply filters (mock implementation)
-  let filteredProducts = [...allProducts];
-  
-  if (params.featured === 'true') {
-    filteredProducts = filteredProducts.filter(p => p.isFeatured);
-  }
+  // Fetch products and categories from database
+  const [productsData, categories] = await Promise.all([
+    getProducts({
+      category: params.category,
+      featured: params.featured === 'true',
+      sortBy: (params.sort as any) || 'newest',
+      page: parseInt(params.page || '1'),
+      limit: 12,
+    }),
+    getCategories(),
+  ]);
 
-  if (params.sort === 'price_asc') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (params.sort === 'price_desc') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  }
+  // Format products for display
+  const formattedProducts = productsData.products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    comparePrice: p.comparePrice ? parseFloat(p.comparePrice as string) : null,
+    images: p.images || [],
+    rating: parseFloat(p.rating as string),
+    reviewCount: p.reviewCount ?? 0,
+    stock: p.stock,
+    isFeatured: p.isFeatured,
+  }));
 
   return (
     <div className="min-h-screen">
@@ -71,7 +83,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       All Products
                     </Link>
                   </li>
-                  {mockCategories.map((category) => (
+                  {categories.map((category) => (
                     <li key={category.id}>
                       <Link
                         href={`/products?category=${category.slug}`}
@@ -151,7 +163,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             {/* Toolbar */}
             <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredProducts.length} products
+                Showing {formattedProducts.length} of {productsData.pagination.total} products
               </p>
               <div className="flex items-center gap-2">
                 <SortSelect defaultValue={params.sort || 'newest'} />
@@ -159,10 +171,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </div>
 
             {/* Products */}
-            <BentoGrid products={filteredProducts} />
+            <BentoGrid products={formattedProducts} />
 
             {/* Empty State */}
-            {filteredProducts.length === 0 && (
+            {formattedProducts.length === 0 && (
               <div className="py-16 text-center">
                 <p className="text-lg text-muted-foreground">No products found</p>
                 <Button variant="outline" className="mt-4" asChild>

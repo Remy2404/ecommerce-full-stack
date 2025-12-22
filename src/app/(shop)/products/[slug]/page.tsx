@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { ProductDetail } from '@/components/products/product-detail';
-import { mockProducts, formatMockProduct } from '@/lib/mock-data';
+import { getProductBySlug, getProducts } from '@/actions/product.actions';
 
 interface ProductPageProps {
   params: Promise<{
@@ -10,8 +10,9 @@ interface ProductPageProps {
 }
 
 // Generate static params for static generation
-export function generateStaticParams() {
-  return mockProducts.map((product) => ({
+export async function generateStaticParams() {
+  const { products } = await getProducts({ limit: 100 });
+  return products.map((product) => ({
     slug: product.slug,
   }));
 }
@@ -19,7 +20,7 @@ export function generateStaticParams() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = mockProducts.find((p) => p.slug === slug);
+  const product = await getProductBySlug(slug);
   
   if (!product) {
     return {
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       title: product.name,
       description: product.description || undefined,
-      images: product.images[0] ? [{ url: product.images[0] }] : undefined,
+      images: (product.images && product.images[0]) ? [{ url: product.images[0] }] : undefined,
     },
   };
 }
@@ -41,8 +42,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
   
-  // Find product by slug (using mock data)
-  const rawProduct = mockProducts.find((p) => p.slug === slug);
+  // Fetch product by slug from database
+  const rawProduct = await getProductBySlug(slug);
   
   if (!rawProduct) {
     notFound();
@@ -54,12 +55,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     name: rawProduct.name,
     slug: rawProduct.slug,
     description: rawProduct.description,
-    price: parseFloat(rawProduct.price),
-    comparePrice: rawProduct.comparePrice ? parseFloat(rawProduct.comparePrice) : null,
+    price: parseFloat(rawProduct.price as string),
+    comparePrice: rawProduct.comparePrice ? parseFloat(rawProduct.comparePrice as string) : null,
     stock: rawProduct.stock,
-    images: rawProduct.images,
-    rating: parseFloat(rawProduct.rating),
-    reviewCount: rawProduct.reviewCount,
+    images: (rawProduct.images && Array.isArray(rawProduct.images)) ? rawProduct.images : [],
+    rating: parseFloat(rawProduct.rating as string),
+    reviewCount: rawProduct.reviewCount ?? 0,
     isFeatured: rawProduct.isFeatured,
   };
 

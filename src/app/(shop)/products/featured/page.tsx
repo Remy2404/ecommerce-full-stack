@@ -2,16 +2,28 @@ import Link from 'next/link';
 import { ArrowRight, Star } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
-import { getFormattedMockProducts } from '@/lib/mock-data';
+import { getFeaturedProducts } from '@/actions/product.actions';
 
 export const metadata = {
   title: 'Featured Products | Store',
   description: 'Hand-picked selections from our collection. The best products we have to offer.',
 };
 
-export default function FeaturedPage() {
-  const allProducts = getFormattedMockProducts();
-  const featuredProducts = allProducts.filter(p => p.isFeatured);
+export default async function FeaturedPage() {
+  const rawProducts = await getFeaturedProducts(20);
+  
+  const featuredProducts = rawProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    comparePrice: p.comparePrice ? parseFloat(p.comparePrice as string) : null,
+    images: p.images || [],
+    rating: parseFloat(p.rating as string),
+    reviewCount: p.reviewCount ?? 0,
+    stock: p.stock,
+    isFeatured: p.isFeatured,
+  }));
 
   return (
     <div className="min-h-screen">

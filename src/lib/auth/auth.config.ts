@@ -38,6 +38,7 @@ export const authConfig: NextAuthConfig = {
                 email: user.email,
                 name: `${user.firstName} ${user.lastName}`,
                 role: user.role,
+                image: user.avatar,
               };
             }
           }
@@ -54,7 +55,7 @@ export const authConfig: NextAuthConfig = {
     newUser: '/register',
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       // Handle Google OAuth sign in
       if (account?.provider === 'google' && user.email) {
         try {
@@ -64,14 +65,12 @@ export const authConfig: NextAuthConfig = {
 
           if (!existingUser) {
             // Create new user from Google OAuth
-            const nameParts = (user.name || 'User').split(' ');
-            const firstName = nameParts[0] || 'User';
-            const lastName = nameParts.slice(1).join(' ') || '';
+            // Use profile object if available for more accurate names
+            const firstName = (profile as any)?.given_name || (user.name || 'User').split(' ')[0];
+            const lastName = (profile as any)?.family_name || (user.name || '').split(' ').slice(1).join(' ');
 
             const [newUser] = await db.insert(users).values({
               email: user.email,
-              phone: '', // OAuth users don't have phone initially
-              password: '', // OAuth users don't have password
               firstName,
               lastName,
               avatar: user.image || null,
@@ -82,7 +81,30 @@ export const authConfig: NextAuthConfig = {
             user.id = newUser.id;
             (user as any).role = newUser.role;
           } else {
-            // Update existing user with Google info if needed
+            // Update existing user with Google info if needed (like avatar or names)
+            const updates: any = {};
+            
+            if (user.image && existingUser.avatar !== user.image) {
+              updates.avatar = user.image;
+            }
+
+            // Sync names if they are currently "User" or empty
+            const firstName = (profile as any)?.given_name;
+            const lastName = (profile as any)?.family_name;
+            
+            if (firstName && (!existingUser.firstName || existingUser.firstName === 'User')) {
+              updates.firstName = firstName;
+            }
+            if (lastName && !existingUser.lastName) {
+              updates.lastName = lastName;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await db.update(users)
+                .set(updates)
+                .where(eq(users.id, existingUser.id));
+            }
+            
             user.id = existingUser.id;
             (user as any).role = existingUser.role;
           }
@@ -97,12 +119,14 @@ export const authConfig: NextAuthConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub;
         session.user.role = token.role as any;
+        session.user.image = token.image as string;
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
+        token.image = (user as any).image;
       }
       return token;
     },

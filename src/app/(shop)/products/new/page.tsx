@@ -2,17 +2,28 @@ import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
-import { getFormattedMockProducts } from '@/lib/mock-data';
+import { getNewArrivals } from '@/actions/product.actions';
 
 export const metadata = {
   title: 'New Arrivals | Store',
   description: 'Discover our latest products and newest additions to our collection.',
 };
 
-export default function NewArrivalsPage() {
-  // Get products sorted by newest first
-  const allProducts = getFormattedMockProducts();
-  const newProducts = [...allProducts].sort((a, b) => b.id.localeCompare(a.id));
+export default async function NewArrivalsPage() {
+  const rawProducts = await getNewArrivals(20);
+  
+  const newProducts = rawProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    comparePrice: p.comparePrice ? parseFloat(p.comparePrice as string) : null,
+    images: p.images || [],
+    rating: parseFloat(p.rating as string),
+    reviewCount: p.reviewCount ?? 0,
+    stock: p.stock,
+    isFeatured: p.isFeatured,
+  }));
 
   return (
     <div className="min-h-screen">

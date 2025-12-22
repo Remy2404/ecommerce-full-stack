@@ -2,16 +2,33 @@ import Link from 'next/link';
 import { ArrowRight, Percent } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
-import { getFormattedMockProducts } from '@/lib/mock-data';
+import { getProducts } from '@/actions/product.actions';
 
 export const metadata = {
   title: 'Sale | Store',
   description: 'Shop our best deals and discounts. Limited time offers on premium products.',
 };
 
-export default function SalePage() {
-  const allProducts = getFormattedMockProducts();
-  const saleProducts = allProducts.filter(p => p.comparePrice && p.comparePrice > p.price);
+export default async function SalePage() {
+  const { products: rawProducts } = await getProducts({ limit: 50 });
+  
+  // Filter for products on sale (comparePrice exists and is greater than price)
+  const filteredSaleProducts = rawProducts.filter(
+    (p) => p.comparePrice && parseFloat(p.comparePrice as string) > parseFloat(p.price as string)
+  );
+  
+  const saleProducts = filteredSaleProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    comparePrice: p.comparePrice ? parseFloat(p.comparePrice as string) : null,
+    images: p.images || [],
+    rating: parseFloat(p.rating as string),
+    reviewCount: p.reviewCount ?? 0,
+    stock: p.stock,
+    isFeatured: p.isFeatured,
+  }));
 
   return (
     <div className="min-h-screen">

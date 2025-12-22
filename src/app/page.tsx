@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Sparkles, Truck, Shield, RefreshCw } from 'lucide-react';
 import { BentoGrid, FeaturedRow } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
-import { getFormattedMockProducts, getFeaturedMockProducts, mockCategories } from '@/lib/mock-data';
+import { getCategories, getFeaturedProducts, getNewArrivals } from '@/actions/product.actions';
 
 export const metadata = {
   title: 'Store | Premium E-commerce',
@@ -28,10 +28,35 @@ const features = [
   },
 ];
 
-export default function HomePage() {
-  // Using mock data for now - will be replaced with actual DB queries
-  const allProducts = getFormattedMockProducts();
-  const featuredProducts = getFeaturedMockProducts();
+export default async function HomePage() {
+  // Fetch data from database
+  const [categories, featuredProducts, newProducts] = await Promise.all([
+    getCategories(),
+    getFeaturedProducts(8),
+    getNewArrivals(4),
+  ]);
+
+  // Format products for display
+  const formattedFeaturedProducts = featuredProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    comparePrice: p.comparePrice ? parseFloat(p.comparePrice as string) : null,
+    images: p.images || [],
+    rating: parseFloat(p.rating as string),
+    reviewCount: p.reviewCount ?? 0,
+    stock: p.stock,
+    isFeatured: p.isFeatured,
+  }));
+
+  const formattedNewProducts = newProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: parseFloat(p.price as string),
+    images: p.images || [],
+  }));
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -106,7 +131,7 @@ export default function HomePage() {
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {mockCategories.map((category) => (
+          {categories.map((category) => (
             <Link
               key={category.id}
               href={`/products?category=${category.slug}`}
@@ -136,7 +161,7 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
-          <BentoGrid products={allProducts} />
+          <BentoGrid products={formattedFeaturedProducts} />
         </div>
       </section>
 
@@ -155,7 +180,7 @@ export default function HomePage() {
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {allProducts.slice(0, 4).map((product, index) => (
+          {formattedNewProducts.map((product, index) => (
             <div key={product.id}>
               <Link
                 href={`/products/${product.slug}`}
