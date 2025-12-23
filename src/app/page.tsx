@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Truck, Shield, RefreshCw } from 'lucide-react';
-import { BentoGrid, FeaturedRow } from '@/components/products/bento-grid';
+import { ArrowRight, Truck, Shield, RefreshCw } from 'lucide-react';
+import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
 import { getCategories, getFeaturedProducts, getNewArrivals } from '@/actions/product.actions';
-import GlitchText from '@/components/GlitchText';
+import HeroWithLaser from '@/components/home/hero-with-laser';
 
 export const metadata = {
   title: 'Store | Premium E-commerce',
@@ -62,41 +62,7 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-muted/50 via-background to-muted/30">
-        <div className="container relative z-10 mx-auto px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <div className="mx-auto max-w-5xl text-center">
-            <GlitchText
-              speed={1}
-              enableShadows={true}
-              enableOnHover={true}
-              className="mx-auto max-w-[15ch] text-5xl font-extrabold tracking-tight text-balance sm:max-w-[18ch] sm:text-7xl lg:max-w-[20ch] lg:text-8xl"
-            >
-              Discover Premium Products
-            </GlitchText>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              Experience our curated collection of premium products.
-              Quality craftsmanship meets modern design in every piece.
-            </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button size="lg" asChild className="rounded-full px-8">
-                <Link href="/products">
-                  Shop Now
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild className="rounded-full px-8">
-                <Link href="/products?featured=true">
-                  View Featured
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Decorative elements */}
-        <div className="absolute -left-4 top-1/4 h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -right-4 bottom-1/4 h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
-      </section>
+      <HeroWithLaser />
 
       {/* Features Bar */}
       <section className="border-y border-border bg-muted/30">
