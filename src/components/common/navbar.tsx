@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Menu, 
-  X, 
-  ShoppingCart, 
-  User, 
-  Search, 
+import {
+  Menu,
+  X,
+  ShoppingCart,
+  User,
+  Search,
   Heart,
   Package,
   LogOut,
@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { signOutUser } from '@/actions/auth.actions';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import PillNav from '@/components/reactbit/PillNav';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -71,7 +72,7 @@ export function Navbar({ user }: NavbarProps) {
 
   const isLinkActive = (href: string) => {
     const [path, query] = href.split('?');
-    
+
     if (pathname !== path) {
       // For Home page, strict match
       if (href === '/' && pathname === '/') return true;
@@ -83,15 +84,15 @@ export function Navbar({ user }: NavbarProps) {
 
     const linkParams = new URLSearchParams(query || '');
     const linkParamKeys = Array.from(linkParams.keys());
-    
+
     if (linkParamKeys.length === 0) {
       // For "Shop" (/products), it should only be active if no other nav link params are present
-      const hasSpecialFilter = searchParams.get('featured') === 'true' || 
-                               searchParams.get('sale') === 'true' || 
-                               searchParams.get('sort') === 'newest';
+      const hasSpecialFilter = searchParams.get('featured') === 'true' ||
+        searchParams.get('sale') === 'true' ||
+        searchParams.get('sort') === 'newest';
       return !hasSpecialFilter;
     }
-    
+
     // For links with query params, check if they all match
     return linkParamKeys.every(key => searchParams.get(key) === linkParams.get(key));
   };
@@ -107,34 +108,31 @@ export function Navbar({ user }: NavbarProps) {
         )}
       >
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between lg:h-20">
-            {/* Logo */}
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 text-xl font-bold tracking-tight"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-design-sm bg-primary text-primary-foreground">
-                S
-              </div>
-              <span className="hidden sm:inline">Store</span>
-            </Link>
+          <div className="flex h-16 items-center justify-between lg:h-20 relative">
+            {/* Left: Logo */}
+            <div className="flex items-center">
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-xl font-bold tracking-tight"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-design-sm bg-primary text-primary-foreground">
+                  S
+                </div>
+                <span className="hidden sm:inline lg:hidden xl:inline">Store</span>
+              </Link>
+            </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex lg:items-center lg:gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'text-sm font-medium transition-colors hover:text-primary',
-                    isLinkActive(link.href)
-                      ? 'text-primary'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            {/* Center: Desktop Navigation */}
+            <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <PillNav
+                items={navLinks}
+                activeHref={navLinks.find(l => isLinkActive(l.href))?.href}
+                showLogo={false}
+                baseColor="hsl(var(--primary))"
+                pillColor="hsl(var(--background))"
+                pillTextColor="hsl(var(--muted-foreground))"
+                hoveredPillTextColor="hsl(var(--background))"
+              />
             </div>
 
             {/* Right Actions */}
