@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles, Truck, Shield, RefreshCw } from 'lucide-react';
 import { BentoGrid, FeaturedRow } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
 import { getCategories, getFeaturedProducts, getNewArrivals } from '@/actions/product.actions';
+import GlitchText from '@/components/GlitchText';
 
 export const metadata = {
   title: 'Store | Premium E-commerce',
@@ -62,28 +63,28 @@ export default async function HomePage() {
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-muted/50 via-background to-muted/30">
-        <div className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-              <Sparkles className="h-4 w-4" />
-              New Collection 2025
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Discover Products
-              <span className="block text-primary">Designed for You</span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-              Experience our curated collection of premium products. 
+        <div className="container relative z-10 mx-auto px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="mx-auto max-w-5xl text-center">
+            <GlitchText
+              speed={1}
+              enableShadows={true}
+              enableOnHover={true}
+              className="mx-auto max-w-[15ch] text-5xl font-extrabold tracking-tight text-balance sm:max-w-[18ch] sm:text-7xl lg:max-w-[20ch] lg:text-8xl"
+            >
+              Discover Premium Products
+            </GlitchText>
+            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+              Experience our curated collection of premium products.
               Quality craftsmanship meets modern design in every piece.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-              <Button size="lg" asChild>
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Button size="lg" asChild className="rounded-full px-8">
                 <Link href="/products">
                   Shop Now
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild>
+              <Button variant="outline" size="lg" asChild className="rounded-full px-8">
                 <Link href="/products?featured=true">
                   View Featured
                 </Link>
@@ -102,8 +103,8 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {features.map((feature) => (
-              <div 
-                key={feature.title} 
+              <div
+                key={feature.title}
                 className="flex items-center justify-center gap-4 text-center sm:justify-start sm:text-left"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-design-sm bg-background shadow-soft">
@@ -224,8 +225,8 @@ export default async function HomePage() {
                 className="h-12 w-full rounded-design border-0 bg-white/10 px-4 text-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 sm:max-w-xs"
                 suppressHydrationWarning
               />
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 size="lg"
                 className="bg-white text-primary hover:bg-white/90"
               >
