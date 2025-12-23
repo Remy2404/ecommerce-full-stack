@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, FormField } from '@/components/ui/input';
 import { registerUser, signInWithGoogle } from '@/actions/auth.actions';
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
+import DomeGallery from '@/components/reactbit/DomeGallery';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -101,43 +102,38 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen bg-black text-white">
       {/* Left side - Image / Content */}
-      <div className="relative hidden w-0 flex-1 lg:block overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-          <div className="flex h-full flex-col items-center justify-center p-12 text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
-              className="max-w-md"
-            >
-              <h2 className="text-4xl font-bold tracking-tight">Join our community</h2>
-              <p className="mt-6 text-lg text-gray-400">
-                Create an account to enjoy exclusive benefits, faster checkout, and personalized recommendations.
-              </p>
+      <div className="relative hidden w-0 flex-1 lg:block overflow-hidden bg-black">
+        <DomeGallery
+          images={[
+            { src: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000', alt: 'Watch', href: '/products/watch' },
+            { src: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000', alt: 'Headphones', href: '/products/headphones' },
+            { src: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1000', alt: 'Sneakers', href: '/products/sneakers' },
+            { src: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000', alt: 'Red Sneakers', href: '/products/red-sneakers' },
+            { src: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1000', alt: 'Bag', href: '/products/bag' },
+            { src: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=1000', alt: 'Shoes', href: '/products/shoes' },
+            { src: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=1000', alt: 'Glasses', href: '/products/glasses' },
+          ]}
+          fit={0.7}
+          minRadius={500}
+          maxRadius={800}
+          overlayBlurColor="rgba(0,0,0,0.8)"
+          grayscale={false}
+          imageBorderRadius="24px"
+        />
 
-              <div className="mt-12 space-y-6 text-left">
-                {[
-                  "Free shipping on your first order",
-                  "Exclusive member-only discounts",
-                  "Easy returns and exchanges",
-                  "Order tracking and history"
-                ].map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + i * 0.1 }}
-                    className="flex items-center gap-3"
-                  >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 border border-white/20">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                    <span className="text-gray-300">{item}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+        {/* Overlay content to guide the user */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-center p-12 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-md bg-black/40 backdrop-blur-md p-8 rounded-3xl border border-white/10"
+          >
+            <h2 className="text-4xl font-bold tracking-tight text-white">Join our community</h2>
+            <p className="mt-4 text-lg text-gray-300">
+              Explore our curated collection and get exclusive access to new drops.
+            </p>
+          </motion.div>
         </div>
       </div>
 

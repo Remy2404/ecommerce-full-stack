@@ -106,11 +106,7 @@ export default async function HomePage() {
             items={categories.map(cat => ({
               link: `/products?category=${cat.slug}`,
               text: cat.name,
-              image: cat.slug === 'electronics' ? 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&q=80' :
-                cat.slug === 'accessories' ? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80' :
-                  cat.slug === 'clothing' ? 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80' :
-                    cat.slug === 'home-living' ? 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80' :
-                      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80'
+              image: cat.image || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80'
             }))}
           />
         </div>

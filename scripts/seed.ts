@@ -69,11 +69,41 @@ async function seed() {
     // Create Categories
     console.log('📁 Creating categories...');
     const categoryData = [
-      { name: 'Electronics', slug: 'electronics', icon: 'Smartphone', sortOrder: 1 },
-      { name: 'Accessories', slug: 'accessories', icon: 'Watch', sortOrder: 2 },
-      { name: 'Clothing', slug: 'clothing', icon: 'Shirt', sortOrder: 3 },
-      { name: 'Home & Living', slug: 'home-living', icon: 'House', sortOrder: 4 },
-      { name: 'Sports & Fitness', slug: 'sports-fitness', icon: 'Activity', sortOrder: 5 },
+      { 
+        name: 'Electronics', 
+        slug: 'electronics', 
+        icon: 'Smartphone', 
+        image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&q=80',
+        sortOrder: 1 
+      },
+      { 
+        name: 'Accessories', 
+        slug: 'accessories', 
+        icon: 'Watch', 
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+        sortOrder: 2 
+      },
+      { 
+        name: 'Clothing', 
+        slug: 'clothing', 
+        icon: 'Shirt', 
+        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
+        sortOrder: 3 
+      },
+      { 
+        name: 'Home & Living', 
+        slug: 'home-living', 
+        icon: 'House', 
+        image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
+        sortOrder: 4 
+      },
+      { 
+        name: 'Sports & Fitness', 
+        slug: 'sports-fitness', 
+        icon: 'Activity', 
+        image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
+        sortOrder: 5 
+      },
     ];
 
     const createdCategories = await db.insert(categories).values(categoryData).returning();

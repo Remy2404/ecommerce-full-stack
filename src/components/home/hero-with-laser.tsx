@@ -33,7 +33,7 @@ export default function HeroWithLaser() {
     return (
         <section
             ref={containerRef}
-            className="relative min-h-[600px] w-full overflow-hidden bg-slate-50 py-20 dark:bg-[#060010] lg:min-h-[800px] lg:py-32"
+            className="relative min-h-[600px] w-full overflow-hidden bg-slate-50 py-20 dark:bg-[#060010] lg:min-h-[800px] lg:py-32 group"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
         >
@@ -91,7 +91,7 @@ export default function HeroWithLaser() {
                 ref={revealImgRef}
                 src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1920"
                 alt="Premium Product Reveal"
-                className="absolute inset-0 z-10 h-full w-full object-cover opacity-10 transition-opacity duration-300 pointer-events-none mix-blend-multiply dark:mix-blend-lighten dark:opacity-20"
+                className="absolute inset-0 z-10 h-full w-full object-cover opacity-20 transition-all duration-700 filter group-hover:opacity-50 group-hover:brightness-[0.75] pointer-events-none dark:opacity-40 dark:group-hover:opacity-100"
                 style={{
                     '--mx': '-9999px',
                     '--my': '-9999px',

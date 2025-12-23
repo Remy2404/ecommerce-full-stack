@@ -30,8 +30,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const [productsData, categories] = await Promise.all([
     getProducts({
       category: params.category,
-      featured: params.featured === 'true',
-      sale: params.sale === 'true',
+      featured: params.featured === 'true' ? true : undefined,
+      sale: params.sale === 'true' ? true : undefined,
       minPrice: params.minPrice ? parseFloat(params.minPrice) : undefined,
       maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
       sortBy: (params.sort as any) || 'newest',
