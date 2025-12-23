@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { ArrowRight, Truck, Shield, RefreshCw } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
-import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { getCategories, getFeaturedProducts, getNewArrivals } from '@/actions/product.actions';
 import HeroWithLaser from '@/components/home/hero-with-laser';
+import FlowingMenu from '@/components/reactbit/FlowingMenu';
 
 export const metadata = {
   title: 'Store | Premium E-commerce',
@@ -90,7 +90,10 @@ export default async function HomePage() {
       {/* Categories */}
       <section className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Shop by Category</h2>
+          <div>
+            <h2 className="text-2xl font-bold lg:text-3xl">Shop by Category</h2>
+            <p className="mt-1 text-muted-foreground">Premium collections for every lifestyle</p>
+          </div>
           <Button variant="ghost" asChild>
             <Link href="/products">
               View All
@@ -98,21 +101,18 @@ export default async function HomePage() {
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/products?category=${category.slug}`}
-              className="group flex flex-col items-center gap-3 rounded-design bg-muted/50 p-6 text-center transition-all hover:bg-muted hover:shadow-soft"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-design-sm bg-background shadow-soft group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                <DynamicIcon name={category.icon || 'Package'} size={32} />
-              </div>
-              <span className="text-sm font-medium group-hover:text-primary transition-colors">
-                {category.name}
-              </span>
-            </Link>
-          ))}
+        <div className="mt-8 border-t border-gray-200 dark:border-gray-800">
+          <FlowingMenu
+            items={categories.map(cat => ({
+              link: `/products?category=${cat.slug}`,
+              text: cat.name,
+              image: cat.slug === 'electronics' ? 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&q=80' :
+                cat.slug === 'accessories' ? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80' :
+                  cat.slug === 'clothing' ? 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80' :
+                    cat.slug === 'home-living' ? 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80' :
+                      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80'
+            }))}
+          />
         </div>
       </section>
 
