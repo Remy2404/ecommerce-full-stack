@@ -25,14 +25,41 @@ async function seed() {
     categories, 
     products, 
     addresses,
-    reviews 
+    reviews,
+    orders,
+    orderItems,
+    payments,
+    deliveries,
+    carts,
+    cartItems,
+    productVariants,
+    wishlists,
+    notifications,
+    wingPoints,
+    wingPointsTransactions,
+    promotions,
+    promotionUsage
   } = await import('../src/lib/db/schema');
   const { hash } = await import('bcryptjs');
 
   try {
     // Clear existing data
     console.log('🗑️  Clearing existing data...');
+    // Delete in order of dependencies (child to parent)
+    await db.delete(promotionUsage);
+    await db.delete(promotions);
+    await db.delete(wingPointsTransactions);
+    await db.delete(wingPoints);
+    await db.delete(notifications);
+    await db.delete(wishlists);
     await db.delete(reviews);
+    await db.delete(orderItems);
+    await db.delete(payments);
+    await db.delete(deliveries);
+    await db.delete(orders);
+    await db.delete(cartItems);
+    await db.delete(carts);
+    await db.delete(productVariants);
     await db.delete(products);
     await db.delete(merchants);
     await db.delete(addresses);
@@ -42,11 +69,11 @@ async function seed() {
     // Create Categories
     console.log('📁 Creating categories...');
     const categoryData = [
-      { name: 'Electronics', slug: 'electronics', icon: '📱', sortOrder: 1 },
-      { name: 'Accessories', slug: 'accessories', icon: '⌚', sortOrder: 2 },
-      { name: 'Clothing', slug: 'clothing', icon: '👕', sortOrder: 3 },
-      { name: 'Home & Living', slug: 'home-living', icon: '🏠', sortOrder: 4 },
-      { name: 'Sports & Fitness', slug: 'sports-fitness', icon: '🏃', sortOrder: 5 },
+      { name: 'Electronics', slug: 'electronics', icon: 'Smartphone', sortOrder: 1 },
+      { name: 'Accessories', slug: 'accessories', icon: 'Watch', sortOrder: 2 },
+      { name: 'Clothing', slug: 'clothing', icon: 'Shirt', sortOrder: 3 },
+      { name: 'Home & Living', slug: 'home-living', icon: 'House', sortOrder: 4 },
+      { name: 'Sports & Fitness', slug: 'sports-fitness', icon: 'Activity', sortOrder: 5 },
     ];
 
     const createdCategories = await db.insert(categories).values(categoryData).returning();
@@ -168,7 +195,7 @@ async function seed() {
         images: ['https://images.unsplash.com/photo-1589003077984-894e133dabab?w=800&q=80'],
         rating: '4.6',
         reviewCount: 203,
-        isFeatured: false,
+        isFeatured: true,
         soldCount: 580,
       },
       {

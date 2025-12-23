@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Truck, Shield, RefreshCw } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
+import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { getCategories, getFeaturedProducts, getNewArrivals } from '@/actions/product.actions';
 import HeroWithLaser from '@/components/home/hero-with-laser';
 
@@ -34,7 +35,7 @@ export default async function HomePage() {
   const [categories, featuredProducts, newProducts] = await Promise.all([
     getCategories(),
     getFeaturedProducts(8),
-    getNewArrivals(4),
+    getNewArrivals(5),
   ]);
 
   // Format products for display
@@ -104,7 +105,9 @@ export default async function HomePage() {
               href={`/products?category=${category.slug}`}
               className="group flex flex-col items-center gap-3 rounded-design bg-muted/50 p-6 text-center transition-all hover:bg-muted hover:shadow-soft"
             >
-              <span className="text-4xl">{category.icon}</span>
+              <div className="flex h-16 w-16 items-center justify-center rounded-design-sm bg-background shadow-soft group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <DynamicIcon name={category.icon || 'Package'} size={32} />
+              </div>
               <span className="text-sm font-medium group-hover:text-primary transition-colors">
                 {category.name}
               </span>
@@ -146,7 +149,7 @@ export default async function HomePage() {
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
           {formattedNewProducts.map((product, index) => (
             <div key={product.id}>
               <Link

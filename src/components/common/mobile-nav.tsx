@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, Search, Heart, ShoppingCart, User } from 'lucide-react';
+import { House, Search, Heart, ShoppingCart, User } from 'lucide-react';
 import { useCart } from '@/hooks/cart-context';
 import { useWishlist } from '@/hooks/wishlist-context';
 import { clsx } from 'clsx';
@@ -14,7 +14,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const navItems = [
-  { href: '/', icon: Home, label: 'Home' },
+  { href: '/', icon: House, label: 'Home' },
   { href: '/products', icon: Search, label: 'Shop' },
   { href: '/wishlist', icon: Heart, label: 'Wishlist' },
   { href: '/cart', icon: ShoppingCart, label: 'Cart' },
@@ -36,14 +36,14 @@ export function MobileNav() {
       <div className="safe-area-inset-bottom">
         <div className="flex h-16 items-center justify-around px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || 
+            const isActive = pathname === item.href ||
               (item.href !== '/' && pathname.startsWith(item.href));
-            
-            const count = item.label === 'Cart' 
+
+            const count = item.label === 'Cart'
               ? (isCartHydrated ? cartItemCount : 0)
               : item.label === 'Wishlist'
-              ? (isWishlistHydrated ? wishlistCount : 0)
-              : 0;
+                ? (isWishlistHydrated ? wishlistCount : 0)
+                : 0;
 
             return (
               <Link

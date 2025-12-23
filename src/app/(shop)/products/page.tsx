@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
+import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { SortSelect } from '@/components/products/sort-select';
 import { getProducts, getCategories } from '@/actions/product.actions';
 
@@ -24,7 +25,7 @@ interface ProductsPageProps {
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
-  
+
   // Fetch products and categories from database
   const [productsData, categories] = await Promise.all([
     getProducts({
@@ -60,19 +61,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       <section className="border-b border-border bg-muted/30 py-12 lg:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
-            {params.featured === 'true' ? 'Featured Products' : 
-             params.sort === 'newest' ? 'New Arrivals' :
-             params.sale === 'true' ? 'Products on Sale' :
-             'All Products'}
+            {params.featured === 'true' ? 'Featured Products' :
+              params.sort === 'newest' ? 'New Arrivals' :
+                params.sale === 'true' ? 'Products on Sale' :
+                  'All Products'}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {params.featured === 'true' 
+            {params.featured === 'true'
               ? 'Hand-picked selections from our collection'
               : params.sort === 'newest'
-              ? 'Check out our latest collection of premium products'
-              : params.sale === 'true'
-              ? 'Great deals on high-quality products'
-              : 'Browse our complete collection of premium products'}
+                ? 'Check out our latest collection of premium products'
+                : params.sale === 'true'
+                  ? 'Great deals on high-quality products'
+                  : 'Browse our complete collection of premium products'}
           </p>
         </div>
       </section>
@@ -100,9 +101,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     <li key={category.id}>
                       <Link
                         href={`/products?category=${category.slug}`}
-                        className={`block rounded-design px-3 py-2 text-sm transition-colors ${params.category === category.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                        className={`flex items-center gap-2 rounded-design px-3 py-2 text-sm transition-colors ${params.category === category.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                       >
-                        {category.icon} {category.name}
+                        <DynamicIcon name={category.icon || 'Package'} size={16} />
+                        {category.name}
                       </Link>
                     </li>
                   ))}
