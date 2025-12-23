@@ -178,26 +178,26 @@ export default async function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary text-primary-foreground">
+      <section className="bg-primary text-primary-foreground dark:bg-card dark:text-card-foreground border-t border-border">
         <div className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold lg:text-4xl">
               Join Our Newsletter
             </h2>
-            <p className="mt-4 text-primary-foreground/80">
+            <p className="mt-4 opacity-80">
               Subscribe to get special offers, free giveaways, and new arrival updates.
             </p>
             <form className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="h-12 w-full rounded-design border-0 bg-white/10 px-4 text-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 sm:max-w-xs"
+                className="h-12 w-full rounded-design border border-white/20 bg-white/10 px-4 text-sm text-inherit placeholder:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs dark:bg-primary/5 dark:border-primary/10"
                 suppressHydrationWarning
               />
               <Button
-                variant="secondary"
+                variant="default"
                 size="lg"
-                className="bg-white text-primary hover:bg-white/90"
+                className="rounded-design bg-white text-black hover:bg-black hover:text-white transition-colors duration-300 dark:bg-white dark:text-black dark:hover:bg-black dark:hover:text-white"
               >
                 Subscribe
               </Button>
