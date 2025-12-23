@@ -23,8 +23,8 @@ export function BentoGrid({ products, isLoading, className }: BentoGridProps) {
         className
       )}>
         {[...Array(8)].map((_, i) => (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className={cn(
               i === 0 && 'sm:col-span-2 sm:row-span-2'
             )}
@@ -59,7 +59,7 @@ export function BentoGrid({ products, isLoading, className }: BentoGridProps) {
       {sortedProducts.map((product, index) => {
         // First featured product gets the large hero tile
         const isHero = product.isFeatured && index === 0;
-        
+
         return (
           <div
             key={product.id}
@@ -67,8 +67,8 @@ export function BentoGrid({ products, isLoading, className }: BentoGridProps) {
               isHero && 'sm:col-span-2 sm:row-span-2'
             )}
           >
-            <ProductCard 
-              product={product} 
+            <ProductCard
+              product={product}
               index={index}
               size={isHero ? 'large' : 'default'}
             />
@@ -114,7 +114,7 @@ export function FeaturedRow({ title, products, isLoading }: FeaturedRowProps) {
       <section className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <h2 className="mb-6 text-2xl font-bold">{title}</h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array(5)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
@@ -126,7 +126,7 @@ export function FeaturedRow({ title, products, isLoading }: FeaturedRowProps) {
     <section className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
       <h2 className="mb-6 text-2xl font-bold">{title}</h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {products.slice(0, 4).map((product, index) => (
+        {products.slice(0, 5).map((product, index) => (
           <ProductCard key={product.id} product={product} index={index} />
         ))}
       </div>
