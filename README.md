@@ -1,52 +1,155 @@
-## Role: Senior Full-Stack Developer & UX Specialist.
+# Ecommerce Frontend
 
-Task: Design and code a modern, clean, and responsive E-commerce UI using Next.js and Tailwind CSS. Implement user authentication with NextAuth.js, ensuring secure login and registration flows. Set up a PostgreSQL database using Drizzle ORM for efficient data management. Create RESTful API routes for product listings, user profiles, and order processing. Ensure the application is optimized for performance and SEO best practices.
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=nextauthdotjs&logoColor=white)](https://authjs.dev/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
+[![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
+[![GSAP](https://img.shields.io/badge/GSAP-88CE02?style=for-the-badge&logo=greensock&logoColor=white)](https://gsap.com/)
 
-### 2025 UI/UX Requirements:
+A high-performance, minimalist e-commerce platform built with Next.js 16 and modern web technologies. Focuses on premium aesthetics, real-time interactivity, and a robust server-side architecture.
 
-- **Bento Grid Homepage**: Use a modular grid to display products. Larger "Hero" tiles must be reserved for products where featured: true. Display rating and price clearly.
-- **Product Page**: Create a high-end layout with a jsonb image gallery, a "Low Stock" indicator for stock < 10, and a sticky "Add to Cart" interaction.
-- **Frictionless Cart**: A slide-out (Drawer) cart that lists cart_items with real-time quantity controls and a subtotal calculation.
-- **Clean Checkout**: A minimal 3-step progress-stepper mapping to the orders table (Shipping > Payment > Summary).
-- **Visual Style**: Aesthetic: Minimalist 2.0 with high-quality white space and soft neutral tones. Details: Use 20px+ border radii, subtle Glassmorphism for the navigation, and smooth Micro-interactions for hover states.
-- **Responsiveness**: Mobile-first, thumb-friendly navigation.
+## Overview
 
-### Deliverables:
-1. **UI Design**: A modern, clean, and responsive E-commerce UI with a focus on user experience, incorporating the 2025 UI/UX requirements.
-2. **Authentication**: Secure login and registration flows using NextAuth.js.
-3. **Database**: A PostgreSQL database setup using Drizzle ORM for efficient data management.
-4. **API Routes**: RESTful API routes for product listings, user profiles, and order processing.
-5. **Optimization**: The application should be optimized for performance and SEO best practices.
+This project serves as the primary frontend for a modern e-commerce experience. It utilizes the latest features of Next.js, including the App Router and Server Actions, to provide a seamless and secure shopping interface. The design philosophy adheres to "Minimalist 2.0," emphasizing clean lines, purposeful animations, and a refined user journey.
 
-### Tech Stack:
-- Next.js
-- Tailwind CSS
-- NextAuth.js
-- PostgreSQL
+### System Architecture
+
+```mermaid
+graph TD
+    User((User))
+    WebBrowser["Next.js Application (Client)"]
+    ServerActions["React Server Actions (API Layer)"]
+    Auth["NextAuth.js (Auth.js)"]
+    DB[("PostgreSQL Database (Drizzle)")]
+    WS["Socket.IO (Real-time Service)"]
+    KHQR["KHQR (Payment Processing)"]
+
+    User <--> WebBrowser
+    WebBrowser <--> ServerActions
+    WebBrowser <--> WS
+    ServerActions <--> DB
+    ServerActions <--> Auth
+    WebBrowser <--> KHQR
+    KHQR <--> ServerActions
+    ServerActions <--> DB
+    ServerActions <--> WS
+    WS <--> DB
+    DB <--> ServerActions
+    ServerActions <--> Auth
+```
+
+## Core Features
+
+- **Real-time Synchronization** – Integrated with Socket.IO for live cart updates and order tracking notifications.
+- **Server-Driven Logic** – Leveraging React Server Actions for secure and efficient data mutations and form handling.
+- **Premium Aesthetics** – Dynamic UI components built with Framer Motion, GSAP, and Three.js for a high-end visual experience.
+- **Secure Authentication** – Robust user management via NextAuth.js v5, supporting both OAuth providers and credential-based login.
+- **Type-Safe Development** – End-to-end type safety using TypeScript and Zod for schema-based validation.
+- **Database Architecture** – High-performance data access layer using Drizzle ORM with PostgreSQL.
+
+### Interactive Highlights
+
+- **Dynamic Hero Sections** – Implemented using Three.js and `three-custom-shader-material` for immersive landing experiences.
+- **Smooth Content Transitions** – Powered by GSAP and Framer Motion for non-intrusive, fluid UI feedback.
+- **Responsive Animations** – Optimized motion paths that adapt to device capabilities and user preferences.
+
+## Technology Stack
+
+### Framework & Language
+- Next.js 16 (App Router)
+- TypeScript
+- React 19
+
+### Interface & Styling
+- Tailwind CSS 4
+- Framer Motion
+- GSAP
+- Radix UI Primitives
+- Lucide React Icons
+
+### State & Data Handling
 - Drizzle ORM
+- NextAuth.js v5 (Auth.js)
+- Zod (Validation)
+- Socket.IO (WebSockets)
+- Axios
 
-### Timeline:
-- **Week 1**: UI Design and Setup
-- **Week 2**: Authentication and Database Setup
-- **Week 3**: API Routes and Integration
-- **Week 4**: Optimization and Testing
+### Visuals & Motion
+- Three.js
+- Tailwind CSS Animate
 
-### Evaluation Criteria:
-- **UI Design**: The UI should be modern, clean, and responsive, adhering to the 2025 UI/UX requirements.
-- **Authentication**: The login and registration flows should be secure and user-friendly.
-- **Database**: The PostgreSQL database should be efficiently managed using Drizzle ORM.
-- **API Routes**: The API routes should be well-structured and efficient.
-- **Optimization**: The application should be optimized for performance and SEO best practices.
+## Project Structure
 
-# E-commerce Frontend
+The codebase follows a feature-centric modular architecture located within the `src` directory:
 
-This is the frontend application for an E-commerce platform built with Next.js, Tailwind CSS, NextAuth.js for authentication, and Drizzle ORM for database management.
+- `src/app` – Route definitions and page layouts using the App Router.
+- `src/actions` – Server-side functions for data mutations (Auth, Cart, Orders).
+- `src/components` – Reusable UI primitives and domain-specific components.
+- `src/lib` – Configuration and utilities for database, authentication, and WebSockets.
+- `src/validations` – Centralized Zod schemas for application-wide data integrity.
 
-## Features
-- Modern and responsive UI design with Bento Grid Homepage and high-end Product Pages
-- Secure user authentication and registration
-- Product listings and detailed views with image galleries and stock indicators
-- Frictionless Cart with slide-out drawer and real-time updates
-- Clean Checkout with 3-step progress stepper
-- Minimalist 2.0 visual style with glassmorphism and micro-interactions
-- Mobile-first, thumb-friendly navigation 
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm (Recommended) or npm
+
+### Environment Configuration
+
+Create a `.env.local` file in the root directory and configure the following variables:
+
+| Variable | Description |
+| :--- | :--- |
+| `DATABASE_URL` | Connection string for the PostgreSQL database. |
+| `GOOGLE_CLIENT_ID` | Client ID from the Google Cloud Console for OAuth. |
+| `GOOGLE_CLIENT_SECRET` | Client Secret from the Google Cloud Console for OAuth. |
+| `NEXTAUTH_SECRET` | A random string used to hash tokens and sign cookies. |
+| `NEXTAUTH_URL` | The base URL of your application (e.g., `http://localhost:3000`). |
+| `STRIPE_API_KEY` | Your Stripe secret API key for payment processing. |
+| `STRIPE_WEBHOOK_SECRET` | Secret key for verifying Stripe webhooks. |
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/laytonglee/ecommerce-frontend.git
+   cd ecommerce-frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+3. Set up environment variables:
+   Copy `.env.local.example` to `.env.local` and populate the required keys.
+
+### Development
+
+Start the development server:
+```bash
+pnpm run dev
+```
+
+The application will be available at `http://localhost:3000`.
+
+## Available Scripts
+
+- `pnpm run dev` – Starts the development server.
+- `pnpm run build` – Compiles the application for production.
+- `pnpm run start` – Runs the built production server.
+- `pnpm run lint` – Executes ESLint to check for code quality.
+- `pnpm run db:generate` – Generates SQL migrations from the Drizzle schema.
+- `pnpm run db:migrate` – Applies pending migrations to the database.
+- `pnpm run db:push` – Synchronizes the schema directly with the database.
+- `pnpm run db:studio` – Opens the Drizzle Studio database explorer.
+- `pnpm run seed` – Populates the database with initial sample data.
+
+## License
+
+This project is privately licensed. See the project owner for details.

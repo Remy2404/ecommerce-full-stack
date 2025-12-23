@@ -51,13 +51,13 @@ Defined in `src/lib/db/schema.ts`.
 ## Development Workflow
 
 ### Scripts
-- `npm run dev`: Start development server.
-- `npm run build`: Build for production.
-- `npm run start`: Start production server.
-- `npm run db:generate`: Generate SQL migrations from schema.
-- `npm run db:migrate`: Apply migrations to the database.
-- `npm run db:push`: Push schema changes directly (prototyping).
-- `npm run db:studio`: Open Drizzle Studio to view data.
+- `pnpm run dev`: Start development server.
+- `pnpm run build`: Build for production.
+- `pnpm run start`: Start production server.
+- `pnpm run db:generate`: Generate SQL migrations from schema.
+- `pnpm run db:migrate`: Apply migrations to the database.
+- `pnpm run db:push`: Push schema changes directly (prototyping).
+- `pnpm run db:studio`: Open Drizzle Studio to view data.
 
 ### Conventions
 - **Strict TypeScript:** No `any`.
