@@ -2,67 +2,78 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import { Input, FormField } from '@/components/ui/input';
 import { registerUser, signInWithGoogle } from '@/actions/auth.actions';
+import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    agreeToTerms: false,
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: false,
+    },
+    mode: 'onChange',
   });
+
+  const password = watch('password');
 
   // Password strength checks
   const passwordChecks = {
-    length: formData.password.length >= 8,
-    uppercase: /[A-Z]/.test(formData.password),
-    lowercase: /[a-z]/.test(formData.password),
-    number: /\d/.test(formData.password),
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /\d/.test(password),
   };
   const passwordStrength = Object.values(passwordChecks).filter(Boolean).length;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!formData.agreeToTerms) {
-      setError('Please agree to the terms and conditions');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
+  const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
 
     try {
       const result = await registerUser({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
       });
 
-      if (!result.success && result.error) {
-        setError(result.error);
+      if (result.success) {
+        toast.success('Registration successful!', {
+          description: 'Your account has been created. Redirecting...',
+        });
+      } else if (result.error) {
+        toast.error('Registration failed', {
+          description: result.error,
+        });
       }
     } catch (err) {
-      // Redirect happens on success
-      setError('Something went wrong. Please try again.');
+      toast.error('Something went wrong', {
+        description: 'Please try again later.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -73,48 +84,59 @@ export default function RegisterPage() {
     try {
       await signInWithGoogle('/');
     } catch (err) {
-      setError('Failed to sign in with Google');
+      toast.error('Google Sign In failed', {
+        description: 'Please try again later.',
+      });
       setIsGoogleLoading(false);
     }
   };
 
   const PasswordCheck = ({ passed, label }: { passed: boolean; label: string }) => (
-    <div className={`flex items-center gap-2 text-xs ${passed ? 'text-success' : 'text-muted-foreground'}`}>
+    <div className={`flex items-center gap-2 text-xs ${passed ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
       {passed ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
       {label}
     </div>
   );
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left side - Image */}
-      <div className="relative hidden w-0 flex-1 lg:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background">
-          <div className="flex h-full items-center justify-center p-12">
-            <div className="max-w-lg text-center">
-              <h2 className="text-3xl font-bold">Join our community</h2>
-              <p className="mt-4 text-muted-foreground">
+    <div className="flex min-h-screen bg-black text-white">
+      {/* Left side - Image / Content */}
+      <div className="relative hidden w-0 flex-1 lg:block overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+          <div className="flex h-full flex-col items-center justify-center p-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-md"
+            >
+              <h2 className="text-4xl font-bold tracking-tight">Join our community</h2>
+              <p className="mt-6 text-lg text-gray-400">
                 Create an account to enjoy exclusive benefits, faster checkout, and personalized recommendations.
               </p>
-              <ul className="mt-8 space-y-3 text-left">
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Free shipping on your first order</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Exclusive member-only discounts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Easy returns and exchanges</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Order tracking and history</span>
-                </li>
-              </ul>
-            </div>
+
+              <div className="mt-12 space-y-6 text-left">
+                {[
+                  "Free shipping on your first order",
+                  "Exclusive member-only discounts",
+                  "Easy returns and exchanges",
+                  "Order tracking and history"
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + i * 0.1 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 border border-white/20">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-gray-300">{item}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -122,157 +144,162 @@ export default function RegisterPage() {
       {/* Right side - Form */}
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
-          <div>
-            <Link href="/" className="text-2xl font-bold text-primary">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Link href="/" className="text-2xl font-bold text-white">
               Store
             </Link>
-            <h1 className="mt-8 text-2xl font-bold tracking-tight">
+            <h1 className="mt-8 text-3xl font-bold tracking-tight">
               Create your account
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-gray-400">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:underline">
+              <Link href="/login" className="text-white hover:underline font-medium">
                 Sign in
               </Link>
             </p>
-          </div>
+          </motion.div>
 
           <div className="mt-10">
             {/* Google Sign In */}
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
-              isLoading={isGoogleLoading}
-            >
-              {!isGoogleLoading && (
-                <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-              )}
-              Continue with Google
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-800 disabled:opacity-50"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading}
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                )}
+                Continue with Google
+              </button>
+            </motion.div>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="w-full border-t border-gray-800" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-2 text-muted-foreground">or</span>
+                <span className="bg-black px-2 text-gray-500">or</span>
               </div>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-4 rounded-design border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
             {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="First name" required>
-                  <Input
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">First name *</label>
+                  <input
+                    {...register('firstName')}
                     placeholder="John"
-                    required
                     disabled={isLoading}
+                    className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.firstName ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                      }`}
                   />
-                </FormField>
-                <FormField label="Last name" required>
-                  <Input
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  {errors.firstName && <p className="text-xs text-red-400">{errors.firstName.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Last name *</label>
+                  <input
+                    {...register('lastName')}
                     placeholder="Doe"
-                    required
                     disabled={isLoading}
+                    className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.lastName ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                      }`}
                   />
-                </FormField>
+                  {errors.lastName && <p className="text-xs text-red-400">{errors.lastName.message}</p>}
+                </div>
               </div>
 
-              <FormField label="Email address" required>
-                <Input
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email address *</label>
+                <input
+                  {...register('email')}
                   type="email"
                   autoComplete="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@example.com"
-                  required
                   disabled={isLoading}
+                  className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                    }`}
                 />
-              </FormField>
+                {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+              </div>
 
-              <FormField label="Phone number" required>
-                <Input
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Phone number *</label>
+                <input
+                  {...register('phone')}
                   type="tel"
-                  autoComplete="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+855 12 345 678"
-                  required
                   disabled={isLoading}
+                  className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                    }`}
                 />
-              </FormField>
+                {errors.phone && <p className="text-xs text-red-400">{errors.phone.message}</p>}
+              </div>
 
-              <FormField label="Password" required>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password *</label>
                 <div className="relative">
-                  <Input
+                  <input
+                    {...register('password')}
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••"
-                    required
                     disabled={isLoading}
-                    className="pr-10"
+                    className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                      }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {/* Password strength */}
-                {formData.password && (
-                  <div className="mt-2 space-y-1">
+                {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+
+                {password && (
+                  <div className="mt-3 space-y-2">
                     <div className="flex gap-1">
                       {[1, 2, 3, 4].map((level) => (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded-full ${
-                            passwordStrength >= level
-                              ? level <= 1
-                                ? 'bg-destructive'
-                                : level <= 2
-                                ? 'bg-warning'
-                                : 'bg-success'
-                              : 'bg-muted'
-                          }`}
+                          className={`h-1 flex-1 rounded-full transition-colors ${passwordStrength >= level
+                            ? level <= 1
+                              ? 'bg-red-500'
+                              : level <= 2
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                            : 'bg-gray-800'
+                            }`}
                         />
                       ))}
                     </div>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-2 gap-2">
                       <PasswordCheck passed={passwordChecks.length} label="8+ characters" />
                       <PasswordCheck passed={passwordChecks.uppercase} label="Uppercase" />
                       <PasswordCheck passed={passwordChecks.lowercase} label="Lowercase" />
@@ -280,43 +307,52 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 )}
-              </FormField>
+              </div>
 
-              <FormField label="Confirm password" required>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="••••••••"
-                  required
-                  disabled={isLoading}
-                />
-              </FormField>
-
-              <label className="flex items-start gap-2 text-sm">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Confirm password *</label>
                 <input
-                  type="checkbox"
-                  className="mt-1 rounded border-border"
-                  checked={formData.agreeToTerms}
-                  onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })}
-                  required
+                  {...register('confirmPassword')}
+                  type="password"
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                  className={`w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-1 ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-white focus:ring-white'
+                    }`}
                 />
-                <span className="text-muted-foreground">
+                {errors.confirmPassword && <p className="text-xs text-red-400">{errors.confirmPassword.message}</p>}
+              </div>
+
+              <label className="flex items-start gap-2 text-sm cursor-pointer group">
+                <input
+                  {...register('agreeToTerms')}
+                  type="checkbox"
+                  className="mt-1 rounded border-gray-700 bg-gray-900 text-white focus:ring-0 focus:ring-offset-0"
+                />
+                <span className="text-gray-400 group-hover:text-gray-300 transition-colors">
                   I agree to the{' '}
-                  <Link href="/terms" className="text-primary hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
+                  <Link href="/terms" className="text-white hover:underline">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" className="text-white hover:underline">Privacy Policy</Link>
                 </span>
               </label>
+              {errors.agreeToTerms && <p className="text-xs text-red-400">{errors.agreeToTerms.message}</p>}
 
-              <Button type="submit" size="lg" className="w-full" isLoading={isLoading}>
-                Create account
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full rounded-xl bg-white text-black py-3 font-semibold transition-colors hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Create account'
+                  )}
+                </button>
+              </motion.div>
             </form>
           </div>
         </div>

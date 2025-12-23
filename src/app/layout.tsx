@@ -8,6 +8,8 @@ import { auth } from "@/lib/auth/auth";
 import { CartProvider } from "@/hooks/cart-context";
 import { WishlistProvider } from "@/hooks/wishlist-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { Toaster } from "sonner";
+
 
 const inter = Inter({
   subsets: ["latin"],
@@ -87,6 +89,7 @@ export default async function RootLayout({
               <Footer />
               <MobileNav />
               <CartDrawer />
+              <Toaster position="top-right" richColors closeButton />
             </div>
           </WishlistProvider>
         </CartProvider>
