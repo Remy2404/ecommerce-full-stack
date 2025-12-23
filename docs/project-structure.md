@@ -74,7 +74,7 @@
 4. **Checkout Process**
    - Shipping information form with Zod validation
    - Order summary
-   - Payment integration (Stripe)
+   - Payment processing KHQR 
    - Order confirmation
 
 5. **Order Management**
@@ -82,13 +82,6 @@
    - Real-time order status tracking (WebSocket)
    - Order details view
    - Download invoice (PDF)
-
-6. **Admin Panel**
-   - Product CRUD operations
-   - Order management
-   - Order status updates
-   - Real-time dashboard (WebSocket)
-   - Analytics overview
 
 ---
 
@@ -118,22 +111,7 @@ ecommerce-nextjs/
 │   │   │       ├── page.tsx
 │   │   │       └── [id]/
 │   │   │           └── page.tsx
-│   │   ├── (admin)/                      # Admin group routes
-│   │   │   └── admin/
-│   │   │       ├── layout.tsx
-│   │   │       ├── page.tsx              # Dashboard
-│   │   │       ├── products/
-│   │   │       │   ├── page.tsx
-│   │   │       │   ├── new/
-│   │   │       │   │   └── page.tsx
-│   │   │       │   └── [id]/
-│   │   │       │       └── edit/
-│   │   │       │           └── page.tsx
-│   │   │       └── orders/
-│   │   │           ├── page.tsx
-│   │   │           └── [id]/
-│   │   │               └── page.tsx
-│   │   ├── api/                          # API Routes
+│   │   ├── api/                         
 │   │   │   ├── auth/
 │   │   │   │   └── [...nextauth]/
 │   │   │   │       └── route.ts
@@ -202,13 +180,6 @@ ecommerce-nextjs/
 │   │   │   ├── register-form.tsx
 │   │   │   ├── google-auth-button.tsx
 │   │   │   └── auth-guard.tsx
-│   │   ├── admin/
-│   │   │   ├── product-form.tsx
-│   │   │   ├── product-table.tsx
-│   │   │   ├── order-table.tsx
-│   │   │   ├── order-status-update.tsx
-│   │   │   ├── dashboard-stats.tsx
-│   │   │   └── real-time-indicator.tsx
 │   │   └── animations/
 │   │       ├── fade-in.tsx
 │   │       ├── slide-in.tsx
@@ -275,7 +246,6 @@ ecommerce-nextjs/
 ├── drizzle.config.ts
 ├── next.config.js
 ├── tsconfig.json
-├── tailwind.config.ts
 ├── package.json
 └── README.md
 ```
