@@ -57,6 +57,8 @@ export default function LoginPage() {
         });
       }
     } catch (err) {
+      if ((err as any)?.message === 'NEXT_REDIRECT') return;
+
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -71,6 +73,8 @@ export default function LoginPage() {
     try {
       await signInWithGoogle(callbackUrl);
     } catch (err) {
+      if ((err as any)?.message === 'NEXT_REDIRECT') return;
+
       toast.error('Google Sign In failed', {
         description: 'Please try again later.',
       });

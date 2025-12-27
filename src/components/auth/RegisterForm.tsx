@@ -57,6 +57,7 @@ export default function RegisterForm() {
                 phone: data.phone,
                 password: data.password,
                 confirmPassword: data.confirmPassword,
+                agreeToTerms: data.agreeToTerms,
             });
 
             if (result.success) {
@@ -69,6 +70,9 @@ export default function RegisterForm() {
                 });
             }
         } catch (err) {
+            // Ignore redirect errors as they are handled by Next.js
+            if ((err as any)?.message === 'NEXT_REDIRECT') return;
+
             toast.error('Something went wrong', {
                 description: 'Please try again later.',
             });
@@ -82,6 +86,8 @@ export default function RegisterForm() {
         try {
             await signInWithGoogle('/');
         } catch (err) {
+            if ((err as any)?.message === 'NEXT_REDIRECT') return;
+
             toast.error('Google Sign In failed', {
                 description: 'Please try again later.',
             });

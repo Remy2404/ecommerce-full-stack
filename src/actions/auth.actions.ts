@@ -73,6 +73,7 @@ export async function registerUser(data: {
   phone: string;
   password: string;
   confirmPassword: string;
+  agreeToTerms: boolean;
 }): Promise<AuthResult> {
   try {
     const validatedFields = registerSchema.safeParse(data);
@@ -126,8 +127,10 @@ export async function registerUser(data: {
 
     return { success: true };
   } catch (error) {
-    console.error('Registration error:', error);
-    // Re-throw redirect errors
+    if (error instanceof AuthError) {
+      return { success: false, error: 'Registration successful, but auto sign-in failed. Please log in manually.' };
+    }
+    // NextAuth redirects throw NEXT_REDIRECT which we should re-throw
     throw error;
   }
 }
