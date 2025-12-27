@@ -260,7 +260,7 @@ export default function LoginPage() {
             transition={{ delay: 0.5 }}
             className="mt-6 text-center text-xs text-gray-500"
           >
-            Demo: demo@example.com / password
+            Demo: rosexmee1122@gmail.com / password
           </motion.p>
         </div>
       </motion.div>

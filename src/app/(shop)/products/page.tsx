@@ -36,7 +36,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
       sortBy: (params.sort as any) || 'newest',
       page: parseInt(params.page || '1'),
-      limit: 12,
+      limit: 50,
     }),
     getCategories(),
   ]);

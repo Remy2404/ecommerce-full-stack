@@ -34,8 +34,8 @@ export default async function HomePage() {
   // Fetch data from database
   const [categories, featuredProducts, newProducts] = await Promise.all([
     getCategories(),
-    getFeaturedProducts(8),
-    getNewArrivals(5),
+    getFeaturedProducts(9),
+    getNewArrivals(10),
   ]);
 
   // Format products for display
