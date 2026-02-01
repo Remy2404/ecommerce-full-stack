@@ -36,7 +36,7 @@ export interface OrderItem {
   variantId?: string;
   variantName?: string;
   quantity: number;
-  unitPrice: number;
+  price: number; 
   subtotal: number;
 }
 

@@ -26,7 +26,7 @@ export type CartItem = {
   price: number;
   quantity: number;
   subtotal: number;
-  stock: number;
+  stock?: number;
 };
 
 /**

@@ -24,7 +24,7 @@ export interface CartItem {
   variantId?: string;
   variantName?: string;
   quantity: number;
-  unitPrice: number;
+  price: number; 
   salePrice?: number;
   subtotal: number;
 }

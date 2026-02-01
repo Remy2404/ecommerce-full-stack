@@ -31,19 +31,19 @@ export interface ShippingAddress {
 export interface OrderResponse {
   id: string;
   orderNumber: string;
-  userId: string;
+  userId: string; // Backend might not send userId in response? Check OrderResponse.java. It doesn't.
   status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
-  paymentMethod: string | null;
-  shippingAddress: ShippingAddress;
+  paymentMethod?: string | null; 
+  shippingAddress?: ShippingAddress; 
   items: OrderItem[];
   subtotal: number;
-  shippingFee: number;
+  deliveryFee: number; 
   discount: number;
   total: number;
-  notes: string | null;
+  notes?: string | null;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string; 
 }
 
 export interface CreateOrderRequest {
