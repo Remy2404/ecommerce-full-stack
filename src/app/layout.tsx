@@ -11,6 +11,8 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "sonner";
 
 
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
