@@ -103,7 +103,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         href={`/products?category=${category.slug}`}
                         className={`flex items-center gap-2 rounded-design px-3 py-2 text-sm transition-colors ${params.category === category.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                       >
-                        <DynamicIcon name={category.icon || 'Package'} size={16} />
+                        <DynamicIcon name={(category as any).icon || 'Package'} size={16} />
                         {category.name}
                       </Link>
                     </li>

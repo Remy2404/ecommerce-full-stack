@@ -18,7 +18,7 @@ import {
   UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { signOutUser } from '@/actions/auth.actions';
+import { useAuth } from '@/hooks/auth-context';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import PillNav from '@/components/reactbit/PillNav';
@@ -30,13 +30,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 import { useCart } from '@/hooks/cart-context';
 import { useWishlist } from '@/hooks/wishlist-context';
 
-interface NavbarProps {
-  user?: {
-    name: string;
-    email: string;
-    image?: string;
-  } | null;
-}
+// User data is now provided by useAuth hook
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -46,7 +40,8 @@ const navLinks = [
   { href: '/products?sale=true', label: 'Sale' },
 ];
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar() {
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -193,16 +188,16 @@ export function Navbar({ user }: NavbarProps) {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="relative"
                   >
-                    {user.image && !imageError ? (
+                    {user.avatar && !imageError ? (
                       <img
-                        src={user.image}
-                        alt={user.name}
+                        src={user.avatar}
+                        alt={`${user.firstName} ${user.lastName}`}
                         className="h-8 w-8 rounded-full object-cover"
                         onError={() => setImageError(true)}
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                        {user.name && user.name.charAt(0).toUpperCase()}
+                        {user.firstName && user.firstName.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </Button>
@@ -222,7 +217,7 @@ export function Navbar({ user }: NavbarProps) {
                           className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-design border border-border bg-popover p-2 shadow-float"
                         >
                           <div className="border-b border-border px-3 py-2 mb-2">
-                            <p className="text-sm font-medium">{user.name}</p>
+                            <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                           <Link
@@ -253,7 +248,7 @@ export function Navbar({ user }: NavbarProps) {
                             className="flex w-full items-center gap-2 rounded-design-sm px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
                             onClick={async () => {
                               setIsUserMenuOpen(false);
-                              await signOutUser();
+                              await logout();
                             }}
                           >
                             <LogOut className="h-4 w-4" />

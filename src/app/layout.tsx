@@ -4,12 +4,11 @@ import "../styles/globals.css";
 import { Navbar } from "@/components/common/navbar";
 import { Footer } from "@/components/common/footer";
 import { MobileNav } from "@/components/common/mobile-nav";
-import { auth } from "@/lib/auth/auth";
+import { AuthProvider } from "@/hooks/auth-context";
 import { CartProvider } from "@/hooks/cart-context";
 import { WishlistProvider } from "@/hooks/wishlist-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "sonner";
-
 
 export const dynamic = "force-dynamic";
 
@@ -71,30 +70,30 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <CartProvider>
-          <WishlistProvider>
-            <div className="flex min-h-screen flex-col">
-              <Navbar user={session?.user as any} />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-              <MobileNav />
-              <CartDrawer />
-              <Toaster position="top-right" richColors closeButton />
-            </div>
-          </WishlistProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <div className="flex min-h-screen flex-col">
+                <Navbar />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+                <MobileNav />
+                <CartDrawer />
+                <Toaster position="top-right" richColors closeButton />
+              </div>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

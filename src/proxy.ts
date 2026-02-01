@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth.config';
+import { cookies } from 'next/headers';
 
 // Protected routes configuration
 const protectedRoutes = [
@@ -11,9 +11,43 @@ const protectedRoutes = [
 
 const authRoutes = ['/login', '/register', '/reset-password'];
 
+/**
+ * Check if user has a valid JWT token
+ * Token is stored in localStorage on client, but for middleware
+ * we check for presence of access token in cookies or Authorization header
+ */
+function isAuthenticated(request: NextRequest): boolean {
+  // Check Authorization header (for API calls)
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    return isValidToken(token);
+  }
+
+  // Check for token in cookies (if using httpOnly cookies)
+  const accessToken = request.cookies.get('accessToken')?.value;
+  if (accessToken) {
+    return isValidToken(accessToken);
+  }
+
+  return false;
+}
+
+/**
+ * Validate JWT token expiration (basic client-side check)
+ */
+function isValidToken(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const session = await auth();
+  const authenticated = isAuthenticated(request);
 
   // Check if route is protected
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -25,14 +59,14 @@ export async function proxy(request: NextRequest) {
   );
 
   // Redirect unauthenticated users to login
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !authenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users away from auth pages
-  if (isAuthRoute && session) {
+  if (isAuthRoute && authenticated) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

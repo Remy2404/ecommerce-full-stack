@@ -1,46 +1,94 @@
-import { users, addresses, merchants, wingPoints, wingPointsTransactions, notifications, userRoleEnum } from '../lib/db/schema';
+/**
+ * Auth-related type definitions
+ * These types mirror the Spring Boot backend models
+ */
 
 // Enums
-export type UserRole = typeof userRoleEnum.enumValues[number];
+export type UserRole = 'USER' | 'ADMIN' | 'MERCHANT';
 
-// Inferred types from schema
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+export interface User {
+  id: string;
+  email: string;
+  phone?: string;
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  role: UserRole;
+  isActive: boolean;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type Address = typeof addresses.$inferSelect;
-export type InsertAddress = typeof addresses.$inferInsert;
+export interface Address {
+  id: string;
+  userId: string;
+  label?: string;
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
 
-export type Merchant = typeof merchants.$inferSelect;
-export type InsertMerchant = typeof merchants.$inferInsert;
+export interface Merchant {
+  id: string;
+  userId: string;
+  businessName: string;
+  bakongId: string;
+  isVerified: boolean;
+  createdAt: string;
+}
 
-export type WingPoints = typeof wingPoints.$inferSelect;
-export type InsertWingPoints = typeof wingPoints.$inferInsert;
+export interface WingPoints {
+  id: string;
+  userId: string;
+  balance: number;
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+}
 
-export type WingPointsTransaction = typeof wingPointsTransactions.$inferSelect;
-export type InsertWingPointsTransaction = typeof wingPointsTransactions.$inferInsert;
+export interface WingPointsTransaction {
+  id: string;
+  userId: string;
+  type: 'EARN' | 'SPEND' | 'EXPIRE' | 'ADJUST';
+  amount: number;
+  description?: string;
+  orderId?: string;
+  createdAt: string;
+}
 
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = typeof notifications.$inferInsert;
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  data?: Record<string, any>;
+  createdAt: string;
+}
 
 // Auth-specific types
-export type LoginCredentials = {
+export interface LoginCredentials {
   email: string;
   password: string;
-};
+}
 
-export type RegisterData = {
+export interface RegisterData {
   email: string;
   phone: string;
   password: string;
   firstName: string;
   lastName: string;
-};
+}
 
-export type AuthUser = {
+export interface AuthUser {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: UserRole;
   avatar?: string;
-};
+}

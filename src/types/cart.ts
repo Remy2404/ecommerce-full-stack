@@ -1,7 +1,30 @@
-import { carts, cartItems } from '../lib/db/schema';
+/**
+ * Cart-related type definitions
+ * These types mirror the Spring Boot backend models
+ */
 
-export type Cart = typeof carts.$inferSelect;
-export type InsertCart = typeof carts.$inferInsert;
+export interface Cart {
+  id: string;
+  userId?: string;
+  sessionId?: string;
+  items: CartItem[];
+  totalItems: number;
+  subtotal: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type CartItem = typeof cartItems.$inferSelect;
-export type InsertCartItem = typeof cartItems.$inferInsert;
+export interface CartItem {
+  id: string;
+  cartId: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  productSlug?: string;
+  variantId?: string;
+  variantName?: string;
+  quantity: number;
+  unitPrice: number;
+  salePrice?: number;
+  subtotal: number;
+}
