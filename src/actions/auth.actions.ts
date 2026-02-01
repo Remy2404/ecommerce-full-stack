@@ -8,6 +8,8 @@ import { cookies } from 'next/headers';
 export type AuthResult = {
   success: boolean;
   error?: string;
+  user?: any; // strict typing would require importing UserSummary
+  token?: string;
 };
 
 /**
@@ -25,13 +27,7 @@ export async function signInWithCredentials(
     return { success: false, error: 'Invalid email or password format' };
   }
 
-  const result = await authService.login(email, password);
-
-  if (!result.success) {
-    return { success: false, error: result.error };
-  }
-
-  redirect(callbackUrl || '/');
+  return await authService.login(email, password);
 }
 
 /**
@@ -40,13 +36,7 @@ export async function signInWithCredentials(
  * using the Google Sign-In SDK, then the ID token is sent to this action
  */
 export async function signInWithGoogle(idToken: string, callbackUrl?: string): Promise<AuthResult> {
-  const result = await authService.loginWithGoogle(idToken);
-
-  if (!result.success) {
-    return { success: false, error: result.error };
-  }
-
-  redirect(callbackUrl || '/');
+  return await authService.loginWithGoogle(idToken);
 }
 
 /**
@@ -55,6 +45,9 @@ export async function signInWithGoogle(idToken: string, callbackUrl?: string): P
  */
 export async function signOutUser(): Promise<void> {
   await authService.logout();
+  // We can keep redirect here as logout doesn't need to save token (it clears it)
+  // But strictly speaking, client should clear token first.
+  // We'll leave it for now or assume client clears it.
   redirect('/login');
 }
 
@@ -81,19 +74,13 @@ export async function registerUser(data: {
 
   const { firstName, lastName, email, phone, password } = validatedFields.data;
 
-  const result = await authService.register({
+  return await authService.register({
     firstName,
     lastName,
     email,
     phone,
     password,
   });
-
-  if (!result.success) {
-    return { success: false, error: result.error };
-  }
-
-  redirect('/');
 }
 
 /**

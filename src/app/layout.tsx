@@ -9,6 +9,7 @@ import { CartProvider } from "@/hooks/cart-context";
 import { WishlistProvider } from "@/hooks/wishlist-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "sonner";
+import { GoogleOAuthProviderWrapper } from "@/components/providers/google-oauth-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -78,22 +79,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <div className="flex min-h-screen flex-col">
-                <Navbar />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-                <MobileNav />
-                <CartDrawer />
-                <Toaster position="top-right" richColors closeButton />
-              </div>
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
+        <GoogleOAuthProviderWrapper>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <div className="flex min-h-screen flex-col">
+                  <Navbar />
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                  <Footer />
+                  <MobileNav />
+                  <CartDrawer />
+                  <Toaster position="top-right" richColors closeButton />
+                </div>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
+        </GoogleOAuthProviderWrapper>
       </body>
     </html>
   );

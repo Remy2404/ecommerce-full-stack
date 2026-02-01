@@ -46,30 +46,8 @@ function isValidToken(token: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const authenticated = isAuthenticated(request);
-
-  // Check if route is protected
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  const isAuthRoute = authRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Redirect unauthenticated users to login
-  if (isProtectedRoute && !authenticated) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (isAuthRoute && authenticated) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
+  // Server-side auth check disabled in favor of client-side AuthGuard
+  // because we are using localStorage which is not accessible here.
   return NextResponse.next();
 }
 

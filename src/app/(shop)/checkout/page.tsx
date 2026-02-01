@@ -12,8 +12,17 @@ import { OrderSummary } from '@/components/checkout/order-summary';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
 import { createOrder } from '@/actions/order.actions';
+import { AuthGuard } from '@/components/providers/auth-guard';
 
 export default function CheckoutPage() {
+  return (
+    <AuthGuard>
+      <CheckoutPageContent />
+    </AuthGuard>
+  );
+}
+
+function CheckoutPageContent() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('shipping');

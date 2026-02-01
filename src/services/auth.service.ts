@@ -19,18 +19,15 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  token: string;
   refreshToken?: string;
-  tokenType: string;
-  expiresIn: number;
   user: UserSummary;
 }
 
 export interface UserSummary {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: 'USER' | 'ADMIN';
   avatar?: string;
 }
@@ -43,6 +40,7 @@ export interface AuthResult {
   success: boolean;
   error?: string;
   user?: UserSummary;
+  token?: string;
 }
 
 // ============================================================================
@@ -59,10 +57,10 @@ export async function login(email: string, password: string): Promise<AuthResult
       password,
     });
 
-    const { accessToken, user } = response.data;
-    setAccessToken(accessToken);
+    const { token, user } = response.data;
+    setAccessToken(token);
 
-    return { success: true, user };
+    return { success: true, user, token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Invalid email or password';
@@ -77,10 +75,10 @@ export async function register(data: RegisterRequest): Promise<AuthResult> {
   try {
     const response = await api.post<AuthResponse>('/auth/register', data);
 
-    const { accessToken, user } = response.data;
-    setAccessToken(accessToken);
+    const { token, user } = response.data;
+    setAccessToken(token);
 
-    return { success: true, user };
+    return { success: true, user, token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
     
@@ -105,10 +103,10 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
       idToken,
     });
 
-    const { accessToken, user } = response.data;
-    setAccessToken(accessToken);
+    const { token, user } = response.data;
+    setAccessToken(token);
 
-    return { success: true, user };
+    return { success: true, user, token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Google authentication failed';
@@ -158,8 +156,9 @@ export function getCurrentUser(): UserSummary | null {
   const decoded = decodeToken<{
     sub: string;
     email: string;
-    firstName: string;
-    lastName: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
     role: 'USER' | 'ADMIN';
     avatar?: string;
     exp: number;
@@ -172,8 +171,7 @@ export function getCurrentUser(): UserSummary | null {
   return {
     id: decoded.sub,
     email: decoded.email,
-    firstName: decoded.firstName,
-    lastName: decoded.lastName,
+    name: decoded.name || `${decoded.firstName || ''} ${decoded.lastName || ''}`.trim(),
     role: decoded.role,
     avatar: decoded.avatar,
   };

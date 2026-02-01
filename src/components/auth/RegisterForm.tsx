@@ -8,10 +8,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
-import { registerUser, signInWithGoogle } from '@/actions/auth.actions';
+import { registerUser } from '@/actions/auth.actions';
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/auth-context';
+import { setAccessToken } from '@/services/api';
+import { useGoogleLogin } from '@react-oauth/google';
+import { loginWithGoogle } from '@/services/auth.service';
+
 export default function RegisterForm() {
+    const router = useRouter();
+    const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -60,19 +68,21 @@ export default function RegisterForm() {
                 agreeToTerms: data.agreeToTerms,
             });
 
-            if (result.success) {
+            if (result.success && result.token) {
+                setAccessToken(result.token);
+                if (result.user) login(result.user);
+
                 toast.success('Registration successful!', {
-                    description: 'Your account has been created. Redirecting...',
+                    description: 'Your account has been created.',
                 });
+                
+                router.push('/');
             } else if (result.error) {
                 toast.error('Registration failed', {
                     description: result.error,
                 });
             }
         } catch (err) {
-            // Ignore redirect errors as they are handled by Next.js
-            if ((err as any)?.message === 'NEXT_REDIRECT') return;
-
             toast.error('Something went wrong', {
                 description: 'Please try again later.',
             });
@@ -81,18 +91,51 @@ export default function RegisterForm() {
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true);
-        try {
-            await signInWithGoogle('/');
-        } catch (err) {
-            if ((err as any)?.message === 'NEXT_REDIRECT') return;
+    // Google OAuth login hook
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                console.log("Register Google login success:", tokenResponse);
+                const result = await loginWithGoogle(tokenResponse.access_token);
+                
+                if (result.success && result.token) {
+                    setAccessToken(result.token);
+                    if (result.user) login(result.user);
 
+                    toast.success('Login successful!', {
+                        description: 'Welcome to our community.',
+                    });
+                    
+                    router.push('/');
+                } else if (result.error) {
+                    console.error("Backend refused login in Register:", result.error);
+                    toast.error('Google Sign In failed', {
+                        description: result.error,
+                    });
+                    setIsGoogleLoading(false);
+                }
+            } catch (err: any) {
+                console.error("Register Google Exception:", err);
+                toast.error('Google Sign In failed', {
+                    description: err.message || 'Please try again later.',
+                });
+                setIsGoogleLoading(false);
+            }
+        },
+        onError: () => {
+            console.error("Register Google OAuth failed");
             toast.error('Google Sign In failed', {
-                description: 'Please try again later.',
+                description: 'Could not connect to Google. Please try again.',
             });
             setIsGoogleLoading(false);
-        }
+        },
+        flow: 'implicit',
+        scope: 'email profile openid',
+    });
+
+    const handleGoogleSignIn = () => {
+        setIsGoogleLoading(true);
+        googleLogin();
     };
 
     const PasswordCheck = ({ passed, label }: { passed: boolean; label: string }) => (

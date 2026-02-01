@@ -1,26 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Truck, Zap, ShieldCheck } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
-import { signInWithCredentials, signInWithGoogle } from '@/actions/auth.actions';
+import { signInWithCredentials } from '@/actions/auth.actions';
+import { loginWithGoogle } from '@/services/auth.service';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { useAuth } from '@/hooks/auth-context';
+import { setAccessToken } from '@/services/api';
 
 export default function LoginPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const { login, isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ... form setup ...
   const {
     register,
     handleSubmit,
@@ -47,18 +61,21 @@ export default function LoginPage() {
         callbackUrl
       );
 
-      if (result.success) {
+      if (result.success && result.token) {
+        setAccessToken(result.token);
+        if (result.user) login(result.user);
+        
         toast.success('Login successful!', {
           description: 'Welcome back to our store.',
         });
+        
+        router.push(callbackUrl);
       } else if (result.error) {
         toast.error('Login failed', {
           description: result.error,
         });
       }
     } catch (err) {
-      if ((err as any)?.message === 'NEXT_REDIRECT') return;
-
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -67,19 +84,47 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
+  // Google OAuth login hook
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        console.log("Google login success:", tokenResponse); // Debug log
+        // Use client-side service directly
+        const result = await loginWithGoogle(tokenResponse.access_token);
+        
+        if (result.success && result.token) {
+          setAccessToken(result.token);
+          if (result.user) login(result.user);
 
-    try {
-      await signInWithGoogle(callbackUrl);
-    } catch (err) {
-      if ((err as any)?.message === 'NEXT_REDIRECT') return;
-
+          toast.success('Login successful!', {
+            description: 'Welcome back to our store.',
+          });
+          
+          router.push(callbackUrl);
+        } else if (result.error) {
+            console.error("Backend refused login:", result.error);
+          toast.error('Google Sign In failed', {
+            description: result.error,
+          });
+        }
+      } catch (err: any) {
+        console.error("Login exception:", err);
+        toast.error('Login error', { description: err.message || 'Unknown error' });
+      }
+    },
+    onError: () => {
+      console.error("Google OAuth failed");
       toast.error('Google Sign In failed', {
-        description: 'Please try again later.',
+        description: 'Could not connect to Google. Please try again.',
       });
-      setIsGoogleLoading(false);
-    }
+    },
+    flow: 'implicit', // Use implicit flow to get access_token
+    scope: 'email profile openid', // Ensure scopes
+  });
+
+  const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
+    googleLogin();
   };
 
   return (
@@ -257,15 +302,6 @@ export default function LoginPage() {
               </motion.div>
             </div>
           </form>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 text-center text-xs text-gray-500"
-          >
-            Demo: rosexmee1122@gmail.com / password
-          </motion.p>
         </div>
       </motion.div>
 

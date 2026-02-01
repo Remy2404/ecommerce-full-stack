@@ -63,7 +63,7 @@ export default function ProfilePage() {
   }
 
   const profileUser = {
-    name: `${user.firstName} ${user.lastName}`,
+    name: user.name,
     email: user.email,
     image: user.avatar || undefined,
     memberSince: 'Member',

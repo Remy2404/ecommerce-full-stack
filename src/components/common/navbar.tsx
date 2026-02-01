@@ -191,13 +191,13 @@ export function Navbar() {
                     {user.avatar && !imageError ? (
                       <img
                         src={user.avatar}
-                        alt={`${user.firstName} ${user.lastName}`}
+                        alt={user.name}
                         className="h-8 w-8 rounded-full object-cover"
                         onError={() => setImageError(true)}
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                        {user.firstName && user.firstName.charAt(0).toUpperCase()}
+                        {user.name && user.name.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </Button>
@@ -217,7 +217,7 @@ export function Navbar() {
                           className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-design border border-border bg-popover p-2 shadow-float"
                         >
                           <div className="border-b border-border px-3 py-2 mb-2">
-                            <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
+                            <p className="text-sm font-medium">{user.name}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                           <Link
