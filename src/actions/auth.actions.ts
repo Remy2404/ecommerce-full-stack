@@ -3,12 +3,13 @@
 import * as authService from '@/services/auth.service';
 import { loginSchema, registerSchema } from '@/validations/auth';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+
+import { AuthUser } from '@/types';
 
 export type AuthResult = {
   success: boolean;
   error?: string;
-  user?: any; // strict typing would require importing UserSummary
+  user?: AuthUser;
   token?: string;
 };
 
@@ -18,8 +19,7 @@ export type AuthResult = {
  */
 export async function signInWithCredentials(
   email: string,
-  password: string,
-  callbackUrl?: string
+  password: string
 ): Promise<AuthResult> {
   const validatedFields = loginSchema.safeParse({ email, password });
 
@@ -35,7 +35,7 @@ export async function signInWithCredentials(
  * Note: The actual Google OAuth flow should be handled client-side
  * using the Google Sign-In SDK, then the ID token is sent to this action
  */
-export async function signInWithGoogle(idToken: string, callbackUrl?: string): Promise<AuthResult> {
+export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
   return await authService.loginWithGoogle(idToken);
 }
 

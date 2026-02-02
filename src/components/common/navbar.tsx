@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -62,8 +63,13 @@ export function Navbar() {
 
   // Close mobile menu on route change
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname, searchParams]);
+    const timer = setTimeout(() => {
+      if (isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [pathname, searchParams, isMobileMenuOpen]);
 
   const isLinkActive = (href: string) => {
     const [path, query] = href.split('?');
@@ -189,12 +195,15 @@ export function Navbar() {
                     className="relative"
                   >
                     {user.avatarUrl && !imageError ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt={user.name}
-                        className="h-8 w-8 rounded-full object-cover"
-                        onError={() => setImageError(true)}
-                      />
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                        <Image
+                          src={user.avatarUrl}
+                          alt={user.name || 'User avatar'}
+                          fill
+                          className="object-cover"
+                          onError={() => setImageError(true)}
+                        />
+                      </div>
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
                         {user.name && user.name.charAt(0).toUpperCase()}

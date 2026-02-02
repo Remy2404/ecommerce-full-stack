@@ -1,6 +1,7 @@
 import { MapPin, Clock, Heart, Zap, Users, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'Careers | Store',
@@ -9,7 +10,7 @@ export const metadata = {
 
 const benefits = [
   { icon: Heart, title: 'Health Insurance', description: 'Comprehensive medical, dental, and vision coverage' },
-  { icon: Zap, title: 'Flexible Hours', description: 'Work when you\'re most productive' },
+  { icon: Zap, title: 'Flexible Hours', description: 'Work when you&apos;re most productive' },
   { icon: Users, title: 'Remote-First', description: 'Work from anywhere in the world' },
   { icon: Coffee, title: 'Team Events', description: 'Regular team gatherings and offsites' },
 ];
@@ -60,7 +61,7 @@ export default function CareersPage() {
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
               Join a team of passionate individuals working to make online shopping 
-              delightful for everyone. We're remote-first and always looking for talented people.
+              delightful for everyone. We&apos;re remote-first and always looking for talented people.
             </p>
             <Button size="lg" className="mt-8" asChild>
               <a href="#positions">View Open Positions</a>
@@ -98,25 +99,28 @@ export default function CareersPage() {
           </div>
           
           <div className="mt-12 grid gap-4 md:grid-cols-3">
-            <div className="aspect-video overflow-hidden rounded-design-lg bg-muted">
-              <img 
+            <div className="relative aspect-video overflow-hidden rounded-design-lg bg-muted">
+              <Image 
                 src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&q=80" 
                 alt="Team collaboration"
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
-            <div className="aspect-video overflow-hidden rounded-design-lg bg-muted">
-              <img 
+            <div className="relative aspect-video overflow-hidden rounded-design-lg bg-muted">
+              <Image 
                 src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80" 
                 alt="Office space"
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
-            <div className="aspect-video overflow-hidden rounded-design-lg bg-muted">
-              <img 
+            <div className="relative aspect-video overflow-hidden rounded-design-lg bg-muted">
+              <Image 
                 src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" 
                 alt="Team event"
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
           </div>
@@ -160,7 +164,7 @@ export default function CareersPage() {
         <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold">Don't see your role?</h2>
           <p className="mt-2 text-muted-foreground">
-            We're always looking for talented people. Send us your resume and we'll 
+            We&apos;re always looking for talented people. Send us your resume and we&apos;ll 
             reach out when a matching position opens up.
           </p>
           <Button variant="outline" className="mt-6" asChild>

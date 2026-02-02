@@ -1,4 +1,5 @@
-import { Users, Heart, Globe, Award, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { Heart, Globe, Award, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -21,7 +22,7 @@ const values = [
   {
     icon: Globe,
     title: 'Sustainability',
-    description: 'We\'re committed to reducing our environmental footprint and supporting ethical practices.',
+    description: 'We&apos;re committed to reducing our environmental footprint and supporting ethical practices.',
   },
   {
     icon: Sparkles,
@@ -52,7 +53,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-4xl font-bold tracking-tight lg:text-6xl">
-              We're on a mission to make
+              We&apos;re on a mission to make
               <span className="text-primary"> shopping delightful</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -97,7 +98,7 @@ export default function AboutPage() {
             </p>
             <p>
               Today, we serve customers across 15 countries, but our mission remains 
-              the same: to help you discover products you'll love, from brands that 
+              the same: to help you discover products you&apos;ll love, from brands that 
               share our values.
             </p>
           </div>
@@ -128,11 +129,12 @@ export default function AboutPage() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {team.map((member) => (
             <div key={member.name} className="text-center">
-              <div className="mx-auto h-32 w-32 overflow-hidden rounded-full bg-muted">
-                <img
+              <div className="relative mx-auto h-32 w-32 overflow-hidden rounded-full bg-muted">
+                <Image
                   src={member.image}
                   alt={member.name}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
               <h3 className="mt-4 font-semibold">{member.name}</h3>
@@ -147,7 +149,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold">Join Our Journey</h2>
           <p className="mt-4 text-primary-foreground/80">
-            We're always looking for talented people who share our vision.
+            We&apos;re always looking for talented people who share our vision.
           </p>
           <Button variant="secondary" size="lg" className="mt-6" asChild>
             <Link href="/careers">View Open Positions</Link>

@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refresh();
 
     // Listen for storage events (login/logout from other tabs)
     const handleStorageChange = (e: StorageEvent) => {

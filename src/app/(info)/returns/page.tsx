@@ -26,7 +26,7 @@ const returnSteps = [
   {
     step: 4,
     title: 'Get Your Refund',
-    description: 'Once we receive and inspect your return, we\'ll process your refund within 5-7 business days.',
+    description: 'Once we receive and inspect your return, we&apos;ll process your refund within 5-7 business days.',
   },
 ];
 
@@ -74,7 +74,7 @@ export default function ReturnsPage() {
             <div>
               <h3 className="font-semibold">Easy Exchanges</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Want a different size or color? We'll ship the new item for free.
+                Want a different size or color? We&apos;ll ship the new item for free.
               </p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function ReturnsPage() {
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>• Personalized or custom-made items</li>
                 <li>• Intimate apparel and swimwear</li>
-                <li>• Items marked as "Final Sale"</li>
+                <li>• Items marked as &quot;Final Sale&quot;</li>
                 <li>• Products showing signs of use or damage</li>
               </ul>
             </div>

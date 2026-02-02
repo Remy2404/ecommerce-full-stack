@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import LaserFlow from '@/components/reactbit/LaserFlow';
 import GlitchText from '@/components/reactbit/GlitchText';
 import { Button } from '@/components/ui/button';
@@ -87,11 +88,12 @@ export default function HeroWithLaser() {
             </div>
 
             {/* Interactive Reveal Image (Optional Premium Touch) */}
-            <img
-                ref={revealImgRef}
+            <Image
+                ref={revealImgRef as any}
                 src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1920"
                 alt="Premium Product Reveal"
-                className="absolute inset-0 z-10 h-full w-full object-cover opacity-20 transition-all duration-700 filter group-hover:opacity-50 group-hover:brightness-[0.75] pointer-events-none dark:opacity-40 dark:group-hover:opacity-100"
+                fill
+                className="absolute inset-0 z-10 object-cover opacity-20 transition-all duration-700 filter group-hover:opacity-50 group-hover:brightness-[0.75] pointer-events-none dark:opacity-40 dark:group-hover:opacity-100"
                 style={{
                     '--mx': '-9999px',
                     '--my': '-9999px',

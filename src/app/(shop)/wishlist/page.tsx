@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, ShoppingCart, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useWishlist, WishlistItem } from '@/hooks/wishlist-context';
@@ -84,11 +85,14 @@ export default function WishlistPage() {
               className="group relative flex flex-col rounded-design-lg border border-border bg-card overflow-hidden transition-all hover:shadow-soft"
             >
               <Link href={`/products/${item.productId}`} className="aspect-square relative overflow-hidden bg-muted">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                <div className="relative h-full w-full">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
                 <div className="absolute top-2 right-2">
                   <Button
                     variant="secondary"

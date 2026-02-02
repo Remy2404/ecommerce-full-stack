@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { getOrderById } from '@/actions/order.actions';
 import { OrderDetailClient } from '@/components/orders/order-detail-client';
+import { Order, OrderStatus, mapOrder } from '@/types/order';
+import { PaymentStatus } from '@/types/payment';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -32,47 +34,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         }
 
         const orderData = result.data;
+        if (!orderData) return;
 
-        const formattedOrder = {
-          id: orderData.id,
-          orderNumber: orderData.orderNumber,
-          status: orderData.status,
-          total: orderData.total.toString(),
-          subtotal: orderData.subtotal.toString(),
-          deliveryFee: orderData.deliveryFee.toString(),
-          discount: (orderData.discount || 0).toString(),
-          tax: (orderData.tax || 0).toString(),
-          createdAt: new Date(orderData.createdAt),
-          deliveryInstructions: (orderData as any).deliveryInstructions,
-          shippingAddress: (orderData as any).deliveryAddress ? {
-            firstName: (orderData as any).user?.firstName,
-            lastName: (orderData as any).user?.lastName,
-            street: (orderData as any).deliveryAddress.street,
-            city: (orderData as any).deliveryAddress.city,
-            province: (orderData as any).deliveryAddress.province,
-            postalCode: (orderData as any).deliveryAddress.postalCode,
-          } : null,
-          paymentInfo: (orderData as any).payment ? {
-            method: (orderData as any).payment.method,
-            status: (orderData as any).payment.status,
-            transactionId: (orderData as any).payment.transactionId,
-            amount: (orderData as any).payment.amount.toString(),
-          } : null,
-          deliveryInfo: (orderData as any).delivery ? {
-            status: (orderData as any).delivery.status,
-            deliveredTime: (orderData as any).delivery.deliveredTime ? new Date((orderData as any).delivery.deliveredTime) : null,
-          } : null,
-          items: (orderData as any).items?.map((item: any) => ({
-            id: item.id,
-            productName: item.productName,
-            productImage: item.productImage,
-            variantName: item.variantName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice.toString(),
-            subtotal: item.subtotal.toString(),
-          })) || [],
-        };
-
+        // Use the centralized mapping logic
+        // Cast to any because the response from getOrderById might not match mapOrder's expected input perfectly yet
+        const formattedOrder = mapOrder(orderData as any);
         setOrder(formattedOrder);
       } catch (error) {
         console.error('Failed to fetch order:', error);

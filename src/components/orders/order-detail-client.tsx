@@ -18,47 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface OrderItem {
-  id: string;
-  productName: string;
-  productImage: string | null;
-  variantName: string | null;
-  quantity: number;
-  unitPrice: string;
-  subtotal: string;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  total: string;
-  subtotal: string;
-  deliveryFee: string;
-  discount: string;
-  tax: string;
-  createdAt: Date;
-  deliveryInstructions: string | null;
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    street: string;
-    city: string;
-    province: string;
-    postalCode: string | null;
-  } | null;
-  paymentInfo: {
-    method: string;
-    status: string;
-    transactionId: string | null;
-    amount: string;
-  } | null;
-  deliveryInfo: {
-    status: string;
-    deliveredTime: Date | null;
-  } | null;
-  items: OrderItem[];
-}
+import { Order } from '@/types';
 
 interface OrderDetailClientProps {
   order: Order;
@@ -228,19 +188,19 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                 {order.shippingAddress ? (
                   <>
                     <p className="font-medium text-foreground mb-1">
-                      {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                      {order.shippingAddress.fullName}
                     </p>
                     <p>{order.shippingAddress.street}</p>
                     <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode || ''}</p>
-                    <p>{order.shippingAddress.province}</p>
+                    <p>{order.shippingAddress.country}</p>
                   </>
                 ) : (
                   <p>No shipping address provided</p>
                 )}
-                {order.deliveryInstructions && (
+                {order.notes && (
                   <div className="mt-4 p-3 rounded-design bg-muted/50 text-xs">
                     <p className="font-semibold text-foreground mb-1">Instructions:</p>
-                    {order.deliveryInstructions}
+                    {order.notes}
                   </div>
                 )}
               </CardContent>
@@ -250,33 +210,16 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  Payment Info
+                  Payment Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                 {order.paymentInfo ? (
-                   <>
-                     <div className="flex items-center gap-2 mb-2">
-                       <div className="h-8 w-12 bg-muted rounded flex items-center justify-center text-[10px] font-bold uppercase">
-                         {order.paymentInfo.method}
-                       </div>
-                       <div>
-                         <p className="font-medium text-foreground capitalize">{order.paymentInfo.method} Payment</p>
-                         {order.paymentInfo.transactionId && (
-                           <p className="text-xs">ID: {order.paymentInfo.transactionId}</p>
-                         )}
-                       </div>
-                     </div>
-                     <Badge 
-                       variant={order.paymentInfo.status === 'paid' ? 'success' : 'secondary'} 
-                       className="mt-2 capitalize"
-                     >
-                       {order.paymentInfo.status}
-                     </Badge>
-                   </>
-                 ) : (
-                   <p>No payment information available</p>
-                 )}
+                 <Badge 
+                   variant={order.paymentStatus === 'PAID' ? 'success' : 'secondary'} 
+                   className="capitalize"
+                 >
+                   {order.paymentStatus}
+                 </Badge>
               </CardContent>
             </Card>
           </div>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Percent } from 'lucide-react';
+import { Percent } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
 import { getProducts } from '@/actions/product.actions';
@@ -44,7 +44,7 @@ export default async function SalePage() {
               Sale & Deals
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Don't miss out on our best discounts. Save big on premium products.
+              Don&apos;t miss out on our best discounts. Save big on premium products.
             </p>
           </div>
         </div>

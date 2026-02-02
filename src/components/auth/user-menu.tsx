@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { User, LogOut, Package, Heart, Settings, ChevronDown } from 'lucide-react';
 import { signOutUser } from '@/actions/auth.actions';
@@ -36,11 +37,14 @@ export function UserMenu({ user }: UserMenuProps) {
         className="flex items-center gap-2 rounded-design px-2 py-1.5 transition-colors hover:bg-muted"
       >
         {user.image ? (
-          <img
-            src={user.image}
-            alt={user.name || 'User'}
-            className="h-8 w-8 rounded-full object-cover"
-          />
+          <div className="relative h-8 w-8 overflow-hidden rounded-full">
+            <Image
+              src={user.image}
+              alt={user.name || 'User'}
+              fill
+              className="object-cover"
+            />
+          </div>
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
             {initials}

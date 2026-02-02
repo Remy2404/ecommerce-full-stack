@@ -13,7 +13,7 @@ import { registerSchema, type RegisterFormData } from '@/validations/auth';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
-import api, { setAccessToken } from '@/services/api';
+import { setAccessToken } from '@/services/api';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginWithGoogle } from '@/services/auth.service';
 
@@ -114,10 +114,11 @@ export default function RegisterForm() {
                     });
                     setIsGoogleLoading(false);
                 }
-            } catch (err: any) {
-                console.error("Register Google Exception:", err);
+            } catch (err) {
+                const error = err as Error;
+                console.error("Register Google Exception:", error);
                 toast.error('Google Sign In failed', {
-                    description: err.message || 'Please try again later.',
+                    description: error.message || 'Please try again later.',
                 });
                 setIsGoogleLoading(false);
             }

@@ -129,10 +129,11 @@ export function CartDrawer() {
                       <div className="flex gap-4">
                         {/* Product Image */}
                         <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-design-sm bg-muted">
-                          <img
+                          <Image
                             src={item.image}
                             alt={item.name}
-                            className="h-full w-full object-cover"
+                            fill
+                            className="object-cover"
                           />
                         </div>
 

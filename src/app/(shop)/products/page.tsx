@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, SlidersHorizontal } from 'lucide-react';
-import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
+import { BentoGrid } from '@/components/products/bento-grid';
 import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { SortSelect } from '@/components/products/sort-select';
 import { getProducts, getCategories } from '@/actions/product.actions';
@@ -15,7 +14,7 @@ interface ProductsPageProps {
   searchParams: Promise<{
     category?: string;
     featured?: string;
-    sale?: string;
+    sale?: string; 
     sort?: string;
     page?: string;
     minPrice?: string;
@@ -34,7 +33,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       sale: params.sale === 'true' ? true : undefined,
       minPrice: params.minPrice ? parseFloat(params.minPrice) : undefined,
       maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
-      sortBy: (params.sort as any) || 'newest',
+      sortBy: (params.sort as 'newest' | 'price_asc' | 'price_desc' | 'rating') || 'newest',
       page: parseInt(params.page || '1'),
       limit: 50,
     }),
@@ -103,7 +102,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         href={`/products?category=${category.slug}`}
                         className={`flex items-center gap-2 rounded-design px-3 py-2 text-sm transition-colors ${params.category === category.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                       >
-                        <DynamicIcon name={(category as any).icon || 'Package'} size={16} />
+                        <DynamicIcon name={(category as { icon?: string }).icon || 'Package'} size={16} />
                         {category.name}
                       </Link>
                     </li>

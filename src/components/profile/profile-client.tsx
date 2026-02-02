@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useWishlist } from '@/hooks/wishlist-context';
+import Image from 'next/image';
 
 interface ProfileClientProps {
   user: {
@@ -71,7 +72,7 @@ export function ProfileClient({ user, stats, recentOrders }: ProfileClientProps)
         <div className="flex items-center gap-4">
           <div className="h-20 w-20 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold border-2 border-background shadow-soft">
             {user.image ? (
-              <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+              <Image src={user.image} alt={user.name} width={80} height={80} className="h-full w-full object-cover" />
             ) : (
               <span>{user.name.charAt(0).toUpperCase()}</span>
             )}
@@ -178,7 +179,7 @@ export function ProfileClient({ user, stats, recentOrders }: ProfileClientProps)
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mb-4 opacity-20" />
-                  <p>You haven't placed any orders yet.</p>
+                  <p>You haven&apos;t placed any orders yet.</p>
                   <Button variant="link" asChild className="mt-2">
                     <Link href="/products">Browse products</Link>
                   </Button>

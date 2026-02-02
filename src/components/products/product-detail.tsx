@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Minus, 
@@ -313,11 +314,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
           >
             <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4">
-                <img
+              <div className="relative h-12 w-12 flex-shrink-0">
+                <Image
                   src={product.images[0]}
                   alt={product.name}
-                  className="h-12 w-12 rounded-design-sm object-cover"
+                  fill
+                  className="rounded-design-sm object-cover"
                 />
+              </div>
                 <div className="hidden sm:block">
                   <p className="font-medium line-clamp-1">{product.name}</p>
                   <p className="text-lg font-bold">{formatPrice(currentPrice)}</p>

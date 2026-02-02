@@ -12,15 +12,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        setAuthorized(false);
-        const url = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
-        router.push(url);
-      } else {
-        setAuthorized(true);
+    const timer = setTimeout(() => {
+      if (!isLoading) {
+        if (!isAuthenticated) {
+          setAuthorized(false);
+          const url = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
+          router.push(url);
+        } else {
+          setAuthorized(true);
+        }
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, isLoading, router, pathname]);
 
   if (isLoading) {

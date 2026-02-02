@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+// // import { useRouter } from 'next/navigation';
 import { ShoppingBag, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckoutStepper, CheckoutStepperMobile, CheckoutStep } from '@/components/checkout/checkout-stepper';
@@ -23,7 +23,7 @@ export default function CheckoutPage() {
 }
 
 function CheckoutPageContent() {
-  const router = useRouter();
+  // const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('shipping');
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +81,7 @@ function CheckoutPageContent() {
           </p>
           <p className="mt-2 text-xl font-mono font-bold">{orderNumber}</p>
           <p className="mt-4 text-sm text-muted-foreground">
-            We've sent a confirmation email with order details.
+            We&apos;ve sent a confirmation email with order details.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button asChild>

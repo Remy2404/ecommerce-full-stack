@@ -140,7 +140,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error('Failed to parse cart from localStorage:', e);
       }
     }
-    setIsHydrated(true);
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save cart to localStorage on change

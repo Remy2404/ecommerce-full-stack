@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { getUserOrders } from '@/actions/order.actions';
 import { OrdersClient } from '@/components/orders/orders-client';
+import { Order, mapOrder } from '@/types/order';
 
 export default function OrdersPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -24,13 +25,7 @@ export default function OrdersPage() {
       try {
         const result = await getUserOrders();
         if (result.success && result.data) {
-          const formattedOrders = (result.data as any[]).map(order => ({
-            id: order.id,
-            orderNumber: order.orderNumber,
-            status: order.status,
-            total: order.total.toString(),
-            createdAt: new Date(order.createdAt),
-          }));
+          const formattedOrders: Order[] = (result.data as any[]).map(order => mapOrder(order));
           setOrders(formattedOrders);
         }
       } catch (error) {

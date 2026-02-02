@@ -15,7 +15,7 @@ import { signInWithCredentials } from '@/actions/auth.actions';
 import { loginWithGoogle } from '@/services/auth.service';
 import { loginSchema, type LoginFormData } from '@/validations/auth';
 import { useAuth } from '@/hooks/auth-context';
-import api, { setAccessToken } from '@/services/api';
+import { setAccessToken } from '@/services/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -67,8 +67,7 @@ export default function LoginPage() {
     try {
       const result = await signInWithCredentials(
         data.email,
-        data.password,
-        safeCallbackUrl
+        data.password
       );
 
       if (result.success && result.token) {
@@ -85,7 +84,7 @@ export default function LoginPage() {
           description: result.error,
         });
       }
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -116,9 +115,10 @@ export default function LoginPage() {
             description: result.error,
           });
         }
-      } catch (err: any) {
-        console.error("Login exception:", err);
-        toast.error('Login error', { description: err.message || 'Unknown error' });
+      } catch (err) {
+        const error = err as Error;
+        console.error("Login exception:", error);
+        toast.error('Login error', { description: error.message || 'Unknown error' });
       }
     },
     onError: () => {
