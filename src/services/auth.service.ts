@@ -144,14 +144,14 @@ export function getCurrentUser(): AuthUser | null {
   if (!token) return null;
 
   const decoded = decodeToken<{
-    id: string; // Backend uses 'id' for user ID
-    sub: string; // contains email
+    id: string; 
+    sub: string; 
     email: string;
     name?: string;
     firstName?: string;
     lastName?: string;
     role: any;
-    avatar?: string; // Backend uses 'avatar'
+    avatar?: string;
     exp: number;
   }>(token);
 
@@ -160,7 +160,7 @@ export function getCurrentUser(): AuthUser | null {
   }
 
   return mapAuthUser({
-    id: decoded.id || decoded.sub, // Fallback to sub if id is missing
+    id: decoded.id || decoded.sub, 
     email: decoded.email || decoded.sub,
     firstName: decoded.firstName || '',
     lastName: decoded.lastName || '',

@@ -160,7 +160,7 @@ export async function getOrderById(orderId: string) {
       notes: order.notes || null,
       createdAt: new Date(order.createdAt),
       updatedAt: order.updatedAt ? new Date(order.updatedAt) : new Date(order.createdAt),
-      orderItems: order.items.map((item) => ({
+      items: order.items.map((item) => ({
         id: item.id,
         productId: item.productId,
         productName: item.productName,

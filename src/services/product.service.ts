@@ -91,7 +91,7 @@ export async function getAllProducts(): Promise<Product[]> {
  */
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const response = await api.get<ProductApiResponse>(`/products/slug/${slug}`);
+    const response = await api.get<ProductApiResponse>(`/products/${slug}`);
     return mapProduct(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;

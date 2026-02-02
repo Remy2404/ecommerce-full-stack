@@ -57,7 +57,7 @@ interface Order {
     status: string;
     deliveredTime: Date | null;
   } | null;
-  orderItems: OrderItem[];
+  items: OrderItem[];
 }
 
 interface OrderDetailClientProps {
@@ -174,7 +174,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">
-                {order.orderItems.map((item) => (
+                {order.items.map((item) => (
                   <div key={item.id} className="flex gap-4 p-6 hover:bg-muted/30 transition-colors">
                     <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-design bg-muted border">
                       {item.productImage ? (

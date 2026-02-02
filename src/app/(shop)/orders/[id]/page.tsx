@@ -62,7 +62,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             status: (orderData as any).delivery.status,
             deliveredTime: (orderData as any).delivery.deliveredTime ? new Date((orderData as any).delivery.deliveredTime) : null,
           } : null,
-          orderItems: (orderData as any).orderItems?.map((item: any) => ({
+          items: (orderData as any).items?.map((item: any) => ({
             id: item.id,
             productName: item.productName,
             productImage: item.productImage,
