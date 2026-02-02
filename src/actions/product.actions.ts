@@ -16,7 +16,6 @@ export interface ProductResult {
   reviewCount: number;
   isFeatured: boolean;
   categoryId: string;
-  merchantId: string;
   createdAt: Date;
 }
 
@@ -65,7 +64,7 @@ export async function getProducts(params: GetProductsParams = {}) {
       id: p.id,
       name: p.name,
       slug: p.slug,
-      description: p.description,
+      description: p.description || '',
       price: String(p.price),
       comparePrice: p.comparePrice ? String(p.comparePrice) : null,
       stock: p.stock,
@@ -73,8 +72,7 @@ export async function getProducts(params: GetProductsParams = {}) {
       rating: String(p.rating),
       reviewCount: p.reviewCount,
       isFeatured: p.isFeatured,
-      categoryId: p.categoryId,
-      merchantId: p.merchantId,
+      categoryId: p.categoryId || '',
       createdAt: new Date(p.createdAt),
     })),
     pagination: {
@@ -99,7 +97,7 @@ export async function getProductBySlug(slug: string) {
     id: product.id,
     name: product.name,
     slug: product.slug,
-    description: product.description,
+    description: product.description || '',
     price: String(product.price),
     comparePrice: product.comparePrice ? String(product.comparePrice) : null,
     stock: product.stock,
@@ -107,8 +105,7 @@ export async function getProductBySlug(slug: string) {
     rating: String(product.rating),
     reviewCount: product.reviewCount,
     isFeatured: product.isFeatured,
-    categoryId: product.categoryId,
-    merchantId: product.merchantId,
+    categoryId: product.categoryId || '',
     createdAt: new Date(product.createdAt),
     // Note: category, merchant, variants, reviews need separate API calls
     // or the backend needs to include them in the response
@@ -126,7 +123,7 @@ export async function getFeaturedProducts(limit: number = 8) {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    description: p.description,
+    description: p.description || '',
     price: String(p.price),
     comparePrice: p.comparePrice ? String(p.comparePrice) : null,
     stock: p.stock,
@@ -134,8 +131,7 @@ export async function getFeaturedProducts(limit: number = 8) {
     rating: String(p.rating),
     reviewCount: p.reviewCount,
     isFeatured: p.isFeatured,
-    categoryId: p.categoryId,
-    merchantId: p.merchantId,
+    categoryId: p.categoryId || '',
     createdAt: new Date(p.createdAt),
   }));
 }
@@ -159,8 +155,7 @@ export async function getNewArrivals(limit: number = 8) {
     rating: String(p.rating),
     reviewCount: p.reviewCount,
     isFeatured: p.isFeatured,
-    categoryId: p.categoryId,
-    merchantId: p.merchantId,
+    categoryId: p.categoryId || '',
     createdAt: new Date(p.createdAt),
   }));
 }

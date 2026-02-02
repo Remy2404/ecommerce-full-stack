@@ -1,65 +1,33 @@
 import api from './api';
 import { AxiosError } from 'axios';
+import { 
+  Cart, 
+  CartApiResponse, 
+  AddToCartRequest, 
+  UpdateCartItemRequest, 
+  CartResult,
+  mapCart
+} from '@/types';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  productImage: string | null;
-  variantId: string | null;
-  variantName: string | null;
-  price: number;
-  quantity: number;
-  subtotal: number;
-  stock?: number;
-}
-
-export interface CartResponse {
-  id: string;
-  userId: string;
-  items: CartItem[];
-  itemCount: number;
-  subtotal: number;
-  total: number;
-}
-
-export interface AddToCartRequest {
-  productId: string;
-  variantId?: string;
-  quantity: number;
-}
-
-export interface UpdateCartItemRequest {
-  cartItemId: string;
-  quantity: number;
-}
-
-export interface CartResult {
-  success: boolean;
-  cart?: CartResponse;
-  error?: string;
-}
-
-// ============================================================================
-// Cart Service
-// ============================================================================
+export type { 
+  Cart, 
+  CartApiResponse, 
+  AddToCartRequest, 
+  UpdateCartItemRequest, 
+  CartResult 
+};
+export { mapCart };
 
 /**
  * Get current user's cart
  */
-export async function getCart(): Promise<CartResponse | null> {
+export async function getCart(): Promise<Cart | null> {
   try {
-    const response = await api.get<CartResponse>('/cart');
-    return response.data;
+    const response = await api.get<CartApiResponse>('/cart');
+    return mapCart(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 401) {
-      // Not authenticated, return null
       return null;
     }
     console.error('Failed to fetch cart:', error);
@@ -72,8 +40,8 @@ export async function getCart(): Promise<CartResponse | null> {
  */
 export async function addToCart(data: AddToCartRequest): Promise<CartResult> {
   try {
-    const response = await api.post<CartResponse>('/cart/add', data);
-    return { success: true, cart: response.data };
+    const response = await api.post<CartApiResponse>('/cart/add', data);
+    return { success: true, cart: mapCart(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Failed to add item to cart';
@@ -86,8 +54,8 @@ export async function addToCart(data: AddToCartRequest): Promise<CartResult> {
  */
 export async function updateCartQuantity(data: UpdateCartItemRequest): Promise<CartResult> {
   try {
-    const response = await api.put<CartResponse>('/cart/items', data);
-    return { success: true, cart: response.data };
+    const response = await api.put<CartApiResponse>('/cart/items', data);
+    return { success: true, cart: mapCart(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Failed to update cart';
@@ -100,8 +68,8 @@ export async function updateCartQuantity(data: UpdateCartItemRequest): Promise<C
  */
 export async function removeFromCart(itemId: string): Promise<CartResult> {
   try {
-    const response = await api.delete<CartResponse>(`/cart/remove/${itemId}`);
-    return { success: true, cart: response.data };
+    const response = await api.delete<CartApiResponse>(`/cart/remove/${itemId}`);
+    return { success: true, cart: mapCart(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Failed to remove item';

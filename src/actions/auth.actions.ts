@@ -1,7 +1,7 @@
 'use server';
 
 import * as authService from '@/services/auth.service';
-import { loginSchema, registerSchema } from '@/lib/validations/auth';
+import { loginSchema, registerSchema } from '@/validations/auth';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 

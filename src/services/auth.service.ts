@@ -1,45 +1,35 @@
 import api, { setAccessToken, removeAccessToken, getAccessToken, decodeToken } from './api';
 import { AxiosError } from 'axios';
+import { 
+  AuthUser, 
+  User, 
+  LoginCredentials as LoginRequest, 
+  RegisterData as RegisterRequest,
+  UserApiResponse,
+  mapAuthUser,
+} from '@/types';
 
-// ============================================================================
-// Types
-// ============================================================================
+export type { 
+  AuthUser, 
+  User, 
+  LoginRequest, 
+  RegisterRequest, 
+  UserApiResponse 
+};
+export { mapAuthUser };
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  password: string;
-}
-
+// API Response type for authentication
 export interface AuthResponse {
   token: string;
   refreshToken?: string;
-  user: UserSummary;
+  user: UserApiResponse;
 }
 
-export interface UserSummary {
-  id: string;
-  email: string;
-  name: string;
-  role: 'USER' | 'ADMIN';
-  avatar?: string;
-}
-
-export interface GoogleLoginRequest {
-  idToken: string;
-}
-
+// Result type for UI logic
 export interface AuthResult {
   success: boolean;
   error?: string;
-  user?: UserSummary;
+  user?: AuthUser;
   token?: string;
 }
 
@@ -60,7 +50,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     const { token, user } = response.data;
     setAccessToken(token);
 
-    return { success: true, user, token };
+    return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Invalid email or password';
@@ -78,7 +68,7 @@ export async function register(data: RegisterRequest): Promise<AuthResult> {
     const { token, user } = response.data;
     setAccessToken(token);
 
-    return { success: true, user, token };
+    return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
     
@@ -106,7 +96,7 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
     const { token, user } = response.data;
     setAccessToken(token);
 
-    return { success: true, user, token };
+    return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Google authentication failed';
@@ -132,7 +122,7 @@ export async function logout(): Promise<void> {
  */
 export async function refreshToken(): Promise<boolean> {
   try {
-    const response = await api.post<{ accessToken: string }>('/auth/refresh-token');
+    const response = await api.post<{ accessToken: string }>('/auth/refresh');
     const { accessToken } = response.data;
     
     if (accessToken) {
@@ -149,18 +139,19 @@ export async function refreshToken(): Promise<boolean> {
 /**
  * Get current user from stored JWT
  */
-export function getCurrentUser(): UserSummary | null {
+export function getCurrentUser(): AuthUser | null {
   const token = getAccessToken();
   if (!token) return null;
 
   const decoded = decodeToken<{
-    sub: string;
+    id: string; // Backend uses 'id' for user ID
+    sub: string; // contains email
     email: string;
     name?: string;
     firstName?: string;
     lastName?: string;
-    role: 'USER' | 'ADMIN';
-    avatar?: string;
+    role: any;
+    avatar?: string; // Backend uses 'avatar'
     exp: number;
   }>(token);
 
@@ -168,13 +159,19 @@ export function getCurrentUser(): UserSummary | null {
     return null;
   }
 
-  return {
-    id: decoded.sub,
-    email: decoded.email,
-    name: decoded.name || `${decoded.firstName || ''} ${decoded.lastName || ''}`.trim(),
+  return mapAuthUser({
+    id: decoded.id || decoded.sub, // Fallback to sub if id is missing
+    email: decoded.email || decoded.sub,
+    firstName: decoded.firstName || '',
+    lastName: decoded.lastName || '',
+    name: decoded.name,
     role: decoded.role,
-    avatar: decoded.avatar,
-  };
+    avatarUrl: decoded.avatar,
+    isActive: true,
+    emailVerified: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as UserApiResponse);
 }
 
 /**

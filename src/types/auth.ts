@@ -71,24 +71,4 @@ export interface Notification {
 }
 
 // Auth-specific types
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  phone: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  avatar?: string;
-}
+export type { LoginCredentials, RegisterData } from './user';

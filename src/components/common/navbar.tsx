@@ -188,9 +188,9 @@ export function Navbar() {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="relative"
                   >
-                    {user.avatar && !imageError ? (
+                    {user.avatarUrl && !imageError ? (
                       <img
-                        src={user.avatar}
+                        src={user.avatarUrl}
                         alt={user.name}
                         className="h-8 w-8 rounded-full object-cover"
                         onError={() => setImageError(true)}

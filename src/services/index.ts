@@ -2,7 +2,7 @@
 // Service Exports
 // ============================================================================
 
-// API Client
+// API Client and Auth Utilities
 export { default as api } from './api';
 export {
   getAccessToken,
@@ -26,12 +26,8 @@ export {
   resetPassword,
 } from './auth.service';
 export type {
-  LoginRequest,
-  RegisterRequest,
-  AuthResponse,
-  UserSummary,
-  GoogleLoginRequest,
   AuthResult,
+  AuthUser,
 } from './auth.service';
 
 // Product Service
@@ -43,7 +39,6 @@ export {
   getNewArrivals,
 } from './product.service';
 export type {
-  ProductResponse,
   ProductFilterParams,
   ProductListResult,
 } from './product.service';
@@ -57,10 +52,6 @@ export {
   clearCart,
 } from './cart.service';
 export type {
-  CartItem,
-  CartResponse,
-  AddToCartRequest,
-  UpdateCartItemRequest,
   CartResult,
 } from './cart.service';
 
@@ -72,14 +63,17 @@ export {
   cancelOrder,
 } from './order.service';
 export type {
-  OrderItem,
-  ShippingAddress,
-  OrderResponse,
-  CreateOrderRequest,
   OrderResult,
   OrderListResult,
 } from './order.service';
 
 // Category Service
 export { getCategories, getCategoryBySlug } from './category.service';
-export type { CategoryResponse } from './category.service';
+
+// Wishlist Service
+export {
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  isInWishlist,
+} from './wishlist.service';

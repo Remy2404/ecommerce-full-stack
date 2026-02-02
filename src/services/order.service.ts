@@ -1,96 +1,39 @@
 import api from './api';
 import { AxiosError } from 'axios';
+import { 
+  Order, 
+  OrderApiResponse, 
+  CreateOrderRequest, 
+  OrderResult, 
+  OrderListResult,
+  mapOrder
+} from '@/types';
 
-// ============================================================================
-// Types
-// ============================================================================
+export type { 
+  Order, 
+  OrderApiResponse, 
+  CreateOrderRequest, 
+  OrderResult, 
+  OrderListResult 
+};
+export { mapOrder };
 
-export interface OrderItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  productImage: string | null;
-  variantId: string | null;
-  variantName: string | null;
-  price: number;
-  quantity: number;
-  subtotal: number;
-}
-
-export interface ShippingAddress {
-  fullName: string;
-  phone: string;
-  street: string;
-  city: string;
-  state?: string;
-  postalCode: string;
-  country: string;
-}
-
-export interface OrderResponse {
-  id: string;
-  orderNumber: string;
-  userId: string; // Backend might not send userId in response? Check OrderResponse.java. It doesn't.
-  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
-  paymentMethod?: string | null; 
-  shippingAddress?: ShippingAddress; 
-  items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number; 
-  discount: number;
-  total: number;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt?: string; 
-}
-
-export interface CreateOrderRequest {
-  shippingAddressId?: string;
-  shippingAddress?: ShippingAddress;
-  paymentMethod: 'COD' | 'CARD' | 'KHQR' | 'WING';
-  notes?: string;
-  promoCode?: string;
-}
-
-export interface PaginatedResponse<T> {
-  content: T[];
+// Pagination wrapper for ordres
+export interface OrderPaginatedResponse {
+  content: OrderApiResponse[];
   totalElements: number;
   totalPages: number;
   size: number;
   number: number;
-  first: boolean;
-  last: boolean;
 }
-
-export interface OrderResult {
-  success: boolean;
-  order?: OrderResponse;
-  error?: string;
-}
-
-export interface OrderListResult {
-  orders: OrderResponse[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-// ============================================================================
-// Order Service
-// ============================================================================
 
 /**
  * Create a new order
  */
 export async function createOrder(data: CreateOrderRequest): Promise<OrderResult> {
   try {
-    const response = await api.post<OrderResponse>('/orders', data);
-    return { success: true, order: response.data };
+    const response = await api.post<OrderApiResponse>('/orders', data);
+    return { success: true, order: mapOrder(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Failed to create order';
@@ -106,14 +49,14 @@ export async function getUserOrders(
   size: number = 20
 ): Promise<OrderListResult> {
   try {
-    const response = await api.get<PaginatedResponse<OrderResponse>>(
+    const response = await api.get<OrderPaginatedResponse>(
       `/orders?page=${page}&size=${size}`
     );
 
     const data = response.data;
     
     return {
-      orders: data.content,
+      orders: data.content.map(mapOrder),
       pagination: {
         page: data.number,
         limit: data.size,
@@ -133,10 +76,10 @@ export async function getUserOrders(
 /**
  * Get order by order number
  */
-export async function getOrderByNumber(orderNumber: string): Promise<OrderResponse | null> {
+export async function getOrderByNumber(orderNumber: string): Promise<Order | null> {
   try {
-    const response = await api.get<OrderResponse>(`/orders/${orderNumber}`);
-    return response.data;
+    const response = await api.get<OrderApiResponse>(`/orders/${orderNumber}`);
+    return mapOrder(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 404) {
@@ -152,8 +95,8 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderRespon
  */
 export async function cancelOrder(orderNumber: string): Promise<OrderResult> {
   try {
-    const response = await api.post<OrderResponse>(`/orders/${orderNumber}/cancel`);
-    return { success: true, order: response.data };
+    const response = await api.post<OrderApiResponse>(`/orders/${orderNumber}/cancel`);
+    return { success: true, order: mapOrder(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message = axiosError.response?.data?.message || 'Failed to cancel order';

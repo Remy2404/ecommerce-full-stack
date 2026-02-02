@@ -65,7 +65,7 @@ export default function ProfilePage() {
   const profileUser = {
     name: user.name,
     email: user.email,
-    image: user.avatar || undefined,
+    image: user.avatarUrl || undefined,
     memberSince: 'Member',
   };
 

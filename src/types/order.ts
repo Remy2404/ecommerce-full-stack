@@ -1,13 +1,70 @@
 /**
  * Order-related type definitions
- * These types mirror the Spring Boot backend models
  */
 
-// Enums
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
-export type PaymentMethod = 'CREDIT_CARD' | 'DEBIT_CARD' | 'BANK_TRANSFER' | 'KHQR' | 'WING' | 'CASH_ON_DELIVERY';
-export type DeliveryStatus = 'PENDING' | 'PREPARING' | 'SHIPPED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'FAILED';
+// --- Backend API Responses (DTOs) ---
+
+export interface OrderItemApiResponse {
+  id: string;
+  orderId?: string;
+  productId: string;
+  productName: string;
+  productImage: string | null;
+  productSlug?: string;
+  variantId: string | null;
+  variantName: string | null;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface OrderApiResponse {
+  id: string;
+  orderNumber: string;
+  userId?: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: string | null;
+  shippingAddress?: OrderShippingAddress;
+  items: OrderItemApiResponse[];
+  subtotal: number;
+  deliveryFee: number;
+  discount: number;
+  tax: number;
+  total: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface OrderShippingAddress {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+}
+
+// --- Frontend Domain Models ---
+
+import { PaymentStatus } from './payment';
+
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  productImage: string | null;
+  variantId: string | null;
+  variantName: string | null;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
 
 export interface Order {
   id: string;
@@ -15,74 +72,99 @@ export interface Order {
   userId: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
-  discount?: number;
-  tax?: number;
+  discount: number;
+  tax: number;
   total: number;
-  deliveryInstructions?: string;
-  notes?: string;
-  orderItems?: OrderItem[];
+  shippingAddress?: OrderShippingAddress;
+  notes?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  productId: string;
-  productName: string;
-  productImage?: string;
-  variantId?: string;
-  variantName?: string;
-  quantity: number;
-  price: number; 
-  subtotal: number;
-}
+// --- Service Inputs (for API) ---
 
-export interface Payment {
-  id: string;
-  orderId: string;
-  method: PaymentMethod;
-  status: PaymentStatus;
-  amount: number;
-  transactionId?: string;
-  paidAt?: string;
-  createdAt: string;
-}
-
-export interface Delivery {
-  id: string;
-  orderId: string;
-  status: DeliveryStatus;
-  trackingNumber?: string;
-  carrier?: string;
-  estimatedDelivery?: string;
-  deliveredTime?: string;
+export interface CreateOrderRequest {
+  shippingAddressId?: string;
+  shippingAddress?: OrderShippingAddress;
+  paymentMethod: 'COD' | 'CARD' | 'KHQR' | 'WING';
   notes?: string;
+  promoCode?: string;
 }
 
-export interface Promotion {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  discountType: 'PERCENTAGE' | 'FIXED';
-  discountValue: number;
-  minOrderAmount?: number;
-  maxDiscountAmount?: number;
-  usageLimit?: number;
-  usageCount: number;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
+// --- UI Logic Types & Results ---
+
+export interface OrderResult {
+  success: boolean;
+  order?: Order;
+  error?: string;
 }
 
-export interface PromotionUsage {
-  id: string;
-  promotionId: string;
-  userId: string;
-  orderId: string;
-  discountAmount: number;
-  usedAt: string;
+export interface OrderListResult {
+  orders: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
+
+// --- Transformation Logic ---
+
+export function mapOrderItem(raw: OrderItemApiResponse): OrderItem {
+  return {
+    id: raw.id,
+    orderId: raw.orderId || '',
+    productId: raw.productId,
+    productName: raw.productName,
+    productImage: raw.productImage,
+    variantId: raw.variantId,
+    variantName: raw.variantName,
+    price: Number(raw.price),
+    quantity: raw.quantity,
+    subtotal: Number(raw.subtotal),
+  };
+}
+
+export function mapOrder(raw: OrderApiResponse): Order {
+  return {
+    id: raw.id,
+    orderNumber: raw.orderNumber,
+    userId: raw.userId || '',
+    status: raw.status,
+    paymentStatus: raw.paymentStatus,
+    items: (raw.items || []).map(mapOrderItem),
+    subtotal: Number(raw.subtotal),
+    deliveryFee: Number(raw.deliveryFee || 0),
+    discount: Number(raw.discount || 0),
+    tax: Number(raw.tax || 0),
+    total: Number(raw.total),
+    shippingAddress: raw.shippingAddress,
+    notes: raw.notes,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt || raw.createdAt,
+  };
+}
+
+// --- UI Logic Types & Constants ---
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING: 'Pending',
+  CONFIRMED: 'Confirmed',
+  PROCESSING: 'Processing',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled'
+};
+
+export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  CONFIRMED: 'bg-blue-100 text-blue-800',
+  PROCESSING: 'bg-indigo-100 text-indigo-800',
+  SHIPPED: 'bg-purple-100 text-purple-800',
+  DELIVERED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-red-100 text-red-800'
+};

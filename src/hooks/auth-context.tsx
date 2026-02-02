@@ -1,13 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getCurrentUser, isLoggedIn, logout as logoutService, type UserSummary } from '@/services';
+import { getCurrentUser, isLoggedIn, logout, type AuthUser } from '@/services';
 
 interface AuthContextType {
-  user: UserSummary | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (user: UserSummary) => void;
+  login: (user: AuthUser) => void;
   logout: () => Promise<void>;
   refresh: () => void;
 }
@@ -15,7 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserSummary | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
@@ -38,12 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [refresh]);
 
-  const login = useCallback((userData: UserSummary) => {
+  const login = useCallback((userData: AuthUser) => {
     setUser(userData);
   }, []);
 
-  const logout = useCallback(async () => {
-    await logoutService();
+  const logoutHander = useCallback(async () => {
+    await logout();
     setUser(null);
     // Redirect to login page
     window.location.href = '/login';
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: user !== null,
     isLoading,
     login,
-    logout,
+    logout: logoutHander,
     refresh,
   };
 

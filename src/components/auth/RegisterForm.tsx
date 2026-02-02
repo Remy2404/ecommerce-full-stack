@@ -9,11 +9,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
 import { registerUser } from '@/actions/auth.actions';
-import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
+import { registerSchema, type RegisterFormData } from '@/validations/auth';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
-import { setAccessToken } from '@/services/api';
+import api, { setAccessToken } from '@/services/api';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginWithGoogle } from '@/services/auth.service';
 

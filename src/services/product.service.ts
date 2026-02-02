@@ -1,73 +1,17 @@
 import api from './api';
 import { AxiosError } from 'axios';
+import { 
+  Product, 
+  Category, 
+  ProductApiResponse, 
+  CategoryApiResponse,
+  ProductFilterParams,
+  mapProduct,
+  mapCategory
+} from '@/types';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface ProductResponse {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  price: number;
-  comparePrice: number | null;
-  stock: number;
-  images: string[]; // Transformed from backend's comma-separated string
-  rating: number;
-  reviewCount: number;
-  isFeatured: boolean;
-  isActive: boolean;
-  categoryId: string;
-  categoryName?: string;
-  merchantId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Raw response from backend (images as string)
-interface ProductApiResponse {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  price: number;
-  comparePrice: number | null;
-  stock: number;
-  images: string | null; // Backend returns comma-separated string
-  rating: number;
-  reviewCount: number;
-  isFeatured: boolean;
-  isActive: boolean;
-  categoryId: string;
-  categoryName?: string;
-  merchantId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Transform backend product response: convert images string to array
- */
-function transformProduct(product: ProductApiResponse): ProductResponse {
-  return {
-    ...product,
-    images: product.images 
-      ? product.images.split(',').map(url => url.trim()).filter(Boolean)
-      : [],
-  };
-}
-
-export interface ProductFilterParams {
-  page?: number;
-  size?: number;
-  category?: string;
-  featured?: boolean;
-  minPrice?: number;
-  maxPrice?: number;
-  search?: string;
-  sort?: 'price_asc' | 'price_desc' | 'newest' | 'rating' | 'popular';
-}
+export type { Product, Category, ProductApiResponse, CategoryApiResponse, ProductFilterParams };
+export { mapProduct, mapCategory };
 
 export interface PaginatedResponse<T> {
   content: T[];
@@ -80,7 +24,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ProductListResult {
-  products: ProductResponse[];
+  products: Product[];
   pagination: {
     page: number;
     limit: number;
@@ -88,10 +32,6 @@ export interface ProductListResult {
     totalPages: number;
   };
 }
-
-// ============================================================================
-// Product Service
-// ============================================================================
 
 /**
  * Get products with filtering and pagination
@@ -116,7 +56,7 @@ export async function getProducts(params: ProductFilterParams = {}): Promise<Pro
     const data = response.data;
     
     return {
-      products: data.content.map(transformProduct),
+      products: data.content.map(mapProduct),
       pagination: {
         page: data.number,
         limit: data.size,
@@ -136,10 +76,10 @@ export async function getProducts(params: ProductFilterParams = {}): Promise<Pro
 /**
  * Get all products without pagination
  */
-export async function getAllProducts(): Promise<ProductResponse[]> {
+export async function getAllProducts(): Promise<Product[]> {
   try {
     const response = await api.get<ProductApiResponse[]>('/products/all');
-    return response.data.map(transformProduct);
+    return response.data.map(mapProduct);
   } catch (error) {
     console.error('Failed to fetch all products:', error);
     return [];
@@ -149,10 +89,10 @@ export async function getAllProducts(): Promise<ProductResponse[]> {
 /**
  * Get product by slug
  */
-export async function getProductBySlug(slug: string): Promise<ProductResponse | null> {
+export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const response = await api.get<ProductApiResponse>(`/products/${slug}`);
-    return transformProduct(response.data);
+    const response = await api.get<ProductApiResponse>(`/products/slug/${slug}`);
+    return mapProduct(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 404) {
@@ -166,12 +106,12 @@ export async function getProductBySlug(slug: string): Promise<ProductResponse | 
 /**
  * Get featured products
  */
-export async function getFeaturedProducts(limit: number = 8): Promise<ProductResponse[]> {
+export async function getFeaturedProducts(limit: number = 8): Promise<Product[]> {
   try {
     const response = await api.get<PaginatedResponse<ProductApiResponse>>(
       `/products?featured=true&size=${limit}`
     );
-    return response.data.content.map(transformProduct);
+    return response.data.content.map(mapProduct);
   } catch (error) {
     console.error('Failed to fetch featured products:', error);
     return [];
@@ -181,14 +121,27 @@ export async function getFeaturedProducts(limit: number = 8): Promise<ProductRes
 /**
  * Get new arrivals (sorted by newest)
  */
-export async function getNewArrivals(limit: number = 8): Promise<ProductResponse[]> {
+export async function getNewArrivals(limit: number = 8): Promise<Product[]> {
   try {
     const response = await api.get<PaginatedResponse<ProductApiResponse>>(
       `/products?sort=newest&size=${limit}`
     );
-    return response.data.content.map(transformProduct);
+    return response.data.content.map(mapProduct);
   } catch (error) {
     console.error('Failed to fetch new arrivals:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all categories
+ */
+export async function getCategories(): Promise<Category[]> {
+  try {
+    const response = await api.get<CategoryApiResponse[]>('/categories');
+    return response.data.map(mapCategory);
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
     return [];
   }
 }

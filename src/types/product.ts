@@ -1,39 +1,48 @@
 /**
  * Product-related type definitions
- * These types mirror the Spring Boot backend models
+ * Includes backend DTOs, frontend models, enums, and mapping logic
  */
 
-export interface Category {
+import { CategoryApiResponse, Category, mapCategory } from '@/types/category';
+
+// --- Backend API Responses (DTOs) ---
+
+export interface ProductApiResponse {
   id: string;
   name: string;
   slug: string;
-  description?: string;
-  imageUrl?: string;
-  parentId?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  description: string | null;
+  price: number;
+  comparePrice: number | null;
+  stock: number;
+  images: string | null;
+  rating: number;
+  reviewCount: number;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  categoryId?: string;
+  categoryName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+// --- Frontend Domain Models ---
 
 export interface Product {
   id: string;
   name: string;
   slug: string;
   description?: string;
-  shortDescription?: string;
-  basePrice: number;
-  salePrice?: number;
-  sku: string;
+  price: number;
+  comparePrice?: number;
   stock: number;
-  categoryId?: string;
-  category?: Category;
   images: string[];
-  thumbnailUrl?: string;
-  isFeatured: boolean;
+  rating: number;
+  reviewCount: number;
   isActive: boolean;
-  tags?: string[];
-  rating?: number;
-  reviewCount?: number;
+  isFeatured: boolean;
+  categoryId?: string;
+  categoryName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,21 +58,51 @@ export interface ProductVariant {
   isActive: boolean;
 }
 
-export interface Review {
-  id: string;
-  productId: string;
-  userId: string;
-  rating: number;
-  title?: string;
-  comment?: string;
-  isVerified: boolean;
-  createdAt: string;
+// --- Transformation Logic ---
+
+export function mapProduct(raw: ProductApiResponse): Product {
+  return {
+    id: raw.id,
+    name: raw.name,
+    slug: raw.slug,
+    description: raw.description || undefined,
+    price: Number(raw.price),
+    comparePrice: raw.comparePrice ? Number(raw.comparePrice) : undefined,
+    stock: raw.stock || 0,
+    images: typeof raw.images === 'string' 
+      ? raw.images.split(',').map((img: string) => img.trim()).filter(Boolean)
+      : Array.isArray(raw.images) ? raw.images : [],
+    rating: raw.rating || 0,
+    reviewCount: raw.reviewCount || 0,
+    isActive: raw.isActive ?? true,
+    isFeatured: raw.isFeatured ?? false,
+    categoryId: raw.categoryId,
+    categoryName: raw.categoryName,
+    createdAt: raw.createdAt || new Date().toISOString(),
+    updatedAt: raw.updatedAt || new Date().toISOString(),
+  };
 }
 
-export interface WishlistItem {
-  id: string;
-  userId: string;
-  productId: string;
-  product?: Product;
-  createdAt: string;
+// --- UI Logic Types & Constants ---
+
+export type ProductSortOption = 'newest' | 'price-low' | 'price-high' | 'rating' | 'popular';
+
+export interface ProductFilterParams {
+  category?: string;
+  featured?: boolean;
+  sale?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+  sort?: string;
+  page?: number;
+  size?: number;
 }
+
+export const PRODUCT_SORT_LABELS: Record<ProductSortOption, string> = {
+  'newest': 'Newest Arrivals',
+  'price-low': 'Price: Low to High',
+  'price-high': 'Price: High to Low',
+  'rating': 'Top Rated',
+  'popular': 'Most Popular'
+};

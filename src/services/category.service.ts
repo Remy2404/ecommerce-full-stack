@@ -1,17 +1,5 @@
 import api from './api';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface CategoryResponse {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  image: string | null;
-  productCount?: number;
-}
+import { CategoryApiResponse, Category, mapCategory } from '@/types/category';
 
 // ============================================================================
 // Category Service
@@ -20,10 +8,10 @@ export interface CategoryResponse {
 /**
  * Get all categories
  */
-export async function getCategories(): Promise<CategoryResponse[]> {
+export async function getCategories(): Promise<Category[]> {
   try {
-    const response = await api.get<CategoryResponse[]>('/categories');
-    return response.data;
+    const response = await api.get<CategoryApiResponse[]>('/categories');
+    return response.data.map(mapCategory);
   } catch (error) {
     console.error('Failed to fetch categories:', error);
     return [];
@@ -33,10 +21,10 @@ export async function getCategories(): Promise<CategoryResponse[]> {
 /**
  * Get category by slug
  */
-export async function getCategoryBySlug(slug: string): Promise<CategoryResponse | null> {
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
-    const response = await api.get<CategoryResponse>(`/categories/${slug}`);
-    return response.data;
+    const response = await api.get<CategoryApiResponse>(`/categories/${slug}`);
+    return mapCategory(response.data);
   } catch {
     return null;
   }

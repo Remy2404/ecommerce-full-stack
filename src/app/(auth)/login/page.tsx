@@ -13,9 +13,9 @@ import { useGoogleLogin } from '@react-oauth/google';
 
 import { signInWithCredentials } from '@/actions/auth.actions';
 import { loginWithGoogle } from '@/services/auth.service';
-import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { loginSchema, type LoginFormData } from '@/validations/auth';
 import { useAuth } from '@/hooks/auth-context';
-import { setAccessToken } from '@/services/api';
+import api, { setAccessToken } from '@/services/api';
 
 export default function LoginPage() {
   const router = useRouter();

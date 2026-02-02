@@ -71,7 +71,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
           const items: WishlistItem[] = products.map(p => ({
             productId: p.id,
             name: p.name,
-            price: p.basePrice,
+            price: p.price,
             image: p.images[0] || '/placeholder.png',
             stock: p.stock
           }));
