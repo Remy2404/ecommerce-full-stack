@@ -15,26 +15,34 @@ const api = axios.create({
 
 /**
  * Get access token from cookies or localStorage
+ * Updated to be async to support next/headers on the server
  */
-export const getAccessToken = (): string | null => {
+export const getAccessToken = async (): Promise<string | null> => {
   // If in browser, prioritize localStorage
   if (typeof window !== 'undefined') {
     const localToken = localStorage.getItem('accessToken');
     if (localToken) return localToken;
   }
 
-  // Fallback to cookies (works on both client and server via document.cookie or headers)
-  try {
-    const cookies = typeof document !== 'undefined' 
-      ? document.cookie 
-      : '';
-    
+  // Handle server-side cookie access
+  if (typeof window === 'undefined') {
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      const serverToken = cookieStore.get('accessToken')?.value;
+      if (serverToken) return serverToken;
+    } catch (error) {
+      console.error('Error reading accessToken from next/headers:', error);
+    }
+  }
+
+  // Fallback to document.cookie (client-side only)
+  if (typeof document !== 'undefined') {
+    const cookies = document.cookie;
     if (cookies) {
       const match = cookies.match(new RegExp('(^| )accessToken=([^;]+)'));
       if (match) return match[2];
     }
-  } catch (error) {
-    console.error('Error reading accessToken from cookies:', error);
   }
 
   return null;
@@ -64,11 +72,8 @@ export const removeAccessToken = (): void => {
   }
 };
 
-/**
- * Check if user is authenticated (has valid token)
- */
-export const isAuthenticated = (): boolean => {
-  const token = getAccessToken();
+export const isAuthenticated = async (): Promise<boolean> => {
+  const token = await getAccessToken();
   if (!token) return false;
   
   try {
@@ -94,8 +99,8 @@ export const decodeToken = <T = Record<string, unknown>>(token: string): T | nul
 
 // Request interceptor: Attach Authorization header
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
+  async (config: InternalAxiosRequestConfig) => {
+    const token = await getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -115,11 +120,31 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        const config: any = { withCredentials: true };
+
+        // If on server, we MUST forward the refreshToken cookie manually to the backend
+        // because axios.post from node won't automatically use browser cookies
+        if (typeof window === 'undefined') {
+          try {
+            const { cookies } = await import('next/headers');
+            const cookieStore = await cookies();
+            const refreshToken = cookieStore.get('refreshToken')?.value;
+            
+            if (refreshToken) {
+              config.headers = {
+                Cookie: `refreshToken=${refreshToken}`
+              };
+            }
+          } catch (serverError) {
+            console.error('Failed to access cookies for refresh forwarding:', serverError);
+          }
+        }
+
         // Attempt to refresh token using httpOnly cookie
         const refreshResponse = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          config
         );
 
         const data = refreshResponse.data;
@@ -127,7 +152,9 @@ api.interceptors.response.use(
         
         if (token) {
           setAccessToken(token);
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
           return api(originalRequest);
         }
       } catch (refreshError) {

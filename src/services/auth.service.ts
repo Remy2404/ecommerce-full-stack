@@ -141,19 +141,7 @@ export async function refreshToken(): Promise<boolean> {
  * Updated to be async to support cookies() in server actions
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  let token = getAccessToken();
-
-  // If on server and no token yet, try next/headers cookies
-  if (!token && typeof window === 'undefined') {
-    try {
-      // Dynamic import to avoid bundling next/headers for client
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      token = cookieStore.get('accessToken')?.value || null;
-    } catch (error) {
-      console.error('Failed to read cookies on server:', error);
-    }
-  }
+  const token = await getAccessToken();
 
   if (!token) return null;
 

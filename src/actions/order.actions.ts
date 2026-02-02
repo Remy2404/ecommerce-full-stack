@@ -103,13 +103,18 @@ export async function createOrder(data: {
   };
 
   const result = await orderService.createOrder({
+    items: data.items.map(item => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.quantity
+    })),
     shippingAddress: {
-      fullName: data.shippingAddress.fullName || '',
+      fullName: data.shippingAddress.fullName || `${user.name}`,
       phone: data.shippingAddress.phone || '',
       street: data.shippingAddress.street,
       city: data.shippingAddress.city,
-      state: data.shippingAddress.province,
-      postalCode: data.shippingAddress.postalCode,
+      state: data.shippingAddress.province || data.shippingAddress.city,
+      zipCode: data.shippingAddress.postalCode,
       country: 'Cambodia',
     },
     paymentMethod: paymentMethodMap[data.paymentData.method] || 'COD',
@@ -174,7 +179,7 @@ export async function getOrderById(orderId: string) {
         street: order.shippingAddress?.street || '',
         city: order.shippingAddress?.city || '',
         province: order.shippingAddress?.state || '',
-        postalCode: order.shippingAddress?.postalCode || '',
+        postalCode: order.shippingAddress?.zipCode || '',
       },
     },
   };

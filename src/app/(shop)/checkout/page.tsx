@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-// // import { useRouter } from 'next/navigation';
-import { ShoppingBag, ArrowLeft, CheckCircle2, X } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckoutStepper, CheckoutStepperMobile, CheckoutStep } from '@/components/checkout/checkout-stepper';
 import { ShippingForm, ShippingAddress } from '@/components/checkout/shipping-form';
@@ -13,11 +12,13 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
 import { createOrder } from '@/actions/order.actions';
 import { AuthGuard } from '@/components/providers/auth-guard';
+import { KHQR_COLORS } from '@/constants';
 import { KhqrCard } from '@/components/checkout/khqr-card';
 import { PaymentStatusListener } from '@/components/checkout/payment-status-listener';
 import { createKHQR } from '@/services/payment.service';
 import { KHQRResult } from '@/types/payment';
 import { toast } from 'sonner';
+import { SHIPPING_CONFIG } from '@/constants';
 
 export default function CheckoutPage() {
   return (
@@ -123,7 +124,7 @@ function CheckoutPageContent() {
     setIsLoading(true);
     
     try {
-      const shippingFee = subtotal >= 100 ? 0 : 10;
+      const shippingFee = subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
       const discount = 0; // To be implemented with promo codes
       const tax = subtotal * 0.1; // 10% tax
       const total = subtotal + shippingFee + tax - discount;
@@ -263,7 +264,7 @@ function CheckoutPageContent() {
                     shippingAddress={shippingAddress}
                     paymentData={paymentData}
                     subtotal={subtotal}
-                    shippingFee={subtotal >= 100 ? 0 : 10}
+                    shippingFee={subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE}
                     onBack={() => setCurrentStep('payment')}
                     onConfirm={handleConfirmOrder}
                     isLoading={isLoading}
@@ -280,30 +281,116 @@ function CheckoutPageContent() {
         {showKhqrModal && khqrResult && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[2.5rem] p-2 max-w-sm w-full relative max-h-[90vh] overflow-y-auto overflow-x-hidden soft-scrollbar"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background rounded-[2.5rem] p-4 sm:p-8 max-w-[95vw] md:max-w-4xl w-full relative max-h-[95vh] overflow-y-auto soft-scrollbar border border-border shadow-2xl"
             >
               <button 
                 onClick={() => setShowKhqrModal(false)} 
-                className="absolute top-6 right-6 z-10 p-2 rounded-full bg-gray-100/80 text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all active:scale-95"
+                className="absolute top-6 right-6 z-20 p-2 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-95"
               >
                 <X className="w-5 h-5" />
               </button>
               
-              <div className="py-2">
-                <KhqrCard 
-                  qrString={khqrResult.qrString}
-                  amount={orderTotal}
-                  orderNumber={orderNumber}
-                  onRegenerate={async () => {
-                    if (orderId) {
-                      const newKhqr = await createKHQR(orderId);
-                      if (newKhqr) setKhqrResult(newKhqr);
-                    }
-                  }}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                {/* Left Column: Card & Actions */}
+                <div className="flex flex-col items-center gap-6">
+                  <div className="w-full">
+                    <KhqrCard 
+                      qrString={khqrResult.qrString}
+                      md5={khqrResult.md5}
+                      amount={orderTotal}
+                      orderNumber={orderNumber}
+                      onRegenerate={async () => {
+                        if (orderId) {
+                          const newKhqr = await createKHQR(orderId);
+                          if (newKhqr) setKhqrResult(newKhqr);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Actions & Feedback (Moved from Card) */}
+                  <div className="w-full max-w-[300px] space-y-4">
+                    <Button 
+                      onClick={() => {
+                        const deepLink = `bakong://pay?qr=${encodeURIComponent(khqrResult.qrString)}`;
+                        window.location.href = deepLink;
+                      }}
+                      className="w-full text-white rounded-2xl h-14 font-bold text-base flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+                      style={{ 
+                        backgroundColor: KHQR_COLORS.BRAND,
+                        boxShadow: `0 10px 15px -3px ${KHQR_COLORS.BRAND}33` // 20% opacity shadow
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = KHQR_COLORS.BRAND_HOVER)}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = KHQR_COLORS.BRAND)}
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                      Open Banking App
+                    </Button>
+                    
+                    <div className="flex items-center justify-between px-2">
+                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Trace ID</span>
+                       <span className="text-xs font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded-lg border border-border">
+                          {khqrResult.md5.slice(0, 8)}...{khqrResult.md5.slice(-4)}
+                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Instructions */}
+                <div className="flex flex-col h-full justify-center space-y-8 py-4 md:py-12 border-t md:border-t-0 md:border-l border-border md:pl-8">
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-black text-foreground tracking-tight">How to make the payment?</h2>
+                    
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: KHQR_COLORS.BRAND_LIGHT, color: KHQR_COLORS.BRAND }}>1</div>
+                           <p className="font-bold text-foreground">Open Bakong App</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: KHQR_COLORS.BRAND_LIGHT, color: KHQR_COLORS.BRAND }}>2</div>
+                           <p className="font-bold text-foreground">Tap &quot;QR pay&quot;</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: KHQR_COLORS.BRAND_LIGHT, color: KHQR_COLORS.BRAND }}>3</div>
+                           <p className="font-bold text-foreground">Scan</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: KHQR_COLORS.BRAND_LIGHT, color: KHQR_COLORS.BRAND }}>4</div>
+                           <p className="font-bold text-foreground">Confirm and Done</p>
+                        </div>
+                      </div>
+
+                      <div className="relative flex items-center py-2">
+                        <div className="flex-grow border-t border-border"></div>
+                        <span className="flex-shrink mx-4 text-xs font-black text-muted-foreground uppercase tracking-widest">or</span>
+                        <div className="flex-grow border-t border-border"></div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-black text-sm">1</div>
+                           <p className="text-sm font-bold text-muted-foreground">Open any Mobile Banking Apps that support KHQR</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-black text-sm">2</div>
+                           <p className="text-sm font-bold text-muted-foreground">Scan QR Code</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-black text-sm">3</div>
+                           <p className="text-sm font-bold text-muted-foreground">Confirm and Done</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-10 border-t border-border flex flex-col items-center gap-2">
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-50">KHQR • Scan. Pay. Done.</p>
+                  </div>
+                </div>
               </div>
 
               <PaymentStatusListener 

@@ -52,6 +52,13 @@ const config: Config = {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
         },
+        bakong: {
+          DEFAULT: '#E1232E',
+          hover: '#C61E28',
+          light: '#E1232E1A', // 10% opacity
+          black: '#000000',
+          white: '#FFFFFF',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

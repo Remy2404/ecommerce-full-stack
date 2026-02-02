@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Trash2, ShoppingBag, Plus, Minus } from 'lucide-
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
+import { SHIPPING_CONFIG } from '@/constants';
 
 export default function CartPage() {
   const { items, subtotal, updateQuantity, removeItem, clearCart } = useCart();
@@ -17,7 +18,7 @@ export default function CartPage() {
     }).format(price);
   };
 
-  const shippingFee = subtotal >= 100 ? 0 : 10;
+  const shippingFee = subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
   const total = subtotal + shippingFee;
 
   if (items.length === 0) {
@@ -190,7 +191,9 @@ export default function CartPage() {
               </div>
               {shippingFee > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Free shipping on orders over $100
+                  {SHIPPING_CONFIG.FREE_THRESHOLD > 0 
+                    ? `Free shipping on orders over $${SHIPPING_CONFIG.FREE_THRESHOLD}`
+                    : 'Free shipping on all orders'}
                 </p>
               )}
             </div>

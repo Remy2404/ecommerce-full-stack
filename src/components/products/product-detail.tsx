@@ -22,6 +22,7 @@ import { useWishlist } from '@/hooks/wishlist-context';
 import { ProductImageGallery } from './product-image-gallery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { SHIPPING_CONFIG } from '@/constants';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -282,7 +283,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
             <div className="space-y-3 border-t border-border pt-6">
               <div className="flex items-center gap-3 text-sm">
                 <Truck className="h-5 w-5 text-muted-foreground" />
-                <span>Free shipping on orders over $100</span>
+                <span>
+                  {SHIPPING_CONFIG.FREE_THRESHOLD > 0 
+                    ? `Free shipping on orders over $${SHIPPING_CONFIG.FREE_THRESHOLD}`
+                    : 'Free shipping on all orders'}
+                </span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <RefreshCw className="h-5 w-5 text-muted-foreground" />

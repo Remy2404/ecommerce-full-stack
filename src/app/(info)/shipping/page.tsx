@@ -9,8 +9,8 @@ const shippingOptions = [
   {
     name: 'Standard Shipping',
     time: '3-5 business days',
-    price: '$5.00',
-    description: 'Available for all orders within Cambodia',
+    price: '$0.00',
+    description: 'Free for all orders within Cambodia',
     icon: Truck,
   },
   {
@@ -49,7 +49,7 @@ export default function ShippingPage() {
               Shipping Information
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Fast, reliable shipping to your doorstep. Free shipping on orders over $100.
+              Fast, reliable shipping to your doorstep. Free shipping on all orders.
             </p>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function ShippingPage() {
       <section className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="rounded-design-lg bg-primary px-6 py-8 text-center text-primary-foreground">
           <Package className="mx-auto h-8 w-8" />
-          <h3 className="mt-4 text-xl font-bold">Free Shipping on Orders Over $100</h3>
+          <h3 className="mt-4 text-xl font-bold">Free Shipping on All Orders</h3>
           <p className="mt-2 text-primary-foreground/80">
             No code needed. Automatically applied at checkout.
           </p>

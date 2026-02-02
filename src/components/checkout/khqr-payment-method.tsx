@@ -27,16 +27,16 @@ export function KhqrPaymentMethod({ selected, onSelect }: KhqrPaymentMethodProps
       className={cn(
         'group relative flex items-center gap-4 rounded-3xl border-2 p-5 text-left transition-all duration-300 w-full',
         selected
-          ? 'border-[#D32F2F] bg-rose-50/30 ring-4 ring-[#D32F2F]/10'
-          : 'border-gray-100 hover:border-[#D32F2F]/30 hover:bg-gray-50'
+          ? 'border-[#D32F2F] bg-rose-500/5 ring-4 ring-[#D32F2F]/10'
+          : 'border-border bg-card/50 hover:border-[#D32F2F]/30 hover:bg-accent/50'
       )}
     >
       <div
         className={cn(
           'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-300',
         selected
-          ? 'bg-[#D32F2F] text-white shadow-lg shadow-rose-200'
-          : 'bg-white text-gray-500 border border-gray-100 group-hover:bg-[#D32F2F]/5 group-hover:text-[#D32F2F]'
+          ? 'bg-[#D32F2F] text-white shadow-lg shadow-[#D32F2F]/20'
+          : 'bg-background text-muted-foreground border border-border group-hover:bg-[#D32F2F]/5 group-hover:text-[#D32F2F]'
         )}
       >
         <div className="relative w-10 h-10">
@@ -51,7 +51,7 @@ export function KhqrPaymentMethod({ selected, onSelect }: KhqrPaymentMethodProps
       
       <div className="flex-1">
         <div className="flex items-center gap-2">
-            <p className={cn("font-bold text-lg leading-tight transition-colors", selected ? "text-[#B71C1C]" : "text-gray-900")}>
+            <p className={cn("font-bold text-lg leading-tight transition-colors", selected ? "text-[#D32F2F]" : "text-foreground")}>
                 KHQR Payment
             </p>
             {selected && (
@@ -60,18 +60,18 @@ export function KhqrPaymentMethod({ selected, onSelect }: KhqrPaymentMethodProps
                 </span>
             )}
         </div>
-        <p className="text-sm text-gray-500 font-medium mt-1">
+        <p className="text-sm text-muted-foreground font-medium mt-1">
           Scan to pay with any banking app
         </p>
       </div>
 
       <div className="hidden sm:flex flex-col items-end gap-1">
-          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Supports</span>
+          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Supports</span>
           <div className="flex -space-x-1.5 transition-all duration-300 group-hover:scale-110">
-             <div className="w-5 h-5 rounded-full border border-white bg-white overflow-hidden shadow-sm">
+             <div className="w-5 h-5 rounded-full border border-background bg-white overflow-hidden shadow-sm">
                 <Image src="/KHQR Logo.png" alt="Bakong" width={20} height={20} />
              </div>
-             <div className="w-5 h-5 rounded-full border border-white bg-[#D32F2F] flex items-center justify-center shadow-sm">
+             <div className="w-5 h-5 rounded-full border border-background bg-[#D32F2F] flex items-center justify-center shadow-sm">
                 <span className="text-[6px] text-white font-black">QR</span>
              </div>
           </div>

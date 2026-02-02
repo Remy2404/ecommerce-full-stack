@@ -43,7 +43,7 @@ export interface OrderShippingAddress {
   street: string;
   city: string;
   state?: string;
-  postalCode: string;
+  zipCode: string;
   country: string;
 }
 
@@ -86,9 +86,16 @@ export interface Order {
 
 // --- Service Inputs (for API) ---
 
+export interface OrderItemRequest {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}
+
 export interface CreateOrderRequest {
   shippingAddressId?: string;
   shippingAddress?: OrderShippingAddress;
+  items: OrderItemRequest[];
   paymentMethod: 'COD' | 'CARD' | 'KHQR' | 'WING';
   notes?: string;
   promoCode?: string;
@@ -142,7 +149,10 @@ export function mapOrder(raw: OrderApiResponse): Order {
     discount: Number(raw.discount || 0),
     tax: Number(raw.tax || 0),
     total: Number(raw.total),
-    shippingAddress: raw.shippingAddress,
+    shippingAddress: raw.shippingAddress ? {
+      ...raw.shippingAddress,
+      zipCode: raw.shippingAddress.zipCode
+    } : undefined,
     notes: raw.notes,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt || raw.createdAt,
