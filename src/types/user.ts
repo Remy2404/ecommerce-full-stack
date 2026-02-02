@@ -14,6 +14,7 @@ export interface UserApiResponse {
   isActive: boolean;
   emailVerified: boolean;
   phoneNumber?: string;
+  avatar?: string;
   avatarUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -74,7 +75,7 @@ export function mapAuthUser(raw: UserApiResponse): AuthUser {
     email: raw.email,
     name: raw.name || `${raw.firstName} ${raw.lastName}`.trim(),
     role: raw.role,
-    avatarUrl: raw.avatarUrl,
+    avatarUrl: raw.avatar || raw.avatarUrl,
     emailVerified: raw.emailVerified,
   };
 }

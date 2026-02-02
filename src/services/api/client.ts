@@ -97,10 +97,12 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        const { accessToken } = refreshResponse.data;
-        if (accessToken) {
-          setAccessToken(accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        const data = refreshResponse.data;
+        const token = 'token' in data ? data.token : data.accessToken;
+        
+        if (token) {
+          setAccessToken(token);
+          originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         }
       } catch (refreshError) {

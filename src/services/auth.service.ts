@@ -122,11 +122,11 @@ export async function logout(): Promise<void> {
  */
 export async function refreshToken(): Promise<boolean> {
   try {
-    const response = await api.post<{ accessToken: string }>('/auth/refresh');
-    const { accessToken } = response.data;
+    const response = await api.post<AuthResponse>('/auth/refresh');
+    const { token } = response.data;
     
-    if (accessToken) {
-      setAccessToken(accessToken);
+    if (token) {
+      setAccessToken(token);
       return true;
     }
     return false;

@@ -25,6 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Initialize auth state from local storage on mount
+    refresh();
 
     // Listen for storage events (login/logout from other tabs)
     const handleStorageChange = (e: StorageEvent) => {
