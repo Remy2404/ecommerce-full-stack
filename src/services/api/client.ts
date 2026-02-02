@@ -14,28 +14,53 @@ const api = axios.create({
 });
 
 /**
- * Get access token from localStorage (client-side only)
+ * Get access token from cookies or localStorage
  */
 export const getAccessToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
+  // If in browser, prioritize localStorage
+  if (typeof window !== 'undefined') {
+    const localToken = localStorage.getItem('accessToken');
+    if (localToken) return localToken;
+  }
+
+  // Fallback to cookies (works on both client and server via document.cookie or headers)
+  try {
+    const cookies = typeof document !== 'undefined' 
+      ? document.cookie 
+      : '';
+    
+    if (cookies) {
+      const match = cookies.match(new RegExp('(^| )accessToken=([^;]+)'));
+      if (match) return match[2];
+    }
+  } catch (error) {
+    console.error('Error reading accessToken from cookies:', error);
+  }
+
+  return null;
 };
 
 /**
- * Store access token in localStorage
+ * Store access token in localStorage and cookies
  */
 export const setAccessToken = (token: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('accessToken', token);
+    
+    // Also set as cookie for server-side access (expires in 7 days)
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000));
+    document.cookie = `accessToken=${token};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
   }
 };
 
 /**
- * Remove access token from localStorage
+ * Remove access token from localStorage and cookies
  */
 export const removeAccessToken = (): void => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('accessToken');
+    document.cookie = 'accessToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
   }
 };
 

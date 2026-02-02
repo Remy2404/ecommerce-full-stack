@@ -49,7 +49,7 @@ const faqCategories = [
     questions: [
       {
         q: 'What payment methods do you accept?',
-        a: 'We accept Visa, Mastercard, JCB, Wing Money, and Cash on Delivery. All card transactions are secured with SSL encryption.',
+        a: 'We accept Visa, Mastercard, JCB, KHQR, and Cash on Delivery. All card transactions are secured with SSL encryption.',
       },
       {
         q: 'Is my payment information secure?',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 // // import { useRouter } from 'next/navigation';
-import { ShoppingBag, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckoutStepper, CheckoutStepperMobile, CheckoutStep } from '@/components/checkout/checkout-stepper';
 import { ShippingForm, ShippingAddress } from '@/components/checkout/shipping-form';
@@ -13,6 +13,11 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
 import { createOrder } from '@/actions/order.actions';
 import { AuthGuard } from '@/components/providers/auth-guard';
+import { KhqrCard } from '@/components/checkout/khqr-card';
+import { PaymentStatusListener } from '@/components/checkout/payment-status-listener';
+import { createKHQR } from '@/services/payment.service';
+import { KHQRResult } from '@/types/payment';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   return (
@@ -29,10 +34,16 @@ function CheckoutPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string>('');
+  const [orderId, setOrderId] = useState<string>('');
 
   // Form data states
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+
+  // KHQR Payment states
+  const [khqrResult, setKhqrResult] = useState<KHQRResult | null>(null);
+  const [showKhqrModal, setShowKhqrModal] = useState(false);
+  const [orderTotal, setOrderTotal] = useState(0);
 
   // Empty cart state
   if (items.length === 0 && !isComplete) {
@@ -116,6 +127,7 @@ function CheckoutPageContent() {
       const discount = 0; // To be implemented with promo codes
       const tax = subtotal * 0.1; // 10% tax
       const total = subtotal + shippingFee + tax - discount;
+      setOrderTotal(total);
 
       const response = await createOrder({
         items,
@@ -130,16 +142,35 @@ function CheckoutPageContent() {
 
       if (response.success && response.data) {
         setOrderNumber(response.data.orderNumber);
+        setOrderId(response.data.orderId);
+        
+        if (paymentData.method === 'KHQR') {
+          try {
+            const khqr = await createKHQR(response.data.orderId);
+            if (khqr) {
+              setKhqrResult(khqr);
+              setShowKhqrModal(true);
+              return;
+            } else {
+              toast.error('Failed to generate KHQR. Please contact support.');
+            }
+          } catch (err) {
+            console.error('KHQR generation error:', err);
+            toast.error('An error occurred while generating payment QR.');
+          }
+        }
+
+        // For COD or Card (if automated) or fallback
         clearCart();
         setIsComplete(true);
       } else {
         // Handle error (could add a toast or error state)
         console.error('Order creation failed:', response.error);
-        alert(`Order creation failed: ${response.error}`);
+        toast.error(`Order creation failed: ${response.error}`);
       }
     } catch (error) {
       console.error('Error during checkout:', error);
-      alert('An unexpected error occurred during checkout. Please try again.');
+      toast.error('An unexpected error occurred during checkout. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -243,6 +274,50 @@ function CheckoutPageContent() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* KHQR Payment Modal */}
+      <AnimatePresence>
+        {showKhqrModal && khqrResult && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2.5rem] p-2 max-w-sm w-full relative max-h-[90vh] overflow-y-auto overflow-x-hidden soft-scrollbar"
+            >
+              <button 
+                onClick={() => setShowKhqrModal(false)} 
+                className="absolute top-6 right-6 z-10 p-2 rounded-full bg-gray-100/80 text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all active:scale-95"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="py-2">
+                <KhqrCard 
+                  qrString={khqrResult.qrString}
+                  amount={orderTotal}
+                  orderNumber={orderNumber}
+                  onRegenerate={async () => {
+                    if (orderId) {
+                      const newKhqr = await createKHQR(orderId);
+                      if (newKhqr) setKhqrResult(newKhqr);
+                    }
+                  }}
+                />
+              </div>
+
+              <PaymentStatusListener 
+                md5={khqrResult.md5}
+                onSuccess={() => {
+                  setShowKhqrModal(false);
+                  clearCart();
+                  setIsComplete(true);
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

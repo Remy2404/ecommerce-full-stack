@@ -88,7 +88,7 @@ export async function registerUser(data: {
  * Note: For server components, this reads from the stored token
  */
 export async function getCurrentUser() {
-  return authService.getCurrentUser();
+  return await authService.getCurrentUser();
 }
 
 /**

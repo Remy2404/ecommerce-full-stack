@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/services/auth.service';
  * Calls Spring Boot backend /api/orders
  */
 export async function getUserOrders(limit: number = 10) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
@@ -37,7 +37,7 @@ export async function getUserOrders(limit: number = 10) {
  * Note: This now uses the order count from the API
  */
 export async function getUserDashboardStats() {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
@@ -82,7 +82,7 @@ export async function createOrder(data: {
     phone?: string;
   };
   paymentData: {
-    method: 'cash' | 'card' | 'khqr' | 'wing';
+    method: 'cash' | 'card' | 'KHQR';
   };
   subtotal: number;
   deliveryFee: number;
@@ -90,17 +90,16 @@ export async function createOrder(data: {
   tax: number;
   total: number;
 }) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
 
   // Map payment method to backend format
-  const paymentMethodMap: Record<string, 'COD' | 'CARD' | 'KHQR' | 'WING'> = {
+  const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD' | 'WING'> = {
     cash: 'COD',
     card: 'CARD',
-    khqr: 'KHQR',
-    wing: 'WING',
+    KHQR: 'KHQR',
   };
 
   const result = await orderService.createOrder({
@@ -134,7 +133,7 @@ export async function createOrder(data: {
  * Calls Spring Boot backend /api/orders/{orderNumber}
  */
 export async function getOrderById(orderId: string) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }

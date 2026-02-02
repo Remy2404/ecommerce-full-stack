@@ -18,8 +18,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    const currentUser = getCurrentUser();
+  const refresh = useCallback(async () => {
+    const currentUser = await getCurrentUser();
     setUser(currentUser);
     setIsLoading(false);
   }, []);

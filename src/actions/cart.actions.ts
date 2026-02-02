@@ -34,7 +34,7 @@ export type CartItem = {
  * Calls Spring Boot backend /api/cart
  */
 export async function getCart(): Promise<CartResult> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
@@ -75,7 +75,7 @@ export async function addToCart(
   quantity: number = 1,
   variantId?: string
 ): Promise<CartResult> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Please log in to add items to cart' };
   }
@@ -109,7 +109,7 @@ export async function addToCart(
  * Calls Spring Boot backend /api/cart/remove/{itemId}
  */
 export async function removeFromCart(itemId: string): Promise<CartResult> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
@@ -142,7 +142,7 @@ export async function updateCartQuantity(
   itemId: string,
   quantity: number
 ): Promise<CartResult> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
@@ -179,7 +179,7 @@ export async function updateCartQuantity(
  * Calls Spring Boot backend /api/cart/clear
  */
 export async function clearCart(): Promise<{ success: boolean; error?: string }> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }

@@ -138,9 +138,23 @@ export async function refreshToken(): Promise<boolean> {
 
 /**
  * Get current user from stored JWT
+ * Updated to be async to support cookies() in server actions
  */
-export function getCurrentUser(): AuthUser | null {
-  const token = getAccessToken();
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  let token = getAccessToken();
+
+  // If on server and no token yet, try next/headers cookies
+  if (!token && typeof window === 'undefined') {
+    try {
+      // Dynamic import to avoid bundling next/headers for client
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      token = cookieStore.get('accessToken')?.value || null;
+    } catch (error) {
+      console.error('Failed to read cookies on server:', error);
+    }
+  }
+
   if (!token) return null;
 
   const decoded = decodeToken<{
@@ -177,8 +191,9 @@ export function getCurrentUser(): AuthUser | null {
 /**
  * Check if user is authenticated
  */
-export function isLoggedIn(): boolean {
-  return getCurrentUser() !== null;
+export async function isLoggedIn(): Promise<boolean> {
+  const user = await getCurrentUser();
+  return user !== null;
 }
 
 /**

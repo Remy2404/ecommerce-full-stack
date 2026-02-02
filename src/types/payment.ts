@@ -18,6 +18,30 @@ export interface PaymentApiResponse {
   updatedAt: string;
 }
 
+export interface KHQRResult {
+  qrString: string;
+  md5: string;
+}
+
+export interface KHQRVerificationResponse {
+  isPaid: boolean;
+  paidAmount: number;
+  currency: string;
+  message: string;
+}
+
+export interface KHQRApiResponse {
+  success: boolean;
+  message: string;
+  data: KHQRResult;
+}
+
+export interface KHQRVerificationApiResponse {
+  success: boolean;
+  message: string;
+  data: KHQRVerificationResponse;
+}
+
 // --- Frontend Domain Models ---
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
@@ -50,5 +74,4 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   COD: 'Cash on Delivery',
   CARD: 'Credit/Debit Card',
   KHQR: 'KHQR (Bakong)',
-  WING: 'Wing Bank',
 };

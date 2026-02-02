@@ -51,8 +51,8 @@ export function OrderSummary({
     switch (method) {
       case 'card':
         return 'Credit/Debit Card';
-      case 'wing':
-        return 'Wing Money';
+      case 'KHQR':
+        return 'KHQR';
       case 'cash':
         return 'Cash on Delivery';
       default:
