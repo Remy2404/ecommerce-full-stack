@@ -21,6 +21,16 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+  
+  const getSafeRedirectUrl = (url: string) => {
+    if (!url) return '/';
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      return url;
+    }
+    return '/';
+  };
+
+  const safeCallbackUrl = getSafeRedirectUrl(callbackUrl);
   const { login, isAuthenticated } = useAuth();
   
   useEffect(() => {
@@ -58,7 +68,7 @@ export default function LoginPage() {
       const result = await signInWithCredentials(
         data.email,
         data.password,
-        callbackUrl
+        safeCallbackUrl
       );
 
       if (result.success && result.token) {
@@ -69,7 +79,7 @@ export default function LoginPage() {
           description: 'Welcome back to our store.',
         });
         
-        router.push(callbackUrl);
+        router.push(safeCallbackUrl);
       } else if (result.error) {
         toast.error('Login failed', {
           description: result.error,
@@ -88,7 +98,6 @@ export default function LoginPage() {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        console.log("Google login success:", tokenResponse); // Debug log
         // Use client-side service directly
         const result = await loginWithGoogle(tokenResponse.access_token);
         
@@ -100,7 +109,7 @@ export default function LoginPage() {
             description: 'Welcome back to our store.',
           });
           
-          router.push(callbackUrl);
+          router.push(safeCallbackUrl);
         } else if (result.error) {
             console.error("Backend refused login:", result.error);
           toast.error('Google Sign In failed', {
