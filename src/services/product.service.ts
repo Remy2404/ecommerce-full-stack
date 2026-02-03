@@ -6,31 +6,18 @@ import {
   ProductApiResponse, 
   CategoryApiResponse,
   ProductFilterParams,
+  PaginatedResponse,
+  Pagination,
   mapProduct,
   mapCategory
 } from '@/types';
 
-export type { Product, Category, ProductApiResponse, CategoryApiResponse, ProductFilterParams };
+export type { Product, Category, ProductApiResponse, CategoryApiResponse, ProductFilterParams, PaginatedResponse, Pagination };
 export { mapProduct, mapCategory };
-
-export interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-}
 
 export interface ProductListResult {
   products: Product[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: Pagination;
 }
 
 /**

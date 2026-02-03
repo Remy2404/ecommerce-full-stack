@@ -3,72 +3,36 @@
  * These types mirror the Spring Boot backend models
  */
 
-// Enums
-export type UserRole = 'USER' | 'ADMIN' | 'MERCHANT';
+import { UserApiResponse, AuthUser, UserRole } from './user';
 
-export interface User {
-  id: string;
+// --- Backend API Responses (DTOs) ---
+
+export interface AuthResponse {
+  token: string;
+  refreshToken?: string;
+  user: UserApiResponse;
+}
+
+// --- Frontend Domain Models ---
+
+export interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: AuthUser;
+  token?: string;
+}
+
+export interface JwtPayload {
+  id?: string;
+  sub: string;
   email: string;
-  phone?: string;
-  firstName: string;
-  lastName: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  role: UserRole | UserRole[];
   avatar?: string;
-  role: UserRole;
-  isActive: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  exp: number;
 }
 
-export interface Address {
-  id: string;
-  userId: string;
-  label?: string;
-  street: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  country: string;
-  isDefault: boolean;
-}
-
-export interface Merchant {
-  id: string;
-  userId: string;
-  businessName: string;
-  bakongId: string;
-  isVerified: boolean;
-  createdAt: string;
-}
-
-export interface WingPoints {
-  id: string;
-  userId: string;
-  balance: number;
-  lifetimeEarned: number;
-  lifetimeSpent: number;
-}
-
-export interface WingPointsTransaction {
-  id: string;
-  userId: string;
-  type: 'EARN' | 'SPEND' | 'EXPIRE' | 'ADJUST';
-  amount: number;
-  description?: string;
-  orderId?: string;
-  createdAt: string;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  data?: Record<string, any>;
-  createdAt: string;
-}
-
-// Auth-specific types
-export type { LoginCredentials, RegisterData } from './user';
+// Re-export common auth types from user.ts
+export type { UserRole, LoginCredentials, RegisterData } from './user';

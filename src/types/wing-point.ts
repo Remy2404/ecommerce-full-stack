@@ -49,11 +49,15 @@ export interface WingPointTransaction {
 export function mapWingPoints(raw: WingPointsApiResponse): WingPoints {
   return {
     ...raw,
+    balance: Number(raw.balance),
+    lifetimeEarned: Number(raw.lifetimeEarned),
+    lifetimeSpent: Number(raw.lifetimeSpent),
   };
 }
 
 export function mapWingPointTransaction(raw: WingPointTransactionApiResponse): WingPointTransaction {
   return {
     ...raw,
+    amount: Number(raw.amount),
   };
 }

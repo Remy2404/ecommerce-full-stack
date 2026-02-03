@@ -6,6 +6,8 @@ import {
   CreateOrderRequest, 
   OrderResult, 
   OrderListResult,
+  PaginatedResponse,
+  Pagination,
   mapOrder
 } from '@/types';
 
@@ -14,18 +16,11 @@ export type {
   OrderApiResponse, 
   CreateOrderRequest, 
   OrderResult, 
-  OrderListResult 
+  OrderListResult,
+  PaginatedResponse,
+  Pagination
 };
 export { mapOrder };
-
-// Pagination wrapper for ordres
-export interface OrderPaginatedResponse {
-  content: OrderApiResponse[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
 
 /**
  * Create a new order
@@ -49,7 +44,7 @@ export async function getUserOrders(
   size: number = 20
 ): Promise<OrderListResult> {
   try {
-    const response = await api.get<OrderPaginatedResponse>(
+    const response = await api.get<PaginatedResponse<OrderApiResponse>>(
       `/orders?page=${page}&size=${size}`
     );
 
@@ -93,13 +88,60 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
 /**
  * Cancel an order
  */
-export async function cancelOrder(orderNumber: string): Promise<OrderResult> {
+export async function cancelOrder(orderId: string, reason: string = 'User cancelled'): Promise<OrderResult> {
+  return updateOrderStatus(orderId, 'CANCELLED', reason);
+}
+
+/**
+ * Update order status (Admin/Merchant)
+ */
+export async function updateOrderStatus(
+  orderId: string, 
+  status: string, 
+  reason?: string
+): Promise<OrderResult> {
   try {
-    const response = await api.post<OrderApiResponse>(`/orders/${orderNumber}/cancel`);
+    const response = await api.put<OrderApiResponse>(`/orders/${orderId}/status`, {
+      status,
+      reason
+    });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
-    const message = axiosError.response?.data?.message || 'Failed to cancel order';
+    const message = axiosError.response?.data?.message || 'Failed to update order status';
     return { success: false, error: message };
   }
 }
+
+/**
+ * Get all orders (Admin)
+ */
+export async function getAllOrders(
+  page: number = 0,
+  size: number = 20
+): Promise<OrderListResult> {
+  try {
+    const response = await api.get<PaginatedResponse<OrderApiResponse>>(
+      `/orders/all?page=${page}&size=${size}`
+    );
+
+    const data = response.data;
+    
+    return {
+      orders: data.content.map(mapOrder),
+      pagination: {
+        page: data.number,
+        limit: data.size,
+        total: data.totalElements,
+        totalPages: data.totalPages,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch all orders:', error);
+    return {
+      orders: [],
+      pagination: { page: 0, limit: 20, total: 0, totalPages: 0 },
+    };
+  }
+}
+

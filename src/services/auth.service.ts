@@ -6,6 +6,9 @@ import {
   LoginCredentials as LoginRequest, 
   RegisterData as RegisterRequest,
   UserApiResponse,
+  AuthResponse,
+  AuthResult,
+  JwtPayload,
   mapAuthUser,
 } from '@/types';
 
@@ -14,24 +17,12 @@ export type {
   User, 
   LoginRequest, 
   RegisterRequest, 
-  UserApiResponse 
+  UserApiResponse,
+  AuthResponse,
+  AuthResult,
+  JwtPayload
 };
 export { mapAuthUser };
-
-// API Response type for authentication
-export interface AuthResponse {
-  token: string;
-  refreshToken?: string;
-  user: UserApiResponse;
-}
-
-// Result type for UI logic
-export interface AuthResult {
-  success: boolean;
-  error?: string;
-  user?: AuthUser;
-  token?: string;
-}
 
 // ============================================================================
 // Auth Service

@@ -57,12 +57,15 @@ export interface PromotionUsage {
 export function mapPromotion(raw: PromotionApiResponse): Promotion {
   return {
     ...raw,
-    minOrderAmount: raw.minOrderAmount || 0,
+    discountValue: Number(raw.discountValue),
+    minOrderAmount: Number(raw.minOrderAmount || 0),
+    maxDiscountAmount: raw.maxDiscountAmount ? Number(raw.maxDiscountAmount) : undefined,
   };
 }
 
 export function mapPromotionUsage(raw: PromotionUsageApiResponse): PromotionUsage {
   return {
     ...raw,
+    discountApplied: Number(raw.discountApplied),
   };
 }

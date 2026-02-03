@@ -2,6 +2,7 @@
 
 import * as orderService from '@/services/order.service';
 import { getCurrentUser } from '@/services/auth.service';
+import { CheckoutInput, Order, OrderListResult } from '@/types';
 
 /**
  * Get all orders for the current user
@@ -17,18 +18,7 @@ export async function getUserOrders(limit: number = 10) {
 
   return {
     success: true,
-    data: result.orders.map((order) => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      status: order.status.toLowerCase(),
-      subtotal: String(order.subtotal),
-      deliveryFee: String(order.deliveryFee),
-      discount: String(order.discount),
-      tax: '0',
-      total: String(order.total),
-      createdAt: new Date(order.createdAt),
-      updatedAt: order.updatedAt ? new Date(order.updatedAt) : new Date(order.createdAt),
-    })),
+    data: result.orders
   };
 }
 
@@ -61,42 +51,14 @@ export async function getUserDashboardStats() {
  * Create a new order
  * Calls Spring Boot backend /api/orders
  */
-export async function createOrder(data: {
-  items: {
-    productId: string;
-    variantId?: string;
-    name: string;
-    image: string;
-    variantName?: string;
-    quantity: number;
-    price: number;
-  }[];
-  shippingAddress: {
-    id?: string;
-    label?: string;
-    street: string;
-    city: string;
-    province?: string;
-    postalCode: string;
-    fullName?: string;
-    phone?: string;
-  };
-  paymentData: {
-    method: 'cash' | 'card' | 'KHQR';
-  };
-  subtotal: number;
-  deliveryFee: number;
-  discount: number;
-  tax: number;
-  total: number;
-}) {
+export async function createOrder(data: CheckoutInput) {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
 
   // Map payment method to backend format
-  const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD' | 'WING'> = {
+  const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD'> = {
     cash: 'COD',
     card: 'CARD',
     KHQR: 'KHQR',
@@ -137,7 +99,7 @@ export async function createOrder(data: {
  * Get order by ID or order number
  * Calls Spring Boot backend /api/orders/{orderNumber}
  */
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string): Promise<{ success: boolean; data?: Order; error?: string }> {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
@@ -151,36 +113,61 @@ export async function getOrderById(orderId: string) {
 
   return {
     success: true,
-    data: {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      status: order.status.toLowerCase(),
-      paymentStatus: order.paymentStatus.toLowerCase(),
-      subtotal: String(order.subtotal),
-      deliveryFee: String(order.deliveryFee),
-      discount: String(order.discount),
-      tax: '0',
-      total: String(order.total),
-      notes: order.notes || null,
-      createdAt: new Date(order.createdAt),
-      updatedAt: order.updatedAt ? new Date(order.updatedAt) : new Date(order.createdAt),
-      items: order.items.map((item) => ({
-        id: item.id,
-        productId: item.productId,
-        productName: item.productName,
-        productImage: item.productImage,
-        variantId: item.variantId,
-        variantName: item.variantName,
-        quantity: item.quantity,
-        unitPrice: String(item.price),
-        subtotal: String(item.subtotal),
-      })),
-      deliveryAddress: {
-        street: order.shippingAddress?.street || '',
-        city: order.shippingAddress?.city || '',
-        province: order.shippingAddress?.state || '',
-        postalCode: order.shippingAddress?.zipCode || '',
-      },
-    },
+    data: order
   };
 }
+
+/**
+ * Update order status (Admin/Merchant only)
+ */
+export async function updateOrderStatus(orderId: string, status: string, reason?: string) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'MERCHANT')) {
+    return { success: false, error: 'Unauthorized: Admin or Merchant privileges required' };
+  }
+
+  const result = await orderService.updateOrderStatus(orderId, status, reason);
+  
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  return { success: true, data: result.order };
+}
+
+/**
+ * Cancel an order
+ */
+export async function performCancelOrder(orderId: string, reason?: string) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const result = await orderService.cancelOrder(orderId, reason);
+  
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  return { success: true, data: result.order };
+}
+
+/**
+ * Get all orders (Admin only)
+ */
+export async function getAllOrders(limit: number = 20) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ADMIN') {
+    return { success: false, error: 'Unauthorized: Admin privileges required' };
+  }
+
+  const result = await orderService.getAllOrders(0, limit);
+
+  return {
+    success: true,
+    data: result.orders,
+    pagination: result.pagination
+  };
+}
+

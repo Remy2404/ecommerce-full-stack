@@ -1,60 +1,66 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { verifyPayment } from '@/services/payment.service';
-import { toast } from 'sonner';
 
 interface PaymentStatusListenerProps {
   md5: string;
+  expiresAt?: string;
   onSuccess: () => void;
-  interval?: number; 
 }
 
-/**
- * PaymentStatusListener Component
- * Auto-polls the backend for payment status and triggers success callback.
- */
-export function PaymentStatusListener({ md5, onSuccess, interval = 3000 }: PaymentStatusListenerProps) {
-  const isPollingRef = useRef(true);
+export function PaymentStatusListener({
+  md5,
+  expiresAt,
+  onSuccess,
+}: PaymentStatusListenerProps) {
+  const [polling, setPolling] = useState(true);
+
+  // Reset polling if MD5 changes (e.g., QR regenerated)
+  useEffect(() => {
+    setPolling(true);
+  }, [md5]);
 
   useEffect(() => {
-    if (!md5) return;
+    if (!polling || !md5) return;
 
-    let timer: NodeJS.Timeout;
-
-    const checkStatus = async () => {
-      if (!isPollingRef.current) return;
-
-      try {
-        const response = await verifyPayment(md5);
-        
-        if (response?.isPaid) {
-          isPollingRef.current = false;
-          toast.success('Payment Received!', {
-            description: `Payment confirmed. Thank you!`,
-          });
-          onSuccess();
-          return;
-        }
-
-        // Continue polling if not paid
-        timer = setTimeout(checkStatus, interval);
-      } catch (error) {
-        console.error('KHQR Polling error:', error);
-        // Only retry if we are still polling
-        if (isPollingRef.current) {
-          timer = setTimeout(checkStatus, interval);
+    // Check if QR is expired locally first
+    const checkExpiration = () => {
+      if (expiresAt) {
+        const expirationTime = new Date(expiresAt).getTime();
+        const now = new Date().getTime();
+        if (now > expirationTime) {
+          setPolling(false);
+          return true;
         }
       }
+      return false;
     };
 
-    checkStatus();
+    if (checkExpiration()) return;
 
-    return () => {
-      isPollingRef.current = false;
-      if (timer) clearTimeout(timer);
-    };
-  }, [md5, onSuccess, interval]);
+    const pollInterval = setInterval(async () => {
+      // Periodic expiration check
+      if (checkExpiration()) {
+        clearInterval(pollInterval);
+        return;
+      }
+
+      try {
+        const result = await verifyPayment(md5);
+
+        if (result?.paid) {
+          setPolling(false);
+          clearInterval(pollInterval);
+          onSuccess();
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [md5, polling, expiresAt, onSuccess]);
 
   return null;
 }

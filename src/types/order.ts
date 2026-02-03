@@ -96,9 +96,42 @@ export interface CreateOrderRequest {
   shippingAddressId?: string;
   shippingAddress?: OrderShippingAddress;
   items: OrderItemRequest[];
-  paymentMethod: 'COD' | 'CARD' | 'KHQR' | 'WING';
+  paymentMethod: 'COD' | 'CARD' | 'KHQR';
   notes?: string;
   promoCode?: string;
+}
+
+/**
+ * Data passed from the Checkout form to the createOrder action
+ */
+export interface CheckoutInput {
+  items: {
+    productId: string;
+    variantId?: string;
+    name: string;
+    image: string;
+    variantName?: string;
+    quantity: number;
+    price: number;
+  }[];
+  shippingAddress: {
+    id?: string;
+    label?: string;
+    street: string;
+    city: string;
+    province?: string;
+    postalCode: string;
+    fullName?: string;
+    phone?: string;
+  };
+  paymentData: {
+    method: 'cash' | 'card' | 'KHQR';
+  };
+  subtotal: number;
+  deliveryFee: number;
+  discount: number;
+  tax: number;
+  total: number;
 }
 
 // --- UI Logic Types & Results ---

@@ -24,7 +24,7 @@ export const getAccessToken = async (): Promise<string | null> => {
     if (localToken) return localToken;
   }
 
-  // Handle server-side cookie access
+  // Handle server-side cookie access (only in Server Components)
   if (typeof window === 'undefined') {
     try {
       const { cookies } = await import('next/headers');
@@ -32,7 +32,9 @@ export const getAccessToken = async (): Promise<string | null> => {
       const serverToken = cookieStore.get('accessToken')?.value;
       if (serverToken) return serverToken;
     } catch (error) {
-      console.error('Error reading accessToken from next/headers:', error);
+      // Silently handle "cookies called outside request scope" error
+      // This occurs when interceptors run during client-side navigation
+      // Safe to ignore - we'll use document.cookie fallback
     }
   }
 
@@ -136,7 +138,7 @@ api.interceptors.response.use(
               };
             }
           } catch (serverError) {
-            console.error('Failed to access cookies for refresh forwarding:', serverError);
+            // Silently handle - cookies() may not be available in this context
           }
         }
 

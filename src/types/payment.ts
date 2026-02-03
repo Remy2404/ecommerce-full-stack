@@ -21,10 +21,11 @@ export interface PaymentApiResponse {
 export interface KHQRResult {
   qrString: string;
   md5: string;
+  expiresAt?: string;
 }
 
 export interface KHQRVerificationResponse {
-  isPaid: boolean;
+  paid: boolean;
   paidAmount: number;
   currency: string;
   message: string;
@@ -65,6 +66,7 @@ export interface Payment {
 export function mapPayment(raw: PaymentApiResponse): Payment {
   return {
     ...raw,
+    amount: Number(raw.amount),
   };
 }
 
