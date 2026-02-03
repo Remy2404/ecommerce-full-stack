@@ -13,6 +13,49 @@ export interface AuthResponse {
   user: UserApiResponse;
 }
 
+export interface TwoFactorResponse {
+  secret: string;
+  qrCodeUrl: string;
+  message?: string;
+}
+
+// --- Backend API Requests (DTOs) ---
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface CompletePasswordResetRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface Enable2FARequest {
+  code: string;
+}
+
 // --- Frontend Domain Models ---
 
 export interface AuthResult {

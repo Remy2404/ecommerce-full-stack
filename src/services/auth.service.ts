@@ -9,6 +9,8 @@ import {
   AuthResponse,
   AuthResult,
   JwtPayload,
+  ChangePasswordRequest,
+  TwoFactorResponse,
   mapAuthUser,
 } from '@/types';
 
@@ -20,7 +22,9 @@ export type {
   UserApiResponse,
   AuthResponse,
   AuthResult,
-  JwtPayload
+  JwtPayload,
+  ChangePasswordRequest,
+  TwoFactorResponse
 };
 export { mapAuthUser };
 
@@ -202,14 +206,44 @@ export async function forgotPassword(email: string): Promise<AuthResult> {
 }
 
 /**
- * Reset password with token
+ * Change user password
  */
-export async function resetPassword(token: string, newPassword: string): Promise<AuthResult> {
+export async function changePassword(data: ChangePasswordRequest): Promise<AuthResult> {
   try {
-    await api.post('/auth/reset-password', { token, newPassword });
+    await api.post('/auth/change-password', data);
     return { success: true };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Password reset failed' };
+    return { success: false, error: axiosError.response?.data?.message || 'Password change failed' };
+  }
+}
+
+/**
+ * Setup 2FA
+ */
+export async function setup2FA(): Promise<{ success: boolean; qrCodeUrl?: string; secret?: string; error?: string }> {
+  try {
+    const response = await api.post<TwoFactorResponse>('/auth/2fa/setup');
+    return { 
+      success: true, 
+      qrCodeUrl: response.data.qrCodeUrl,
+      secret: response.data.secret
+    };
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return { success: false, error: axiosError.response?.data?.message || 'Failed to setup 2FA' };
+  }
+}
+
+/**
+ * Verify 2FA code
+ */
+export async function verify2FA(code: string): Promise<AuthResult> {
+  try {
+    await api.post('/auth/2fa/verify', { code });
+    return { success: true };
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return { success: false, error: axiosError.response?.data?.message || 'Invalid 2FA code' };
   }
 }

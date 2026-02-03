@@ -132,3 +132,26 @@ export async function getCategories(): Promise<Category[]> {
     return [];
   }
 }
+
+/**
+ * Create new product (Admin only)
+ */
+export async function createProduct(data: any): Promise<Product> {
+  const response = await api.post<ProductApiResponse>('/products', data);
+  return mapProduct(response.data);
+}
+
+/**
+ * Update product (Admin only)
+ */
+export async function updateProduct(slug: string, data: any): Promise<Product> {
+  const response = await api.put<ProductApiResponse>(`/products/${slug}`, data);
+  return mapProduct(response.data);
+}
+
+/**
+ * Delete product (Admin only)
+ */
+export async function deleteProduct(slug: string): Promise<void> {
+  await api.delete(`/products/${slug}`);
+}
