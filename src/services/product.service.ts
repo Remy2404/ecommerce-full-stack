@@ -121,19 +121,6 @@ export async function getNewArrivals(limit: number = 8): Promise<Product[]> {
 }
 
 /**
- * Get all categories
- */
-export async function getCategories(): Promise<Category[]> {
-  try {
-    const response = await api.get<CategoryApiResponse[]>('/categories');
-    return response.data.map(mapCategory);
-  } catch (error) {
-    console.error('Failed to fetch categories:', error);
-    return [];
-  }
-}
-
-/**
  * Create new product (Admin only)
  */
 export async function createProduct(data: any): Promise<Product> {
