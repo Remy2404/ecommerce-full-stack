@@ -1,175 +1,206 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
-/**
- * Axios instance configured for Spring Boot backend
- */
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // For cookie-based refresh tokens
-});
+/* ------------------------------------------------------------------ */
+/* Environment helpers */
+/* ------------------------------------------------------------------ */
 
-/**
- * Get access token from cookies or localStorage
- * Updated to be async to support next/headers on the server
- */
+const isBrowser = () => typeof window !== 'undefined';
+const isServer = () => !isBrowser();
+
+/* ------------------------------------------------------------------ */
+/* Token utilities */
+/* ------------------------------------------------------------------ */
+
+const ACCESS_TOKEN_KEY = 'accessToken';
+
 export const getAccessToken = async (): Promise<string | null> => {
-  // If in browser, prioritize localStorage
-  if (typeof window !== 'undefined') {
-    const localToken = localStorage.getItem('accessToken');
-    if (localToken) return localToken;
+  // Browser: localStorage first
+  if (isBrowser()) {
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (token) return token;
   }
 
-  // Handle server-side cookie access (only in Server Components)
-  if (typeof window === 'undefined') {
+  // Server: next/headers cookies
+  if (isServer()) {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      const serverToken = cookieStore.get('accessToken')?.value;
-      if (serverToken) return serverToken;
-    } catch (error) {
-      // Silently handle "cookies called outside request scope" error
-      // This occurs when interceptors run during client-side navigation
-      // Safe to ignore - we'll use document.cookie fallback
+      return cookieStore.get(ACCESS_TOKEN_KEY)?.value ?? null;
+    } catch {
+      // cookies() not available (safe to ignore)
     }
   }
 
-  // Fallback to document.cookie (client-side only)
-  if (typeof document !== 'undefined') {
-    const cookies = document.cookie;
-    if (cookies) {
-      const match = cookies.match(new RegExp('(^| )accessToken=([^;]+)'));
-      if (match) return match[2];
-    }
+  // Browser fallback: document.cookie
+  if (isBrowser()) {
+    const match = document.cookie.match(
+      new RegExp(`(^| )${ACCESS_TOKEN_KEY}=([^;]+)`)
+    );
+    return match?.[2] ?? null;
   }
 
   return null;
 };
 
-/**
- * Store access token in localStorage and cookies
- */
 export const setAccessToken = (token: string): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('accessToken', token);
-    
-    // Also set as cookie for server-side access (expires in 7 days)
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000));
-    document.cookie = `accessToken=${token};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-  }
+  if (!isBrowser()) return;
+
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
+
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  document.cookie = `${ACCESS_TOKEN_KEY}=${token};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
 };
 
-/**
- * Remove access token from localStorage and cookies
- */
 export const removeAccessToken = (): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('accessToken');
-    document.cookie = 'accessToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+  if (!isBrowser()) return;
+
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  document.cookie = `${ACCESS_TOKEN_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
+
+/* ------------------------------------------------------------------ */
+/* JWT helpers */
+/* ------------------------------------------------------------------ */
+
+type JwtPayload = {
+  exp: number;
+  [key: string]: unknown;
+};
+
+export const decodeToken = <T = JwtPayload>(token: string): T | null => {
+  try {
+    return JSON.parse(atob(token.split('.')[1])) as T;
+  } catch {
+    return null;
   }
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {
   const token = await getAccessToken();
   if (!token) return false;
-  
-  try {
-    // Decode JWT payload to check expiration
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp * 1000 > Date.now();
-  } catch {
-    return false;
-  }
+
+  const payload = decodeToken(token);
+  return !!payload && payload.exp * 1000 > Date.now();
 };
 
-/**
- * Decode JWT token to get user info
- */
-export const decodeToken = <T = Record<string, unknown>>(token: string): T | null => {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload)) as T;
-  } catch {
-    return null;
+/* ------------------------------------------------------------------ */
+/* Axios instance */
+/* ------------------------------------------------------------------ */
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
+
+/* ------------------------------------------------------------------ */
+/* Request interceptor */
+/* ------------------------------------------------------------------ */
+
+api.interceptors.request.use(async (config) => {
+  const token = await getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
+
+/* ------------------------------------------------------------------ */
+/* Refresh token queue */
+/* ------------------------------------------------------------------ */
+
+let isRefreshing = false;
+let subscribers: Array<(token: string) => void> = [];
+
+const subscribe = (cb: (token: string) => void) => subscribers.push(cb);
+
+const notifySubscribers = (token: string) => {
+  subscribers.forEach((cb) => cb(token));
+  subscribers = [];
 };
 
-// Request interceptor: Attach Authorization header
-api.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    const token = await getAccessToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+/* ------------------------------------------------------------------ */
+/* Response interceptor */
+/* ------------------------------------------------------------------ */
 
-// Response interceptor: Handle 401 errors
 api.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
 
-    // If 401 and not already retrying, attempt token refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry
+    ) {
+      return Promise.reject(error);
+    }
 
-      try {
-        const config: any = { withCredentials: true };
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        subscribe((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          resolve(api(originalRequest));
+        });
+      });
+    }
 
-        // If on server, we MUST forward the refreshToken cookie manually to the backend
-        // because axios.post from node won't automatically use browser cookies
-        if (typeof window === 'undefined') {
-          try {
-            const { cookies } = await import('next/headers');
-            const cookieStore = await cookies();
-            const refreshToken = cookieStore.get('refreshToken')?.value;
-            
-            if (refreshToken) {
-              config.headers = {
-                Cookie: `refreshToken=${refreshToken}`
-              };
-            }
-          } catch (serverError) {
-            // Silently handle - cookies() may not be available in this context
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const refreshConfig: { 
+        withCredentials: boolean; 
+        headers?: { Cookie: string } 
+      } = { withCredentials: true };
+
+      // Server-side cookie forwarding
+      if (isServer()) {
+        try {
+          const { cookies } = await import('next/headers');
+          const cookieStore = await cookies();
+          const refreshToken = cookieStore.get('refreshToken')?.value;
+          if (refreshToken) {
+            refreshConfig.headers = {
+              Cookie: `refreshToken=${refreshToken}`,
+            };
           }
-        }
+        } catch {}
+      }
 
-        // Attempt to refresh token using httpOnly cookie
-        const refreshResponse = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          {},
-          config
-        );
+      const res = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        {},
+        refreshConfig
+      );
 
-        const data = refreshResponse.data;
-        const token = 'token' in data ? data.token : data.accessToken;
-        
-        if (token) {
-          setAccessToken(token);
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, clear token and redirect to login
-        removeAccessToken();
-        if (typeof window !== 'undefined') {
+      const token = res.data.accessToken ?? res.data.token;
+      if (!token) throw new Error('No access token returned');
+
+      setAccessToken(token);
+      notifySubscribers(token);
+
+      originalRequest.headers.Authorization = `Bearer ${token}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      removeAccessToken();
+
+      if (isBrowser()) {
+        const path = window.location.pathname;
+        if (!path.startsWith('/login') && !path.startsWith('/register')) {
           window.location.href = '/login';
         }
-        return Promise.reject(refreshError);
       }
-    }
 
-    return Promise.reject(error);
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 

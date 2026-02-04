@@ -136,7 +136,27 @@ export async function refreshToken(): Promise<boolean> {
  * Updated to be async to support cookies() in server actions
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const token = await getAccessToken();
+  let token = await getAccessToken();
+
+  // If no token or token expired, try to refresh
+  let shouldRefresh = !token;
+  
+  if (token) {
+    const decoded = decodeToken<{ exp: number }>(token);
+    if (!decoded || decoded.exp * 1000 < Date.now()) {
+      shouldRefresh = true;
+    }
+  }
+
+  if (shouldRefresh) {
+    // Attempt refresh (works if httpOnly cookie is present)
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      token = await getAccessToken();
+    } else {
+      return null;
+    }
+  }
 
   if (!token) return null;
 

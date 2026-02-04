@@ -101,9 +101,8 @@ export async function updateOrderStatus(
   reason?: string
 ): Promise<OrderResult> {
   try {
-    const response = await api.put<OrderApiResponse>(`/orders/${orderId}/status`, {
-      status,
-      reason
+    const response = await api.put<OrderApiResponse>(`/orders/${orderId}/status`, null, {
+      params: { status }
     });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
