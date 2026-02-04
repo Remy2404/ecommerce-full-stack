@@ -206,6 +206,19 @@ export async function forgotPassword(email: string): Promise<AuthResult> {
 }
 
 /**
+ * Reset password with token
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<AuthResult> {
+  try {
+    await api.post('/auth/reset-password', { token, newPassword });
+    return { success: true };
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return { success: false, error: axiosError.response?.data?.message || 'Password reset failed' };
+  }
+}
+
+/**
  * Change user password
  */
 export async function changePassword(data: ChangePasswordRequest): Promise<AuthResult> {
