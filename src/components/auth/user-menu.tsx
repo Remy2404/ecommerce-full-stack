@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, LogOut, Package, Heart, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, Package, Heart, Settings, ChevronDown, LayoutGrid } from 'lucide-react';
 import { signOutUser } from '@/actions/auth.actions';
 
 interface UserMenuProps {
@@ -73,6 +73,16 @@ export function UserMenu({ user }: UserMenuProps) {
             </div>
 
             <div className="p-1">
+              {user.role === 'ADMIN' && (
+                <Link
+                  href="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              )}
               <Link
                 href="/orders"
                 onClick={() => setIsOpen(false)}

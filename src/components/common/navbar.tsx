@@ -16,7 +16,8 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  UserCircle
+  UserCircle,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -52,14 +53,16 @@ export function Navbar() {
   const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isAdminRoute = pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (isAdminRoute) return;
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isAdminRoute]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -97,6 +100,10 @@ export function Navbar() {
     // For links with query params, check if they all match
     return linkParamKeys.every(key => searchParams.get(key) === linkParams.get(key));
   };
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <>
@@ -237,6 +244,16 @@ export function Navbar() {
                             <UserCircle className="h-4 w-4" />
                             My Profile
                           </Link>
+                          {user.role === 'ADMIN' && (
+                            <Link
+                              href="/admin"
+                              className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                              Admin Dashboard
+                            </Link>
+                          )}
                           <Link
                             href="/orders"
                             className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
