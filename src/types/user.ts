@@ -27,7 +27,7 @@ export interface RefreshTokenApiResponse {
 
 // --- Frontend Domain Models ---
 
-export type UserRole = 'USER' | 'ADMIN' | 'MERCHANT';
+export type UserRole = 'CUSTOMER' | 'ADMIN' | 'MERCHANT' | 'DELIVERY';
 
 export interface AuthUser {
   id: string;
@@ -63,6 +63,7 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  confirmPassword: string;
   firstName: string;
   lastName: string;
 }

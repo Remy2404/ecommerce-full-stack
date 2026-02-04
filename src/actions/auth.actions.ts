@@ -72,7 +72,7 @@ export async function registerUser(data: {
     return { success: false, error: firstError || 'Invalid form data' };
   }
 
-  const { firstName, lastName, email, phone, password } = validatedFields.data;
+  const { firstName, lastName, email, phone, password, confirmPassword } = validatedFields.data;
 
   return await authService.register({
     firstName,
@@ -80,6 +80,7 @@ export async function registerUser(data: {
     email,
     phone,
     password,
+    confirmPassword,
   });
 }
 

@@ -129,8 +129,8 @@ export default function AdminOrdersPage() {
 
       <Card>
         <CardContent className="space-y-4 pt-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex flex-1 items-center gap-2">
+          <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+            <div className="flex w-full items-center gap-2 lg:flex-1 lg:min-w-[280px]">
               <Input
                 placeholder="Search by order number or user ID"
                 icon={<Search className="h-4 w-4" />}
@@ -138,12 +138,12 @@ export default function AdminOrdersPage() {
                 onChange={(event) => setQuery(event.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex w-full flex-wrap items-center gap-2 text-sm lg:w-auto">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="h-10 rounded-design border border-input bg-background px-3 text-sm"
+                className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm sm:w-auto"
               >
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
@@ -154,7 +154,7 @@ export default function AdminOrdersPage() {
               <select
                 value={paymentFilter}
                 onChange={(event) => setPaymentFilter(event.target.value as PaymentStatus | 'ALL')}
-                className="h-10 rounded-design border border-input bg-background px-3 text-sm"
+                className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm sm:w-auto"
               >
                 {paymentOptions.map((status) => (
                   <option key={status} value={status}>
@@ -163,20 +163,20 @@ export default function AdminOrdersPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex w-full flex-wrap items-center gap-2 text-sm lg:w-auto">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(event) => setDateFrom(event.target.value)}
-                className="h-10 rounded-design border border-input bg-background px-3 text-sm"
+                className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm sm:w-auto"
               />
               <span className="text-muted-foreground">to</span>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(event) => setDateTo(event.target.value)}
-                className="h-10 rounded-design border border-input bg-background px-3 text-sm"
+                className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm sm:w-auto"
               />
             </div>
           </div>
@@ -189,14 +189,14 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
             <CardTitle>Orders ({filteredOrders.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden rounded-design border border-border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-design border border-border">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold">Order</th>
@@ -285,7 +285,7 @@ export default function AdminOrdersPage() {
                 <div className="grid gap-3 rounded-design border border-border p-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Customer</span>
-                    <span>{selectedOrder.userId || '—'}</span>
+                    <span className="max-w-[200px] break-all text-right">{selectedOrder.userId || '—'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Payment</span>

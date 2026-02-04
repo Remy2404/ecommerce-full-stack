@@ -10,9 +10,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-72">
+      <div className="min-w-0 lg:pl-64 xl:pl-72">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="px-6 py-6 lg:px-10">{children}</main>
+        <main className="px-4 py-6 sm:px-6 lg:px-10">{children}</main>
       </div>
     </div>
   );

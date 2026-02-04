@@ -93,8 +93,8 @@ export default function AdminLoyaltyPage() {
             <CardTitle>Active Promotions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden rounded-design border border-border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-design border border-border">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold">Code</th>
@@ -189,8 +189,8 @@ export default function AdminLoyaltyPage() {
             <CardTitle>Recent Wing Points Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden rounded-design border border-border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-design border border-border">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold">Type</th>
