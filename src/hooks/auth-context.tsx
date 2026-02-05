@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getCurrentUser, isLoggedIn, logout, type AuthUser } from '@/services';
+import { getUserProfile } from '@/services/user.service';
+import { mapUser } from '@/types/user';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -19,9 +21,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    try {
+      const profile = await getUserProfile();
+      setUser(mapUser(profile));
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+      // Fallback to token decoding if API fails or for initial mount if token exists
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {

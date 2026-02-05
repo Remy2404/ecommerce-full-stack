@@ -42,9 +42,15 @@ export async function login(email: string, password: string): Promise<AuthResult
       password,
     });
 
-    const { token, user } = response.data;
+    const { token, user, tempToken } = response.data;
+    
+    // If tempToken is present, 2FA is required
+    if (tempToken) {
+      return { success: true, tempToken };
+    }
+    
+    // Normal login flow
     setAccessToken(token);
-
     return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;

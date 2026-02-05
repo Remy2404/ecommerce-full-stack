@@ -14,8 +14,8 @@ export interface UserApiResponse {
   isActive: boolean;
   emailVerified: boolean;
   phoneNumber?: string;
-  avatar?: string;
   avatarUrl?: string;
+  twofaEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +36,7 @@ export interface AuthUser {
   role: UserRole;
   avatarUrl?: string;
   emailVerified: boolean;
+  twofaEnabled: boolean;
 }
 
 export interface User extends AuthUser {
@@ -68,6 +69,12 @@ export interface RegisterData {
   lastName: string;
 }
 
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}
+
 // --- Transformation Logic ---
 
 export function mapAuthUser(raw: UserApiResponse): AuthUser {
@@ -76,8 +83,9 @@ export function mapAuthUser(raw: UserApiResponse): AuthUser {
     email: raw.email,
     name: raw.name || `${raw.firstName} ${raw.lastName}`.trim(),
     role: raw.role,
-    avatarUrl: raw.avatar || raw.avatarUrl,
+    avatarUrl: raw.avatarUrl,
     emailVerified: raw.emailVerified,
+    twofaEnabled: raw.twofaEnabled,
   };
 }
 

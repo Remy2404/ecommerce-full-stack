@@ -11,6 +11,7 @@ export type AuthResult = {
   error?: string;
   user?: AuthUser;
   token?: string;
+  tempToken?: string;
 };
 
 /**

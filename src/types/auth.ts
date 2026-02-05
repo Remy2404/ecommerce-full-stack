@@ -11,6 +11,7 @@ export interface AuthResponse {
   token: string;
   refreshToken?: string;
   user: UserApiResponse;
+  tempToken?: string; 
 }
 
 export interface TwoFactorResponse {
@@ -63,6 +64,7 @@ export interface AuthResult {
   error?: string;
   user?: AuthUser;
   token?: string;
+  tempToken?: string;
 }
 
 export interface JwtPayload {

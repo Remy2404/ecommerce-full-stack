@@ -154,6 +154,10 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
+      if (isBrowser()) {
+        console.debug('[API] Token expired, attempting refresh...');
+      }
+
       const refreshConfig: { 
         withCredentials: boolean; 
         headers?: { Cookie: string } 
@@ -180,20 +184,32 @@ api.interceptors.response.use(
       );
 
       const token = res.data.accessToken ?? res.data.token;
-      if (!token) throw new Error('No access token returned');
+      if (!token) throw new Error('No access token returned from refresh');
+
+      if (isBrowser()) {
+        console.debug('[API] Token refreshed successfully');
+      }
 
       setAccessToken(token);
       notifySubscribers(token);
 
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return api(originalRequest);
-    } catch (refreshError) {
+    } catch (refreshError: any) {
+      if (isBrowser()) {
+        console.error('[API] Refresh token failed:', {
+          status: refreshError.response?.status,
+          message: refreshError.response?.data?.error || refreshError.message,
+          code: refreshError.response?.data?.code
+        });
+      }
+
       removeAccessToken();
 
       if (isBrowser()) {
         const path = window.location.pathname;
         if (!path.startsWith('/login') && !path.startsWith('/register')) {
-          window.location.href = '/login';
+          window.location.href = '/login?reason=token_expired';
         }
       }
 

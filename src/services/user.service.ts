@@ -1,36 +1,17 @@
-import api from './api';
-import { User, UserApiResponse, mapUser } from '@/types';
+import api from './api/client';
+import { User, UpdateProfileRequest } from '@/types/user';
 
-/**
- * Get current user profile
- */
-export async function getProfile(): Promise<User | null> {
-  try {
-    const response = await api.get<UserApiResponse>('/users/profile');
-    return mapUser(response.data);
-  } catch (error) {
-    console.error('Failed to fetch profile:', error);
-    return null;
-  }
+export async function getUserProfile(): Promise<User> {
+  const response = await api.get<User>('/user/profile');
+  return response.data;
 }
 
-/**
- * Update user profile
- */
-export async function updateProfile(data: Partial<User>): Promise<User> {
-  const response = await api.put<UserApiResponse>('/users/profile', data);
-  return mapUser(response.data);
+export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
+  const response = await api.put<User>('/user/profile', data);
+  return response.data;
 }
 
-/**
- * Get user dashboard statistics
- */
-export async function getUserStats(): Promise<any> {
-  try {
-    const response = await api.get('/users/stats');
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch user stats:', error);
-    return null;
-  }
+export async function getUserStats() {
+  const response = await api.get('/user/stats');
+  return response.data;
 }

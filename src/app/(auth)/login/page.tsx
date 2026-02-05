@@ -70,7 +70,14 @@ export default function LoginPage() {
         data.password
       );
 
-      if (result.success && result.token) {
+      if (result.success && result.tempToken) {
+        // 2FA required - store temp token and redirect
+        sessionStorage.setItem('2fa_temp_token', result.tempToken);
+        toast.info('2FA verification required', {
+          description: 'Enter your authenticator code to continue',
+        });
+        router.push('/2fa');
+      } else if (result.success && result.token) {
         setAccessToken(result.token);
         if (result.user) login(result.user);
         
@@ -80,9 +87,17 @@ export default function LoginPage() {
         
         router.push(safeCallbackUrl);
       } else if (result.error) {
-        toast.error('Login failed', {
-          description: result.error,
-        });
+        // Handle specific error cases
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          toast.error('Please verify your email address', {
+            description: 'Check your inbox for the verification link we sent you.',
+            duration: 6000,
+          });
+        } else {
+          toast.error('Login failed', {
+            description: result.error,
+          });
+        }
       }
     } catch {
       toast.error('Something went wrong', {
@@ -223,6 +238,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     placeholder="you@example.com"
                     disabled={isLoading}
+                    suppressHydrationWarning
                     className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.email
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-700 focus:border-white focus:ring-white'
@@ -262,6 +278,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     placeholder="••••••••"
                     disabled={isLoading}
+                    suppressHydrationWarning
                     className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.password
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-700 focus:border-white focus:ring-white'
