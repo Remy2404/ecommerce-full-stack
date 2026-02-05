@@ -162,7 +162,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                       </div>
                       <div className="flex justify-end mt-4">
                         <Button variant="ghost" size="sm" asChild>
-                           <Link href={`/products/${item.id}`} className="text-xs">
+                           <Link href={`/products/${item.productSlug || item.productId}`} className="text-xs">
                              Buy Again
                              <ChevronRight className="h-3 w-3 ml-1" />
                            </Link>

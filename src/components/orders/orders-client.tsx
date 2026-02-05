@@ -138,7 +138,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                     transition={{ delay: i * 0.05 }}
                     layout
                   >
-                    <Link href={`/orders/${order.id}`}>
+                    <Link href={`/orders/${order.orderNumber}`}>
                       <Card className="hover:border-primary/30 hover:shadow-soft transition-all group overflow-hidden">
                         <CardContent className="p-0">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6">

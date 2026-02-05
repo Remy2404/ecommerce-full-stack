@@ -4,6 +4,18 @@
 
 // --- Backend API Responses (DTOs) ---
 
+export interface SavedPaymentMethodApiResponse {
+  id: string;
+  method: string;
+  brand?: string;
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
+  isDefault?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserApiResponse {
   id: string;
   email: string;
@@ -18,6 +30,8 @@ export interface UserApiResponse {
   twofaEnabled: boolean;
   createdAt: string;
   updatedAt: string;
+  addresses?: any[];
+  savedPaymentMethods?: SavedPaymentMethodApiResponse[];
 }
 
 export interface RefreshTokenApiResponse {
@@ -39,6 +53,18 @@ export interface AuthUser {
   twofaEnabled: boolean;
 }
 
+export interface SavedPaymentMethod {
+  id: string;
+  method: string;
+  brand?: string;
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
+  isDefault?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User extends AuthUser {
   firstName: string;
   lastName: string;
@@ -46,6 +72,7 @@ export interface User extends AuthUser {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  savedPaymentMethods?: SavedPaymentMethod[];
 }
 
 export interface RefreshToken {
@@ -98,5 +125,6 @@ export function mapUser(raw: UserApiResponse): User {
     isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    savedPaymentMethods: raw.savedPaymentMethods,
   };
 }

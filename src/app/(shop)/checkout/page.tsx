@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, CheckCircle2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ import { KHQR_COLORS } from '@/constants';
 import { KhqrCard } from '@/components/checkout/khqr-card';
 import { PaymentStatusListener } from '@/components/checkout/payment-status-listener';
 import { createKHQR } from '@/services/payment.service';
+import { createAddress, getAddresses } from '@/services/address.service';
 import { KHQRResult } from '@/types/payment';
 import { toast } from 'sonner';
 import { SHIPPING_CONFIG } from '@/constants';
@@ -40,11 +41,51 @@ function CheckoutPageContent() {
   // Form data states
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(false);
 
   // KHQR Payment states
   const [khqrResult, setKhqrResult] = useState<KHQRResult | null>(null);
   const [showKhqrModal, setShowKhqrModal] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAddresses() {
+      setAddressesLoading(true);
+      try {
+        const addresses = await getAddresses();
+        if (!isMounted) return;
+        const mapped = addresses.map((addr) => {
+          const [firstName, ...rest] = (addr.fullName || '').split(' ');
+          return {
+            id: addr.id,
+            firstName: firstName || '',
+            lastName: rest.join(' '),
+            email: '',
+            phone: addr.phone,
+            street: addr.street,
+            city: addr.city,
+            province: addr.state || '',
+            postalCode: addr.postalCode,
+            country: addr.country,
+            label: (addr.label as 'home' | 'office' | 'other') || 'home',
+            isDefault: addr.isDefault,
+          } as ShippingAddress;
+        });
+        setSavedAddresses(mapped);
+      } catch (error) {
+        console.error('Failed to load addresses', error);
+      } finally {
+        if (isMounted) setAddressesLoading(false);
+      }
+    }
+
+    loadAddresses();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Empty cart state
   if (items.length === 0 && !isComplete) {
@@ -108,7 +149,42 @@ function CheckoutPageContent() {
     );
   }
 
-  const handleShippingSubmit = (address: ShippingAddress) => {
+  const handleShippingSubmit = async (address: ShippingAddress) => {
+    if (!address.id) {
+      try {
+        const created = await createAddress({
+          label: address.label,
+          fullName: `${address.firstName} ${address.lastName}`.trim(),
+          phone: address.phone,
+          street: address.street,
+          city: address.city,
+          state: address.province,
+          postalCode: address.postalCode,
+          country: address.country,
+          isDefault: address.isDefault,
+        });
+        setSavedAddresses((prev) => [
+          ...prev.filter((a) => a.id !== created.id),
+          {
+            id: created.id,
+            firstName: address.firstName,
+            lastName: address.lastName,
+            email: address.email,
+            phone: created.phone,
+            street: created.street,
+            city: created.city,
+            province: created.state || '',
+            postalCode: created.postalCode,
+            country: created.country,
+            label: (created.label as 'home' | 'office' | 'other') || 'home',
+            isDefault: created.isDefault,
+          },
+        ]);
+      } catch (error) {
+        console.error('Failed to save address:', error);
+      }
+    }
+
     setShippingAddress(address);
     setCurrentStep('payment');
   };
@@ -240,8 +316,9 @@ function CheckoutPageContent() {
                 <div className="rounded-design-lg border border-border bg-background p-6 shadow-soft lg:p-8">
                   <h2 className="mb-6 text-xl font-semibold">Shipping Information</h2>
                   <ShippingForm 
+                    savedAddresses={savedAddresses}
                     onSubmit={handleShippingSubmit}
-                    isLoading={isLoading}
+                    isLoading={isLoading || addressesLoading}
                   />
                 </div>
               )}

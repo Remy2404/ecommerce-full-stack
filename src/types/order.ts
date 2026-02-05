@@ -59,6 +59,7 @@ export interface OrderItem {
   productId: string;
   productName: string;
   productImage: string | null;
+  productSlug?: string;
   variantId: string | null;
   variantName: string | null;
   price: number;
@@ -161,6 +162,7 @@ export function mapOrderItem(raw: OrderItemApiResponse): OrderItem {
     productId: raw.productId,
     productName: raw.productName,
     productImage: raw.productImage,
+    productSlug: raw.productSlug,
     variantId: raw.variantId,
     variantName: raw.variantName,
     price: Number(raw.price),

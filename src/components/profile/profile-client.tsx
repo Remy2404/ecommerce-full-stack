@@ -168,7 +168,7 @@ export function ProfileClient({ user, stats, recentOrders }: ProfileClientProps)
                           {order.status}
                         </Badge>
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/orders/${order.id}`}>
+                          <Link href={`/orders/${order.orderNumber}`}>
                             <ChevronRight className="h-4 w-4" />
                           </Link>
                         </Button>

@@ -1,14 +1,14 @@
 import api from './api/client';
-import { User, UpdateProfileRequest } from '@/types/user';
+import { User, UpdateProfileRequest, UserApiResponse, mapUser } from '@/types/user';
 
 export async function getUserProfile(): Promise<User> {
-  const response = await api.get<User>('/user/profile');
-  return response.data;
+  const response = await api.get<UserApiResponse>('/user/profile');
+  return mapUser(response.data);
 }
 
 export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
-  const response = await api.put<User>('/user/profile', data);
-  return response.data;
+  const response = await api.put<UserApiResponse>('/user/profile', data);
+  return mapUser(response.data);
 }
 
 export async function getUserStats() {
