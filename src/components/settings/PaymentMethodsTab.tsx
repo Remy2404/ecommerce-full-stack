@@ -12,6 +12,7 @@ import {
   deletePaymentMethod,
   getPaymentMethods,
   setDefaultPaymentMethod,
+  updatePaymentMethod,
 } from '@/services/payment-method.service';
 import { SavedPaymentMethod } from '@/types/user';
 
@@ -30,6 +31,7 @@ export function PaymentMethodsTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -47,26 +49,48 @@ export function PaymentMethodsTab() {
     load();
   }, []);
 
-  const handleCreate = async () => {
-    if (!form.method || !form.providerToken) {
-      toast.error('Method and provider token are required');
+  const isValid = () => {
+    if (!form.method) return false;
+    if (!editingId && !form.providerToken) return false;
+    if (form.last4 && !/^\d{4}$/.test(form.last4)) return false;
+    if (form.expMonth && (Number(form.expMonth) < 1 || Number(form.expMonth) > 12)) return false;
+    if (form.expYear && (Number(form.expYear) < 2000 || Number(form.expYear) > 2100)) return false;
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!isValid()) {
+      toast.error('Please enter valid payment details');
       return;
     }
 
     setIsSaving(true);
     try {
-      const created = await createPaymentMethod({
-        method: form.method,
-        brand: form.brand || undefined,
-        last4: form.last4 || undefined,
-        expMonth: form.expMonth ? Number(form.expMonth) : undefined,
-        expYear: form.expYear ? Number(form.expYear) : undefined,
-        providerToken: form.providerToken,
-        isDefault: form.isDefault,
-      });
-      setMethods((prev) => [...prev, created]);
+      if (editingId) {
+        const updated = await updatePaymentMethod(editingId, {
+          brand: form.brand || undefined,
+          last4: form.last4 || undefined,
+          expMonth: form.expMonth ? Number(form.expMonth) : undefined,
+          expYear: form.expYear ? Number(form.expYear) : undefined,
+          isDefault: form.isDefault,
+        });
+        setMethods((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        toast.success('Payment method updated');
+      } else {
+        const created = await createPaymentMethod({
+          method: form.method,
+          brand: form.brand || undefined,
+          last4: form.last4 || undefined,
+          expMonth: form.expMonth ? Number(form.expMonth) : undefined,
+          expYear: form.expYear ? Number(form.expYear) : undefined,
+          providerToken: form.providerToken,
+          isDefault: form.isDefault,
+        });
+        setMethods((prev) => [...prev, created]);
+        toast.success('Payment method saved');
+      }
       setForm({ ...DEFAULT_FORM });
-      toast.success('Payment method saved');
+      setEditingId(null);
     } catch (error) {
       toast.error('Failed to save payment method');
     } finally {
@@ -116,6 +140,24 @@ export function PaymentMethodsTab() {
                       {method.isDefault && <Badge variant="secondary">Default</Badge>}
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingId(method.id);
+                          setForm({
+                            method: method.method,
+                            brand: method.brand || '',
+                            last4: method.last4 || '',
+                            expMonth: method.expMonth ? String(method.expMonth) : '',
+                            expYear: method.expYear ? String(method.expYear) : '',
+                            providerToken: '',
+                            isDefault: !!method.isDefault,
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
                       {!method.isDefault && (
                         <Button size="sm" variant="outline" onClick={() => handleDefault(method.id)}>
                           Set Default
@@ -141,7 +183,7 @@ export function PaymentMethodsTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add Payment Method</CardTitle>
+          <CardTitle>{editingId ? 'Edit Payment Method' : 'Add Payment Method'}</CardTitle>
           <CardDescription>Save a payment method for faster checkout.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
@@ -181,7 +223,22 @@ export function PaymentMethodsTab() {
             />
             Set as default
           </label>
-          <Button onClick={handleCreate} isLoading={isSaving}>Save Payment Method</Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} isLoading={isSaving}>
+              {editingId ? 'Update Payment Method' : 'Save Payment Method'}
+            </Button>
+            {editingId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({ ...DEFAULT_FORM });
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

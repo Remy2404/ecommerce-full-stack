@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { createAddress, deleteAddress, getAddresses, setDefaultAddress } from '@/services/address.service';
+import { createAddress, deleteAddress, getAddresses, setDefaultAddress, updateAddress } from '@/services/address.service';
 import { Address } from '@/types/address';
 
 const DEFAULT_FORM = {
@@ -27,6 +27,7 @@ export function AddressesTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -44,21 +45,40 @@ export function AddressesTab() {
     load();
   }, []);
 
-  const handleCreate = async () => {
+  const isValid = () => {
     if (!form.fullName || !form.phone || !form.street || !form.city || !form.state || !form.postalCode || !form.country) {
+      return false;
+    }
+    if (!/^[-+()\d\s]{6,}$/.test(form.phone)) return false;
+    if (form.postalCode.length < 3) return false;
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!isValid()) {
       toast.error('Please fill all required fields');
       return;
     }
 
     setIsSaving(true);
     try {
-      const created = await createAddress({
-        ...form,
-        label: form.label as 'home' | 'office' | 'other',
-      } as any);
-      setAddresses((prev) => [...prev, created]);
+      if (editingId) {
+        const updated = await updateAddress(editingId, {
+          ...form,
+          label: form.label as 'home' | 'office' | 'other',
+        } as any);
+        setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+        toast.success('Address updated');
+      } else {
+        const created = await createAddress({
+          ...form,
+          label: form.label as 'home' | 'office' | 'other',
+        } as any);
+        setAddresses((prev) => [...prev, created]);
+        toast.success('Address saved');
+      }
       setForm({ ...DEFAULT_FORM });
-      toast.success('Address saved');
+      setEditingId(null);
     } catch (error) {
       toast.error('Failed to save address');
     } finally {
@@ -108,6 +128,26 @@ export function AddressesTab() {
                       {address.isDefault && <Badge variant="secondary">Default</Badge>}
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingId(address.id);
+                          setForm({
+                            label: address.label || 'home',
+                            fullName: address.fullName,
+                            phone: address.phone,
+                            street: address.street,
+                            city: address.city,
+                            state: address.state || '',
+                            postalCode: address.postalCode,
+                            country: address.country,
+                            isDefault: address.isDefault,
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
                       {!address.isDefault && (
                         <Button size="sm" variant="outline" onClick={() => handleDefault(address.id)}>
                           Set Default
@@ -132,8 +172,8 @@ export function AddressesTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add New Address</CardTitle>
-          <CardDescription>Save a new shipping address for faster checkout.</CardDescription>
+          <CardTitle>{editingId ? 'Edit Address' : 'Add New Address'}</CardTitle>
+          <CardDescription>Save a shipping address for faster checkout.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -182,7 +222,22 @@ export function AddressesTab() {
             />
             Set as default
           </label>
-          <Button onClick={handleCreate} isLoading={isSaving}>Save Address</Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} isLoading={isSaving}>
+              {editingId ? 'Update Address' : 'Save Address'}
+            </Button>
+            {editingId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({ ...DEFAULT_FORM });
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
