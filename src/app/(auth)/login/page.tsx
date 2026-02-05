@@ -1,26 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Truck, Zap, ShieldCheck } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
-import { signInWithCredentials, signInWithGoogle } from '@/actions/auth.actions';
-import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { signInWithCredentials } from '@/actions/auth.actions';
+import { loginWithGoogle } from '@/services/auth.service';
+import { loginSchema, type LoginFormData } from '@/validations/auth';
+import { useAuth } from '@/hooks/auth-context';
+import { setAccessToken } from '@/services/api';
 
 export default function LoginPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+  
+  const getSafeRedirectUrl = (url: string) => {
+    if (!url) return '/';
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      return url;
+    }
+    return '/';
+  };
+
+  const safeCallbackUrl = getSafeRedirectUrl(callbackUrl);
+  const { login, isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ... form setup ...
   const {
     register,
     handleSubmit,
@@ -43,22 +67,39 @@ export default function LoginPage() {
     try {
       const result = await signInWithCredentials(
         data.email,
-        data.password,
-        callbackUrl
+        data.password
       );
 
-      if (result.success) {
+      if (result.success && result.tempToken) {
+        // 2FA required - store temp token and redirect
+        sessionStorage.setItem('2fa_temp_token', result.tempToken);
+        toast.info('2FA verification required', {
+          description: 'Enter your authenticator code to continue',
+        });
+        router.push('/2fa');
+      } else if (result.success && result.token) {
+        setAccessToken(result.token);
+        if (result.user) login(result.user);
+        
         toast.success('Login successful!', {
           description: 'Welcome back to our store.',
         });
+        
+        router.push(safeCallbackUrl);
       } else if (result.error) {
-        toast.error('Login failed', {
-          description: result.error,
-        });
+        // Handle specific error cases
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          toast.error('Please verify your email address', {
+            description: 'Check your inbox for the verification link we sent you.',
+            duration: 6000,
+          });
+        } else {
+          toast.error('Login failed', {
+            description: result.error,
+          });
+        }
       }
-    } catch (err) {
-      if ((err as any)?.message === 'NEXT_REDIRECT') return;
-
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -67,19 +108,47 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
+  // Google OAuth login hook
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Use client-side service directly
+        const result = await loginWithGoogle(tokenResponse.access_token);
+        
+        if (result.success && result.token) {
+          setAccessToken(result.token);
+          if (result.user) login(result.user);
 
-    try {
-      await signInWithGoogle(callbackUrl);
-    } catch (err) {
-      if ((err as any)?.message === 'NEXT_REDIRECT') return;
-
+          toast.success('Login successful!', {
+            description: 'Welcome back to our store.',
+          });
+          
+          router.push(safeCallbackUrl);
+        } else if (result.error) {
+            console.error("Backend refused login:", result.error);
+          toast.error('Google Sign In failed', {
+            description: result.error,
+          });
+        }
+      } catch (err) {
+        const error = err as Error;
+        console.error("Login exception:", error);
+        toast.error('Login error', { description: error.message || 'Unknown error' });
+      }
+    },
+    onError: () => {
+      console.error("Google OAuth failed");
       toast.error('Google Sign In failed', {
-        description: 'Please try again later.',
+        description: 'Could not connect to Google. Please try again.',
       });
-      setIsGoogleLoading(false);
-    }
+    },
+    flow: 'implicit', // Use implicit flow to get access_token
+    scope: 'email profile openid', // Ensure scopes
+  });
+
+  const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
+    googleLogin();
   };
 
   return (
@@ -169,6 +238,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     placeholder="you@example.com"
                     disabled={isLoading}
+                    suppressHydrationWarning
                     className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.email
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-700 focus:border-white focus:ring-white'
@@ -208,6 +278,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     placeholder="••••••••"
                     disabled={isLoading}
+                    suppressHydrationWarning
                     className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.password
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-700 focus:border-white focus:ring-white'
@@ -257,15 +328,6 @@ export default function LoginPage() {
               </motion.div>
             </div>
           </form>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 text-center text-xs text-gray-500"
-          >
-            Demo: rosexmee1122@gmail.com / password
-          </motion.p>
         </div>
       </motion.div>
 

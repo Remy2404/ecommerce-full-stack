@@ -3,9 +3,6 @@
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=nextauthdotjs&logoColor=white)](https://authjs.dev/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![GSAP](https://img.shields.io/badge/GSAP-88CE02?style=for-the-badge&logo=greensock&logoColor=white)](https://gsap.com/)
@@ -16,30 +13,30 @@ A high-performance, minimalist e-commerce platform built with Next.js 16 and mod
 
 This project serves as the primary frontend for a modern e-commerce experience. It utilizes the latest features of Next.js, including the App Router and Server Actions, to provide a seamless and secure shopping interface. The design philosophy adheres to "Minimalist 2.0," emphasizing clean lines, purposeful animations, and a refined user journey.
 
-### System Architecture
+## System Architecture
+
+### High-Level Architecture
 
 ```mermaid
-graph TD
-    User((User))
-    WebBrowser["Next.js Application (Client)"]
-    ServerActions["React Server Actions (API Layer)"]
-    Auth["NextAuth.js (Auth.js)"]
-    DB[("PostgreSQL Database (Drizzle)")]
-    WS["Socket.IO (Real-time Service)"]
-    KHQR["KHQR (Payment Processing)"]
-
-    User <--> WebBrowser
-    WebBrowser <--> ServerActions
-    WebBrowser <--> WS
-    ServerActions <--> DB
-    ServerActions <--> Auth
-    WebBrowser <--> KHQR
-    KHQR <--> ServerActions
-    ServerActions <--> DB
-    ServerActions <--> WS
-    WS <--> DB
-    DB <--> ServerActions
-    ServerActions <--> Auth
+graph TB
+    Client[Client Browser]
+    Frontend[Next.js 16 Frontend<br/>Port 3000]
+    Backend[Spring Boot Backend<br/>Port 8080]
+    DB[(PostgreSQL Database<br/>Port 5432)]
+    KHQR[KHQR/Bakong API<br/>NBC Cambodia]
+    Email[Email Service<br/>SMTP]
+    
+    Client -->|HTTPS| Frontend
+    Frontend -->|REST API| Backend
+    Frontend -->|Real-time| Backend
+    Backend -->|JPA/Hibernate| DB
+    Backend -->|Payment Verification| KHQR
+    Backend -->|Notifications| Email
+    
+    style Frontend fill:#61dafb
+    style Backend fill:#6db33f
+    style DB fill:#336791
+    style KHQR fill:#ff6b6b
 ```
 
 ## Core Features
@@ -72,8 +69,6 @@ graph TD
 - Lucide React Icons
 
 ### State & Data Handling
-- Drizzle ORM
-- NextAuth.js v5 (Auth.js)
 - Zod (Validation)
 - Socket.IO (WebSockets)
 - Axios
@@ -81,16 +76,6 @@ graph TD
 ### Visuals & Motion
 - Three.js
 - Tailwind CSS Animate
-
-## Project Structure
-
-The codebase follows a feature-centric modular architecture located within the `src` directory:
-
-- `src/app` – Route definitions and page layouts using the App Router.
-- `src/actions` – Server-side functions for data mutations (Auth, Cart, Orders).
-- `src/components` – Reusable UI primitives and domain-specific components.
-- `src/lib` – Configuration and utilities for database, authentication, and WebSockets.
-- `src/validations` – Centralized Zod schemas for application-wide data integrity.
 
 ## Getting Started
 
@@ -105,13 +90,9 @@ Create a `.env.local` file in the root directory and configure the following var
 
 | Variable | Description |
 | :--- | :--- |
-| `DATABASE_URL` | Connection string for the PostgreSQL database. |
-| `GOOGLE_CLIENT_ID` | Client ID from the Google Cloud Console for OAuth. |
-| `GOOGLE_CLIENT_SECRET` | Client Secret from the Google Cloud Console for OAuth. |
-| `NEXTAUTH_SECRET` | A random string used to hash tokens and sign cookies. |
-| `NEXTAUTH_URL` | The base URL of your application (e.g., `http://localhost:3000`). |
-| `STRIPE_API_KEY` | Your Stripe secret API key for payment processing. |
-| `STRIPE_WEBHOOK_SECRET` | Secret key for verifying Stripe webhooks. |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Client ID from the Google Cloud Console for OAuth. |
+| `NEXT_PUBLIC_API_URL` | The base URL of your backend API (e.g., `http://localhost:8080`). |
+| `NEXT_PUBLIC_APP_URL` | The base URL of your application (e.g., `http://localhost:3000`). |
 
 ### Installation
 
@@ -125,9 +106,6 @@ Create a `.env.local` file in the root directory and configure the following var
    ```bash
    pnpm install
    ```
-
-3. Set up environment variables:
-   Copy `.env.local.example` to `.env.local` and populate the required keys.
 
 ### Development
 
@@ -144,11 +122,6 @@ The application will be available at `http://localhost:3000`.
 - `pnpm run build` – Compiles the application for production.
 - `pnpm run start` – Runs the built production server.
 - `pnpm run lint` – Executes ESLint to check for code quality.
-- `pnpm run db:generate` – Generates SQL migrations from the Drizzle schema.
-- `pnpm run db:migrate` – Applies pending migrations to the database.
-- `pnpm run db:push` – Synchronizes the schema directly with the database.
-- `pnpm run db:studio` – Opens the Drizzle Studio database explorer.
-- `pnpm run seed` – Populates the database with initial sample data.
 
 ## License
 

@@ -65,7 +65,7 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Have a question or feedback? We'd love to hear from you.
+              Have a question or feedback? We&apos;d love to hear from you.
             </p>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function ContactPage() {
                 </div>
                 <h3 className="text-xl font-semibold">Message Sent!</h3>
                 <p className="mt-2 text-muted-foreground">
-                  Thank you for reaching out. We'll get back to you within 24 hours.
+                  Thank you for reaching out. We&apos;ll get back to you within 24 hours.
                 </p>
                 <Button 
                   variant="outline" 
@@ -110,7 +110,6 @@ export default function ContactPage() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="you@example.com"
                       required
                     />
                   </FormField>

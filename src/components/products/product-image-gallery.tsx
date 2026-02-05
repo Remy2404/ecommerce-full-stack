@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,20 +42,25 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
       {/* Main Image */}
       <div className="relative aspect-square overflow-hidden rounded-design-lg bg-muted">
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={activeIndex}
-            src={images[activeIndex]}
-            alt={`${productName} - Image ${activeIndex + 1}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={cn(
-              'h-full w-full object-cover transition-transform duration-slow',
-              isZoomed && 'scale-150 cursor-zoom-out'
-            )}
-            onClick={() => setIsZoomed(!isZoomed)}
-          />
+            className="h-full w-full"
+          >
+            <Image
+              src={images[activeIndex]}
+              alt={`${productName} - Image ${activeIndex + 1}`}
+              fill
+              className={cn(
+                'object-cover transition-transform duration-slow',
+                isZoomed && 'scale-150 cursor-zoom-out'
+              )}
+              onClick={() => setIsZoomed(!isZoomed)}
+            />
+          </motion.div>
         </AnimatePresence>
 
         {/* Navigation Arrows */}
@@ -112,10 +118,11 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                   : 'opacity-60 hover:opacity-100'
               )}
             >
-              <img
+              <Image
                 src={image}
                 alt={`${productName} thumbnail ${index + 1}`}
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
               />
             </button>
           ))}

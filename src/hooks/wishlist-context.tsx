@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useReducer, useEffect, ReactNode, useState } from 'react';
+import { useAuth } from './auth-context';
+import * as wishlistService from '@/services/wishlist.service';
 
 export interface WishlistItem {
   productId: string;
@@ -44,9 +46,9 @@ function wishlistReducer(state: WishlistState, action: WishlistAction): Wishlist
 
 interface WishlistContextType {
   items: WishlistItem[];
-  addItem: (item: WishlistItem) => void;
-  removeItem: (productId: string) => void;
-  toggleWishlist: (item: WishlistItem) => void;
+  addItem: (item: WishlistItem) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  toggleWishlist: (item: WishlistItem) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
   clearWishlist: () => void;
   itemCount: number;
@@ -58,55 +60,92 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(wishlistReducer, initialState);
   const [isHydrated, setIsHydrated] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  // Load wishlist from localStorage on mount
+  // Load wishlist (API or LocalStorage)
   useEffect(() => {
-    const saved = localStorage.getItem('wishlist');
-    if (saved) {
-      try {
-        dispatch({ type: 'SET_ITEMS', payload: JSON.parse(saved) });
-      } catch (e) {
-        console.error('Failed to parse wishlist', e);
-      }
-    }
-    setIsHydrated(true);
-  }, []);
-
-  // Sync to localStorage
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem('wishlist', JSON.stringify(state.items));
-    }
-  }, [state.items, isHydrated]);
-
-  // Cross-tab synchronization
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'wishlist' && e.newValue) {
+    const loadWishlist = async () => {
+      if (isAuthenticated) {
         try {
-          dispatch({ type: 'SET_ITEMS', payload: JSON.parse(e.newValue) });
-        } catch (err) {
-          console.error('Failed to sync wishlist across tabs', err);
+          const products = await wishlistService.getWishlist();
+          const items: WishlistItem[] = products.map(p => ({
+            productId: p.id,
+            name: p.name,
+            price: p.price,
+            image: p.images[0] || '/placeholder.png',
+            stock: p.stock
+          }));
+          dispatch({ type: 'SET_ITEMS', payload: items });
+        } catch (error) {
+          console.error('Failed to load wishlist from server', error);
         }
-      } else if (e.key === 'wishlist' && !e.newValue) {
-        dispatch({ type: 'CLEAR_WISHLIST' });
+      } else {
+        // Guest: Load from localStorage
+        const saved = localStorage.getItem('wishlist');
+        if (saved) {
+          try {
+            dispatch({ type: 'SET_ITEMS', payload: JSON.parse(saved) });
+          } catch (e) {
+            console.error('Failed to parse wishlist', e);
+          }
+        }
       }
+      setIsHydrated(true);
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    loadWishlist();
+  }, [isAuthenticated]);
 
-  const addItem = (item: WishlistItem) => dispatch({ type: 'ADD_ITEM', payload: item });
-  const removeItem = (productId: string) => dispatch({ type: 'REMOVE_ITEM', payload: productId });
+  // Sync to localStorage ONLY for guests
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      localStorage.setItem('wishlist', JSON.stringify(state.items));
+    }
+  }, [state.items, isHydrated, isAuthenticated]);
+
+  const addItem = async (item: WishlistItem) => {
+    // Optimistic update
+    dispatch({ type: 'ADD_ITEM', payload: item });
+
+    if (isAuthenticated) {
+      try {
+        await wishlistService.addToWishlist(item.productId);
+        console.log(`Added ${item.name} to server wishlist`);
+      } catch (error) {
+        console.error('Failed to add to server wishlist', error);
+        // Revert optimistic update on error
+        dispatch({ type: 'REMOVE_ITEM', payload: item.productId });
+      }
+    }
+  };
+
+  const removeItem = async (productId: string) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: productId });
+
+    if (isAuthenticated) {
+      try {
+        await wishlistService.removeFromWishlist(productId);
+        console.log(`Removed ${productId} from server wishlist`);
+      } catch (error) {
+        console.error('Failed to remove from server wishlist', error);
+      }
+    }
+  };
+
+  const clearWishlist = () => {
+    dispatch({ type: 'CLEAR_WISHLIST' });
+    if (!isAuthenticated) {
+      localStorage.removeItem('wishlist');
+    }
+  };
+
   const isInWishlist = (productId: string) => state.items.some((item) => item.productId === productId);
-  const clearWishlist = () => dispatch({ type: 'CLEAR_WISHLIST' });
   
-  const toggleWishlist = (item: WishlistItem) => {
+  const toggleWishlist = async (item: WishlistItem) => {
     if (isInWishlist(item.productId)) {
-      removeItem(item.productId);
+      await removeItem(item.productId);
     } else {
-      addItem(item);
+      await addItem(item);
     }
   };
 

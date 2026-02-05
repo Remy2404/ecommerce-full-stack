@@ -17,13 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  total: string;
-  createdAt: Date;
-}
+import { Order } from '@/types/order';
 
 interface OrdersClientProps {
   orders: Order[];
@@ -48,11 +42,11 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     return matchesStatus && matchesSearch;
   });
 
-  const formatPrice = (price: string) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(Number(price));
+    }).format(price);
   };
 
   const getStatusVariant = (status: string) => {

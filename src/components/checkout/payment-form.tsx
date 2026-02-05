@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input, FormField, Label } from '@/components/ui/input';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { KhqrPaymentMethod } from './khqr-payment-method';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-export type PaymentMethod = 'card' | 'wing' | 'cash';
+export type PaymentMethod = 'card' | 'KHQR' | 'cash';
 
 export interface PaymentData {
   method: PaymentMethod;
@@ -36,9 +37,9 @@ const paymentMethods = [
     icon: CreditCard,
   },
   {
-    id: 'wing' as const,
-    label: 'Wing Money',
-    description: 'Pay with Wing wallet',
+    id: 'KHQR' as const,
+    label: 'KHQR Payment',
+    description: 'Pay with any banking app',
     icon: Wallet,
   },
   {
@@ -143,37 +144,45 @@ export function PaymentForm({ onSubmit, onBack, isLoading, total }: PaymentFormP
         <Label>Payment Method</Label>
         <div className="grid gap-3">
           {paymentMethods.map((method) => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => setSelectedMethod(method.id)}
-              className={cn(
-                'relative flex items-center gap-4 rounded-design border p-4 text-left transition-all',
-                selectedMethod === method.id
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/50'
-              )}
-            >
-              <div
+            method.id === 'KHQR' ? (
+              <KhqrPaymentMethod 
+                key={method.id}
+                selected={selectedMethod === 'KHQR'}
+                onSelect={() => setSelectedMethod('KHQR')}
+              />
+            ) : (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => setSelectedMethod(method.id)}
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-design-sm',
+                  'relative flex items-center gap-4 rounded-design border p-4 text-left transition-all',
                   selectedMethod === method.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
                 )}
               >
-                <method.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-medium">{method.label}</p>
-                <p className="text-sm text-muted-foreground">{method.description}</p>
-              </div>
-              {selectedMethod === method.id && (
-                <div className="absolute right-4 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Check className="h-3 w-3" />
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-design-sm',
+                    selectedMethod === method.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  <method.icon className="h-5 w-5" />
                 </div>
-              )}
-            </button>
+                <div>
+                  <p className="font-medium">{method.label}</p>
+                  <p className="text-sm text-muted-foreground">{method.description}</p>
+                </div>
+                {selectedMethod === method.id && (
+                  <div className="absolute right-4 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                )}
+              </button>
+            )
           ))}
         </div>
       </div>
@@ -230,20 +239,6 @@ export function PaymentForm({ onSubmit, onBack, isLoading, total }: PaymentFormP
         </div>
       )}
 
-      {/* Wing QR */}
-      {selectedMethod === 'wing' && (
-        <div className="rounded-design border border-border bg-muted/30 p-6 text-center">
-          <div className="mx-auto mb-4 h-48 w-48 rounded-design bg-white p-4">
-            {/* Placeholder for QR code */}
-            <div className="flex h-full w-full items-center justify-center border-2 border-dashed border-border rounded-design">
-              <span className="text-sm text-muted-foreground">QR Code</span>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Scan this QR code with your Wing app to pay {formatPrice(total)}
-          </p>
-        </div>
-      )}
 
       {/* Cash on Delivery Info */}
       {selectedMethod === 'cash' && (

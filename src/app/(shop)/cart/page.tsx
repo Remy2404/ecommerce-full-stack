@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, ArrowRight, Trash2, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
+import { SHIPPING_CONFIG } from '@/constants';
 
 export default function CartPage() {
   const { items, subtotal, updateQuantity, removeItem, clearCart } = useCart();
@@ -16,7 +18,7 @@ export default function CartPage() {
     }).format(price);
   };
 
-  const shippingFee = subtotal >= 100 ? 0 : 10;
+  const shippingFee = subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
   const total = subtotal + shippingFee;
 
   if (items.length === 0) {
@@ -30,7 +32,7 @@ export default function CartPage() {
           </div>
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
           <p className="mt-2 text-muted-foreground">
-            Looks like you haven't added anything to your cart yet.
+            Looks like you haven&apos;t added anything to your cart yet.
           </p>
           <Button className="mt-6" asChild>
             <Link href="/products">
@@ -81,12 +83,13 @@ export default function CartPage() {
                     {/* Product Image */}
                     <Link 
                       href={`/products/${item.productId}`}
-                      className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-design bg-muted sm:h-32 sm:w-32"
+                      className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-design bg-muted sm:h-32 sm:w-32"
                     >
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.name}
-                        className="h-full w-full object-cover transition-transform hover:scale-105"
+                        fill
+                        className="object-cover transition-transform hover:scale-105"
                       />
                     </Link>
 
@@ -188,7 +191,9 @@ export default function CartPage() {
               </div>
               {shippingFee > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Free shipping on orders over $100
+                  {SHIPPING_CONFIG.FREE_THRESHOLD > 0 
+                    ? `Free shipping on orders over $${SHIPPING_CONFIG.FREE_THRESHOLD}`
+                    : 'Free shipping on all orders'}
                 </p>
               )}
             </div>

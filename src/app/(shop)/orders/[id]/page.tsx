@@ -1,71 +1,80 @@
-import { notFound, redirect } from 'next/navigation';
-import { auth } from '@/lib/auth/auth';
+'use client';
+
+import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/auth-context';
 import { getOrderById } from '@/actions/order.actions';
 import { OrderDetailClient } from '@/components/orders/order-detail-client';
+import { Order, OrderStatus, mapOrder } from '@/types/order';
+import { PaymentStatus } from '@/types/payment';
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  return {
-    title: `Order #${resolvedParams.id}`,
-  };
-}
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect(`/api/auth/signin?callbackUrl=/orders/${resolvedParams.id}`);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push(`/login?callbackUrl=/orders/${resolvedParams.id}`);
+      return;
+    }
+
+    async function fetchOrder() {
+      if (!isAuthenticated) return;
+      
+      try {
+        const result = await getOrderById(resolvedParams.id);
+        
+        if (!result.success || !result.data) {
+          setNotFound(true);
+          return;
+        }
+
+        const orderData = result.data;
+        if (!orderData) return;
+
+        // Use the centralized mapping logic
+        // Cast to any because the response from getOrderById might not match mapOrder's expected input perfectly yet
+        const formattedOrder = mapOrder(orderData as any);
+        setOrder(formattedOrder);
+      } catch (error) {
+        console.error('Failed to fetch order:', error);
+        setNotFound(true);
+      } finally {
+        setDataLoading(false);
+      }
+    }
+
+    if (isAuthenticated) {
+      fetchOrder();
+    }
+  }, [isAuthenticated, isLoading, router, resolvedParams.id]);
+
+  if (isLoading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
 
-  const result = await getOrderById(resolvedParams.id);
-
-  if (!result.success || !result.data) {
-    notFound();
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Order Not Found</h1>
+          <p className="text-muted-foreground">The order you&apos;re looking for doesn&apos;t exist.</p>
+        </div>
+      </div>
+    );
   }
 
-  const order = result.data;
+  if (!order) {
+    return null;
+  }
 
-  // Transform data to match client component expectations
-  const formattedOrder = {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    total: order.total.toString(),
-    subtotal: order.subtotal.toString(),
-    deliveryFee: order.deliveryFee.toString(),
-    discount: (order.discount || 0).toString(),
-    tax: (order.tax || 0).toString(),
-    createdAt: new Date(order.createdAt),
-    deliveryInstructions: order.deliveryInstructions,
-    shippingAddress: (order as any).deliveryAddress ? {
-      firstName: (order as any).user.firstName,
-      lastName: (order as any).user.lastName,
-      street: (order as any).deliveryAddress.street,
-      city: (order as any).deliveryAddress.city,
-      province: (order as any).deliveryAddress.province,
-      postalCode: (order as any).deliveryAddress.postalCode,
-    } : null,
-    paymentInfo: (order as any).payment ? {
-      method: (order as any).payment.method,
-      status: (order as any).payment.status,
-      transactionId: (order as any).payment.transactionId,
-      amount: (order as any).payment.amount.toString(),
-    } : null,
-    deliveryInfo: (order as any).delivery ? {
-      status: (order as any).delivery.status,
-      deliveredTime: (order as any).delivery.deliveredTime ? new Date((order as any).delivery.deliveredTime) : null,
-    } : null,
-    orderItems: (order as any).orderItems?.map((item: any) => ({
-      id: item.id,
-      productName: item.productName,
-      productImage: item.productImage,
-      variantName: item.variantName,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice.toString(),
-      subtotal: item.subtotal.toString(),
-    })) || [],
-  };
-
-  return <OrderDetailClient order={formattedOrder} />;
+  return <OrderDetailClient order={order} />;
 }

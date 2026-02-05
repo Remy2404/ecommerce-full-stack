@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { 
@@ -113,10 +114,11 @@ export function ProductCard({ product, index = 0, size = 'default' }: ProductCar
             )}
           >
             {/* Product Image */}
-            <img
+            <Image
               src={product.images[0] || '/placeholder.jpg'}
               alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-slow group-hover:scale-105"
+              fill
+              className="object-cover transition-transform duration-slow group-hover:scale-105"
             />
 
             {/* Badges */}

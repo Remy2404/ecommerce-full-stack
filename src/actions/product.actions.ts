@@ -1,8 +1,7 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { products, categories, merchants } from '@/lib/db/schema';
-import { eq, desc, sql, and, ilike, gte, lte } from 'drizzle-orm';
+import * as productService from '@/services/product.service';
+import * as categoryService from '@/services/category.service';
 
 export interface ProductResult {
   id: string;
@@ -17,7 +16,6 @@ export interface ProductResult {
   reviewCount: number;
   isFeatured: boolean;
   categoryId: string;
-  merchantId: string;
   createdAt: Date;
 }
 
@@ -33,207 +31,149 @@ export interface GetProductsParams {
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'rating' | 'popular';
 }
 
+/**
+ * Get products with filtering and pagination
+ * Calls Spring Boot backend /api/products
+ */
 export async function getProducts(params: GetProductsParams = {}) {
   const {
     page = 1,
     limit = 12,
     category,
     featured,
-    sale,
     minPrice,
     maxPrice,
     search,
     sortBy = 'newest',
   } = params;
 
-  const offset = (page - 1) * limit;
+  const result = await productService.getProducts({
+    page: page - 1, // Spring Boot uses 0-indexed pages
+    size: limit,
+    category,
+    featured,
+    minPrice,
+    maxPrice,
+    search,
+    sort: sortBy,
+  });
 
-  try {
-    // Build where conditions
-    const conditions = [eq(products.isActive, true)];
-
-    if (category) {
-      const categoryRecord = await db.query.categories.findFirst({
-        where: eq(categories.slug, category),
-      });
-      if (categoryRecord) {
-        conditions.push(eq(products.categoryId, categoryRecord.id));
-      }
-    }
-
-    if (featured !== undefined) {
-      conditions.push(eq(products.isFeatured, featured));
-    }
-
-    if (sale === true) {
-      conditions.push(sql`${products.comparePrice} IS NOT NULL AND ${products.comparePrice} > ${products.price}`);
-    }
-
-    if (minPrice !== undefined) {
-      conditions.push(gte(products.price, minPrice.toString()));
-    }
-
-    if (maxPrice !== undefined) {
-      conditions.push(lte(products.price, maxPrice.toString()));
-    }
-
-    if (search) {
-      conditions.push(ilike(products.name, `%${search}%`));
-    }
-
-    // Build order by
-    let orderBy;
-    switch (sortBy) {
-      case 'price_asc':
-        orderBy = products.price;
-        break;
-      case 'price_desc':
-        orderBy = desc(products.price);
-        break;
-      case 'rating':
-        orderBy = desc(products.rating);
-        break;
-      case 'popular':
-        orderBy = desc(products.soldCount);
-        break;
-      default:
-        orderBy = desc(products.createdAt);
-    }
-
-    const [productList, countResult] = await Promise.all([
-      db
-        .select()
-        .from(products)
-        .where(and(...conditions))
-        .orderBy(orderBy)
-        .limit(limit)
-        .offset(offset),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(products)
-        .where(and(...conditions)),
-    ]);
-
-    const total = Number(countResult[0]?.count || 0);
-
-    return {
-      products: productList.map((p) => ({
-        ...p,
-        images: p.images as string[] | null,
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  } catch (error) {
-    console.error('Failed to fetch products:', error);
-    return {
-      products: [],
-      pagination: {
-        page: 1,
-        limit,
-        total: 0,
-        totalPages: 0,
-      },
-    };
-  }
+  // Transform to match existing interface
+  return {
+    products: result.products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      description: p.description || '',
+      price: String(p.price),
+      comparePrice: p.comparePrice ? String(p.comparePrice) : null,
+      stock: p.stock,
+      images: p.images,
+      rating: String(p.rating),
+      reviewCount: p.reviewCount,
+      isFeatured: p.isFeatured,
+      categoryId: p.categoryId || '',
+      createdAt: new Date(p.createdAt),
+    })),
+    pagination: {
+      page: result.pagination.page + 1, // Convert back to 1-indexed for frontend
+      limit: result.pagination.limit,
+      total: result.pagination.total,
+      totalPages: result.pagination.totalPages,
+    },
+  };
 }
 
+/**
+ * Get product by slug
+ * Calls Spring Boot backend /api/products/{slug}
+ */
 export async function getProductBySlug(slug: string) {
-  try {
-    const product = await db.query.products.findFirst({
-      where: and(eq(products.slug, slug), eq(products.isActive, true)),
-      with: {
-        category: true,
-        merchant: true,
-        variants: {
-          where: (variants, { eq }) => eq(variants.isActive, true),
-        },
-        reviews: {
-          limit: 10,
-          orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
-          with: {
-            user: {
-              columns: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-      },
-    });
+  const product = await productService.getProductBySlug(slug);
 
-    if (!product) return null;
+  if (!product) return null;
 
-    // Increment view count
-    await db
-      .update(products)
-      .set({ viewCount: sql`${products.viewCount} + 1` })
-      .where(eq(products.id, product.id));
-
-    return {
-      ...product,
-      images: product.images as string[] | null,
-    };
-  } catch (error) {
-    console.error('Failed to fetch product:', error);
-    return null;
-  }
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    description: product.description || '',
+    price: String(product.price),
+    comparePrice: product.comparePrice ? String(product.comparePrice) : null,
+    stock: product.stock,
+    images: product.images,
+    rating: String(product.rating),
+    reviewCount: product.reviewCount,
+    isFeatured: product.isFeatured,
+    categoryId: product.categoryId || '',
+    createdAt: new Date(product.createdAt),
+    // Note: category, merchant, variants, reviews need separate API calls
+    // or the backend needs to include them in the response
+  };
 }
 
+/**
+ * Get featured products
+ * Calls Spring Boot backend /api/products?featured=true
+ */
 export async function getFeaturedProducts(limit: number = 8) {
-  try {
-    const featuredList = await db
-      .select()
-      .from(products)
-      .where(and(eq(products.isActive, true), eq(products.isFeatured, true)))
-      .orderBy(desc(products.createdAt))
-      .limit(limit);
+  const products = await productService.getFeaturedProducts(limit);
 
-    return featuredList.map((p) => ({
-      ...p,
-      images: p.images as string[] | null,
-    }));
-  } catch (error) {
-    console.error('Failed to fetch featured products:', error);
-    return [];
-  }
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description || '',
+    price: String(p.price),
+    comparePrice: p.comparePrice ? String(p.comparePrice) : null,
+    stock: p.stock,
+    images: p.images,
+    rating: String(p.rating),
+    reviewCount: p.reviewCount,
+    isFeatured: p.isFeatured,
+    categoryId: p.categoryId || '',
+    createdAt: new Date(p.createdAt),
+  }));
 }
 
+/**
+ * Get new arrivals (sorted by newest)
+ * Calls Spring Boot backend /api/products?sort=newest
+ */
 export async function getNewArrivals(limit: number = 8) {
-  try {
-    const newProducts = await db
-      .select()
-      .from(products)
-      .where(eq(products.isActive, true))
-      .orderBy(desc(products.createdAt))
-      .limit(limit);
+  const products = await productService.getNewArrivals(limit);
 
-    return newProducts.map((p) => ({
-      ...p,
-      images: p.images as string[] | null,
-    }));
-  } catch (error) {
-    console.error('Failed to fetch new arrivals:', error);
-    return [];
-  }
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description,
+    price: String(p.price),
+    comparePrice: p.comparePrice ? String(p.comparePrice) : null,
+    stock: p.stock,
+    images: p.images,
+    rating: String(p.rating),
+    reviewCount: p.reviewCount,
+    isFeatured: p.isFeatured,
+    categoryId: p.categoryId || '',
+    createdAt: new Date(p.createdAt),
+  }));
 }
 
+/**
+ * Get all categories
+ * Calls Spring Boot backend /api/categories
+ */
 export async function getCategories() {
-  try {
-    return await db
-      .select()
-      .from(categories)
-      .where(eq(categories.isActive, true))
-      .orderBy(categories.sortOrder);
-  } catch (error) {
-    console.error('Failed to fetch categories:', error);
-    return [];
-  }
+  const categories = await categoryService.getCategories();
+
+  return categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    description: c.description,
+    image: c.image,
+    isActive: true,
+    sortOrder: 0,
+  }));
 }

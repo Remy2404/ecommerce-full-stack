@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Package, MapPin, CreditCard } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { type CartItem } from '@/hooks/cart-context';
 import { type ShippingAddress } from './shipping-form';
@@ -50,8 +51,8 @@ export function OrderSummary({
     switch (method) {
       case 'card':
         return 'Credit/Debit Card';
-      case 'wing':
-        return 'Wing Money';
+      case 'KHQR':
+        return 'KHQR';
       case 'cash':
         return 'Cash on Delivery';
       default:
@@ -70,11 +71,12 @@ export function OrderSummary({
         <div className="divide-y divide-border">
           {items.map((item) => (
             <div key={item.id} className="flex gap-4 p-4">
-              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-design-sm bg-muted">
-                <img
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-design-sm bg-muted">
+                <Image
                   src={item.image}
                   alt={item.name}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
               <div className="flex flex-1 flex-col justify-center">

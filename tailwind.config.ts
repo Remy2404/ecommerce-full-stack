@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import tailwindAnimate from 'tailwindcss-animate';
 
 const config: Config = {
   darkMode: 'class',
@@ -50,6 +51,13 @@ const config: Config = {
         warning: {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
+        },
+        bakong: {
+          DEFAULT: '#E1232E',
+          hover: '#C61E28',
+          light: '#E1232E1A', // 10% opacity
+          black: '#000000',
+          white: '#FFFFFF',
         },
       },
       borderRadius: {
@@ -129,7 +137,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [tailwindAnimate],
 };
 
 export default config;

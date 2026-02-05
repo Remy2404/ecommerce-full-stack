@@ -15,15 +15,15 @@ const faqCategories = [
       },
       {
         q: 'Can I track my order?',
-        a: 'Yes! Once your order ships, you\'ll receive an email with a tracking number. You can also track your order from your account dashboard under "Orders".',
+        a: 'Yes! Once your order ships, you&apos;ll receive an email with a tracking number. You can also track your order from your account dashboard under "Orders".',
       },
       {
         q: 'Do you ship internationally?',
-        a: 'Yes, we ship to most countries worldwide. Shipping costs and delivery times vary by location. You\'ll see the exact shipping cost at checkout.',
+        a: 'Yes, we ship to most countries worldwide. Shipping costs and delivery times vary by location. You&apos;ll see the exact shipping cost at checkout.',
       },
       {
         q: 'What if my order is delayed?',
-        a: 'If your order is delayed beyond the estimated delivery date, please contact our support team. We\'ll investigate and provide updates. In some cases, we may offer compensation or expedited shipping.',
+        a: 'If your order is delayed beyond the estimated delivery date, please contact our support team. We&apos;ll investigate and provide updates. In some cases, we may offer compensation or expedited shipping.',
       },
     ],
   },
@@ -36,7 +36,7 @@ const faqCategories = [
       },
       {
         q: 'How do I return an item?',
-        a: 'Start a return from your account or contact our support team. You\'ll receive a prepaid shipping label and instructions. Once we receive and inspect the item, we\'ll process your refund.',
+        a: 'Start a return from your account or contact our support team. You&apos;ll receive a prepaid shipping label and instructions. Once we receive and inspect the item, we&apos;ll process your refund.',
       },
       {
         q: 'When will I receive my refund?',
@@ -49,7 +49,7 @@ const faqCategories = [
     questions: [
       {
         q: 'What payment methods do you accept?',
-        a: 'We accept Visa, Mastercard, JCB, Wing Money, and Cash on Delivery. All card transactions are secured with SSL encryption.',
+        a: 'We accept Visa, Mastercard, JCB, KHQR, and Cash on Delivery. All card transactions are secured with SSL encryption.',
       },
       {
         q: 'Is my payment information secure?',
@@ -70,11 +70,11 @@ const faqCategories = [
       },
       {
         q: 'How do I reset my password?',
-        a: 'Click "Forgot Password" on the login page. We\'ll send a password reset link to your email address.',
+        a: 'Click "Forgot Password" on the login page. We&apos;ll send a password reset link to your email address.',
       },
       {
         q: 'Can I change my email address?',
-        a: 'Yes, you can update your email in Account Settings. You\'ll need to verify the new email address before the change takes effect.',
+        a: 'Yes, you can update your email in Account Settings. You&apos;ll need to verify the new email address before the change takes effect.',
       },
     ],
   },
@@ -113,7 +113,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const filteredCategories = faqCategories.map(category => ({
     ...category,
@@ -170,7 +169,7 @@ export default function FAQPage() {
           ) : (
             <div className="py-12 text-center">
               <p className="text-lg text-muted-foreground">
-                No questions found matching "{searchQuery}"
+                No questions found matching &quot;{searchQuery}&quot;
               </p>
             </div>
           )}
@@ -180,7 +179,7 @@ export default function FAQPage() {
         <div className="mx-auto mt-12 max-w-xl rounded-design-lg border border-border bg-muted/30 p-8 text-center">
           <h3 className="text-lg font-semibold">Still have questions?</h3>
           <p className="mt-2 text-muted-foreground">
-            Can't find what you're looking for? Our support team is here to help.
+            Can&apos;t find what you&apos;re looking for? Our support team is here to help.
           </p>
           <a
             href="/contact"

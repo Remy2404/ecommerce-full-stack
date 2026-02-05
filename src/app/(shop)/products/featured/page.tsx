@@ -33,7 +33,7 @@ export default async function FeaturedPage() {
           <div className="mx-auto max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-warning/10 px-4 py-1.5 text-sm font-medium text-warning">
               <Star className="h-4 w-4 fill-current" />
-              Editor's Choice
+              Editor&apos;s Choice
             </div>
             <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
               Featured Products

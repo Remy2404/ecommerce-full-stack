@@ -26,8 +26,8 @@ export function MobileNav() {
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
 
-  // Hide on desktop and on checkout pages
-  if (pathname.startsWith('/checkout')) {
+  // Hide on desktop and on checkout/admin pages
+  if (pathname.startsWith('/checkout') || pathname.startsWith('/admin')) {
     return null;
   }
 

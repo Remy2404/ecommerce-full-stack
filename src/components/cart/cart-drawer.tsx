@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/cart-context';
@@ -17,9 +18,12 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, itemCount, updateQuantity, removeItem } = useCart();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const isAdminRoute = pathname.startsWith('/admin');
 
   // Close on escape key
   useEffect(() => {
+    if (isAdminRoute) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeCart();
     };
@@ -31,14 +35,15 @@ export function CartDrawer() {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, closeCart]);
+  }, [isOpen, closeCart, isAdminRoute]);
 
   // Focus trap
   useEffect(() => {
+    if (isAdminRoute) return;
     if (isOpen && drawerRef.current) {
       drawerRef.current.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, isAdminRoute]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -46,6 +51,10 @@ export function CartDrawer() {
       currency: 'USD',
     }).format(price);
   };
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
@@ -129,10 +138,11 @@ export function CartDrawer() {
                       <div className="flex gap-4">
                         {/* Product Image */}
                         <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-design-sm bg-muted">
-                          <img
+                          <Image
                             src={item.image}
                             alt={item.name}
-                            className="h-full w-full object-cover"
+                            fill
+                            className="object-cover"
                           />
                         </div>
 

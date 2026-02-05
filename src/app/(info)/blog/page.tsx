@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Calendar, Clock, ArrowRight, Tag } from 'lucide-react';
+import Image from 'next/image';
+import { Calendar, Clock, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
@@ -21,7 +22,7 @@ const blogPosts = [
   },
   {
     id: 2,
-    title: 'Sustainable Shopping: A Beginner\'s Guide',
+    title: 'Sustainable Shopping: A Beginner&apos;s Guide',
     excerpt: 'Learn how to make environmentally conscious purchasing decisions without compromising on quality.',
     image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&q=80',
     category: 'Sustainability',
@@ -118,11 +119,12 @@ export default function BlogPage() {
       <section className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <Link href={`/blog/${featuredPost.slug}`} className="group block">
           <div className="grid gap-8 lg:grid-cols-2">
-            <div className="aspect-video overflow-hidden rounded-design-lg bg-muted">
-              <img
+            <div className="relative aspect-video overflow-hidden rounded-design-lg bg-muted">
+              <Image
                 src={featuredPost.image}
                 alt={featuredPost.title}
-                className="h-full w-full object-cover transition-transform duration-slow group-hover:scale-105"
+                fill
+                className="object-cover transition-transform duration-slow group-hover:scale-105"
               />
             </div>
             <div className="flex flex-col justify-center">
@@ -163,11 +165,12 @@ export default function BlogPage() {
               href={`/blog/${post.slug}`}
               className="group block rounded-design-lg border border-border bg-card overflow-hidden transition-all hover:shadow-soft"
             >
-              <div className="aspect-video overflow-hidden">
-                <img
+              <div className="relative aspect-video overflow-hidden">
+                <Image
                   src={post.image}
                   alt={post.title}
-                  className="h-full w-full object-cover transition-transform duration-slow group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-slow group-hover:scale-105"
                 />
               </div>
               <div className="p-6">

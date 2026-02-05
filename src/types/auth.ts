@@ -1,46 +1,83 @@
-import { users, addresses, merchants, wingPoints, wingPointsTransactions, notifications, userRoleEnum } from '../lib/db/schema';
+/**
+ * Auth-related type definitions
+ * These types mirror the Spring Boot backend models
+ */
 
-// Enums
-export type UserRole = typeof userRoleEnum.enumValues[number];
+import { UserApiResponse, AuthUser, UserRole } from './user';
 
-// Inferred types from schema
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+// --- Backend API Responses (DTOs) ---
 
-export type Address = typeof addresses.$inferSelect;
-export type InsertAddress = typeof addresses.$inferInsert;
+export interface AuthResponse {
+  token: string;
+  refreshToken?: string;
+  user: UserApiResponse;
+  tempToken?: string; 
+}
 
-export type Merchant = typeof merchants.$inferSelect;
-export type InsertMerchant = typeof merchants.$inferInsert;
+export interface TwoFactorResponse {
+  secret: string;
+  qrCodeUrl: string;
+  message?: string;
+}
 
-export type WingPoints = typeof wingPoints.$inferSelect;
-export type InsertWingPoints = typeof wingPoints.$inferInsert;
+// --- Backend API Requests (DTOs) ---
 
-export type WingPointsTransaction = typeof wingPointsTransactions.$inferSelect;
-export type InsertWingPointsTransaction = typeof wingPointsTransactions.$inferInsert;
-
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = typeof notifications.$inferInsert;
-
-// Auth-specific types
-export type LoginCredentials = {
+export interface LoginRequest {
   email: string;
   password: string;
-};
+}
 
-export type RegisterData = {
+export interface RegisterRequest {
   email: string;
-  phone: string;
   password: string;
   firstName: string;
   lastName: string;
-};
+  phone?: string;
+}
 
-export type AuthUser = {
-  id: string;
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface ForgotPasswordRequest {
   email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
+}
+
+export interface CompletePasswordResetRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface Enable2FARequest {
+  code: string;
+}
+
+// --- Frontend Domain Models ---
+
+export interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: AuthUser;
+  token?: string;
+  tempToken?: string;
+}
+
+export interface JwtPayload {
+  id?: string;
+  sub: string;
+  email: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  role: UserRole | UserRole[];
   avatar?: string;
-};
+  exp: number;
+}
+
+// Re-export common auth types from user.ts
+export type { UserRole, LoginCredentials, RegisterData } from './user';

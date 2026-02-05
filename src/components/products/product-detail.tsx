@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Minus, 
@@ -21,6 +22,7 @@ import { useWishlist } from '@/hooks/wishlist-context';
 import { ProductImageGallery } from './product-image-gallery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { SHIPPING_CONFIG } from '@/constants';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -281,7 +283,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
             <div className="space-y-3 border-t border-border pt-6">
               <div className="flex items-center gap-3 text-sm">
                 <Truck className="h-5 w-5 text-muted-foreground" />
-                <span>Free shipping on orders over $100</span>
+                <span>
+                  {SHIPPING_CONFIG.FREE_THRESHOLD > 0 
+                    ? `Free shipping on orders over $${SHIPPING_CONFIG.FREE_THRESHOLD}`
+                    : 'Free shipping on all orders'}
+                </span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <RefreshCw className="h-5 w-5 text-muted-foreground" />
@@ -313,11 +319,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
           >
             <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4">
-                <img
+              <div className="relative h-12 w-12 flex-shrink-0">
+                <Image
                   src={product.images[0]}
                   alt={product.name}
-                  className="h-12 w-12 rounded-design-sm object-cover"
+                  fill
+                  className="rounded-design-sm object-cover"
                 />
+              </div>
                 <div className="hidden sm:block">
                   <p className="font-medium line-clamp-1">{product.name}</p>
                   <p className="text-lg font-bold">{formatPrice(currentPrice)}</p>

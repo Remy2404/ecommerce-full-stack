@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { ArrowRight, Truck, Shield, RefreshCw } from 'lucide-react';
 import { BentoGrid } from '@/components/products/bento-grid';
 import { Button } from '@/components/ui/button';
@@ -152,11 +153,12 @@ export default async function HomePage() {
                 href={`/products/${product.slug}`}
                 className="group block overflow-hidden rounded-design border border-border bg-card transition-all hover:shadow-float hover:-translate-y-1"
               >
-                <div className="aspect-square overflow-hidden bg-muted">
-                  <img
+                <div className="relative aspect-square overflow-hidden bg-muted">
+                  <NextImage
                     src={product.images[0]}
                     alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-slow group-hover:scale-105"
+                    fill
+                    className="object-cover transition-transform duration-slow group-hover:scale-105"
                   />
                 </div>
                 <div className="p-4">

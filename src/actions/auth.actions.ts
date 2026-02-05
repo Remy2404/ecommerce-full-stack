@@ -1,70 +1,60 @@
 'use server';
 
-import { signIn, signOut } from '@/lib/auth/auth.config';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
-import { loginSchema, registerSchema } from '@/lib/validations/auth';
-import { AuthError } from 'next-auth';
+import * as authService from '@/services/auth.service';
+import { loginSchema, registerSchema } from '@/validations/auth';
+import { redirect } from 'next/navigation';
+
+import { AuthUser } from '@/types';
 
 export type AuthResult = {
   success: boolean;
   error?: string;
+  user?: AuthUser;
+  token?: string;
+  tempToken?: string;
 };
 
 /**
  * Sign in with credentials (email/password)
+ * Calls Spring Boot backend /api/auth/login
  */
 export async function signInWithCredentials(
   email: string,
-  password: string,
-  callbackUrl?: string
+  password: string
 ): Promise<AuthResult> {
-  try {
-    const validatedFields = loginSchema.safeParse({ email, password });
+  const validatedFields = loginSchema.safeParse({ email, password });
 
-    if (!validatedFields.success) {
-      return { success: false, error: 'Invalid email or password format' };
-    }
-
-    await signIn('credentials', {
-      email,
-      password,
-      redirectTo: callbackUrl || '/',
-    });
-
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return { success: false, error: 'Invalid email or password' };
-        default:
-          return { success: false, error: 'Something went wrong. Please try again.' };
-      }
-    }
-    // NextAuth redirects throw NEXT_REDIRECT which we should re-throw
-    throw error;
+  if (!validatedFields.success) {
+    return { success: false, error: 'Invalid email or password format' };
   }
+
+  return await authService.login(email, password);
 }
 
 /**
  * Sign in with Google OAuth
+ * Note: The actual Google OAuth flow should be handled client-side
+ * using the Google Sign-In SDK, then the ID token is sent to this action
  */
-export async function signInWithGoogle(callbackUrl?: string): Promise<void> {
-  await signIn('google', { redirectTo: callbackUrl || '/' });
+export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
+  return await authService.loginWithGoogle(idToken);
 }
 
 /**
  * Sign out the current user
+ * Calls Spring Boot backend /api/auth/logout
  */
 export async function signOutUser(): Promise<void> {
-  await signOut({ redirectTo: '/login' });
+  await authService.logout();
+  // We can keep redirect here as logout doesn't need to save token (it clears it)
+  // But strictly speaking, client should clear token first.
+  // We'll leave it for now or assume client clears it.
+  redirect('/login');
 }
 
 /**
  * Register a new user with email/password
+ * Calls Spring Boot backend /api/auth/register
  */
 export async function registerUser(data: {
   firstName: string;
@@ -75,71 +65,51 @@ export async function registerUser(data: {
   confirmPassword: string;
   agreeToTerms: boolean;
 }): Promise<AuthResult> {
-  try {
-    const validatedFields = registerSchema.safeParse(data);
+  const validatedFields = registerSchema.safeParse(data);
 
-    if (!validatedFields.success) {
-      const errors = validatedFields.error.flatten().fieldErrors;
-      const firstError = Object.values(errors).flat()[0];
-      return { success: false, error: firstError || 'Invalid form data' };
-    }
-
-    const { firstName, lastName, email, phone, password } = validatedFields.data;
-
-    // Check if user already exists
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email),
-    });
-
-    if (existingUser) {
-      return { success: false, error: 'An account with this email already exists' };
-    }
-
-    // Check if phone already exists
-    const existingPhone = await db.query.users.findFirst({
-      where: eq(users.phone, phone),
-    });
-
-    if (existingPhone) {
-      return { success: false, error: 'This phone number is already registered' };
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    await db.insert(users).values({
-      firstName,
-      lastName,
-      email,
-      phone,
-      password: hashedPassword,
-      role: 'customer',
-      isActive: true,
-    });
-
-    // Auto sign in after registration
-    await signIn('credentials', {
-      email,
-      password,
-      redirectTo: '/',
-    });
-
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { success: false, error: 'Registration successful, but auto sign-in failed. Please log in manually.' };
-    }
-    // NextAuth redirects throw NEXT_REDIRECT which we should re-throw
-    throw error;
+  if (!validatedFields.success) {
+    const errors = validatedFields.error.flatten().fieldErrors;
+    const firstError = Object.values(errors).flat()[0];
+    return { success: false, error: firstError || 'Invalid form data' };
   }
+
+  const { firstName, lastName, email, phone, password, confirmPassword } = validatedFields.data;
+
+  return await authService.register({
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    confirmPassword,
+  });
 }
 
 /**
- * Get current user from session (for client components)
+ * Get current user from JWT token
+ * Note: For server components, this reads from the stored token
  */
 export async function getCurrentUser() {
-  const { auth } = await import('@/lib/auth/auth.config');
-  const session = await auth();
-  return session?.user || null;
+  return await authService.getCurrentUser();
+}
+
+/**
+ * Verify email with verification code
+ */
+export async function verifyEmail(email: string, code: string): Promise<AuthResult> {
+  return authService.verifyEmail(email, code);
+}
+
+/**
+ * Request password reset email
+ */
+export async function forgotPassword(email: string): Promise<AuthResult> {
+  return authService.forgotPassword(email);
+}
+
+/**
+ * Reset password with token
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<AuthResult> {
+  return authService.resetPassword(token, newPassword);
 }

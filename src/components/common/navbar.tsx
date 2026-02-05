@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -15,10 +16,11 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  UserCircle
+  UserCircle,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { signOutUser } from '@/actions/auth.actions';
+import { useAuth } from '@/hooks/auth-context';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import PillNav from '@/components/reactbit/PillNav';
@@ -30,13 +32,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 import { useCart } from '@/hooks/cart-context';
 import { useWishlist } from '@/hooks/wishlist-context';
 
-interface NavbarProps {
-  user?: {
-    name: string;
-    email: string;
-    image?: string;
-  } | null;
-}
+// User data is now provided by useAuth hook
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -46,7 +42,8 @@ const navLinks = [
   { href: '/products?sale=true', label: 'Sale' },
 ];
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar() {
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -56,19 +53,26 @@ export function Navbar({ user }: NavbarProps) {
   const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isAdminRoute = pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (isAdminRoute) return;
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isAdminRoute]);
 
   // Close mobile menu on route change
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname, searchParams]);
+    const timer = setTimeout(() => {
+      if (isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [pathname, searchParams, isMobileMenuOpen]);
 
   const isLinkActive = (href: string) => {
     const [path, query] = href.split('?');
@@ -96,6 +100,10 @@ export function Navbar({ user }: NavbarProps) {
     // For links with query params, check if they all match
     return linkParamKeys.every(key => searchParams.get(key) === linkParams.get(key));
   };
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <>
@@ -193,13 +201,16 @@ export function Navbar({ user }: NavbarProps) {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="relative"
                   >
-                    {user.image && !imageError ? (
-                      <img
-                        src={user.image}
-                        alt={user.name}
-                        className="h-8 w-8 rounded-full object-cover"
-                        onError={() => setImageError(true)}
-                      />
+                    {user.avatarUrl && !imageError ? (
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                        <Image
+                          src={user.avatarUrl}
+                          alt={user.name || 'User avatar'}
+                          fill
+                          className="object-cover"
+                          onError={() => setImageError(true)}
+                        />
+                      </div>
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
                         {user.name && user.name.charAt(0).toUpperCase()}
@@ -233,6 +244,16 @@ export function Navbar({ user }: NavbarProps) {
                             <UserCircle className="h-4 w-4" />
                             My Profile
                           </Link>
+                          {user.role === 'ADMIN' && (
+                            <Link
+                              href="/admin"
+                              className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                              Admin Dashboard
+                            </Link>
+                          )}
                           <Link
                             href="/orders"
                             className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
@@ -253,7 +274,7 @@ export function Navbar({ user }: NavbarProps) {
                             className="flex w-full items-center gap-2 rounded-design-sm px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
                             onClick={async () => {
                               setIsUserMenuOpen(false);
-                              await signOutUser();
+                              await logout();
                             }}
                           >
                             <LogOut className="h-4 w-4" />
