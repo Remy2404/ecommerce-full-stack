@@ -8,6 +8,7 @@ import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import api from '@/services/api/client';
+import { getErrorMessage } from '@/lib/http-error';
 
 interface VerifyEmailFormProps {
   token?: string;
@@ -17,14 +18,13 @@ type VerificationState = 'verifying' | 'success' | 'error' | 'no-token';
 
 export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   const router = useRouter();
-  const [state, setState] = useState<VerificationState>('verifying');
+  const [state, setState] = useState<VerificationState>(() =>
+    token ? 'verifying' : 'no-token'
+  );
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    if (!token) {
-      setState('no-token');
-      return;
-    }
+    if (!token) return;
 
     const verifyEmail = async () => {
       try {
@@ -39,8 +39,11 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
         setTimeout(() => {
           router.push('/login');
         }, 3000);
-      } catch (error: any) {
-        const message = error.response?.data?.message || 'Verification failed. The link may be invalid or expired.';
+      } catch (error: unknown) {
+        const message = getErrorMessage(
+          error,
+          'Verification failed. The link may be invalid or expired.'
+        );
         setErrorMessage(message);
         setState('error');
         

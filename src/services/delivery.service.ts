@@ -17,10 +17,10 @@ export async function getDeliveryStatus(orderId: string): Promise<Delivery | nul
 /**
  * Update delivery status (Admin/Delivery personnel)
  */
-export async function updateDeliveryStatus(deliveryId: string, status: string, location?: string): Promise<Delivery> {
-  const response = await api.put<DeliveryApiResponse>(`/delivery/${deliveryId}/status`, {
-    status,
-    location
-  });
-  return mapDelivery(response.data);
+export async function updateDeliveryStatus(deliveryId: string, status: string, notes?: string): Promise<void> {
+  await api.put(
+    `/delivery/${deliveryId}/status`,
+    null,
+    { params: { status, notes: notes?.trim() ? notes.trim() : undefined } }
+  );
 }

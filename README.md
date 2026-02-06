@@ -123,6 +123,28 @@ The application will be available at `http://localhost:3000`.
 - `pnpm run start` – Runs the built production server.
 - `pnpm run lint` – Executes ESLint to check for code quality.
 
+## Production Build Notes (Windows + Docker/CI)
+
+This project supports a standard `next build` output for local builds and an opt-in standalone output for Docker/CI.
+
+### Windows-safe build (default)
+
+```bash
+pnpm run build
+```
+
+### Standalone build (Docker/CI)
+
+PowerShell:
+```powershell
+$env:NEXT_STANDALONE_OUTPUT='true'; pnpm run build
+```
+
+Bash:
+```bash
+NEXT_STANDALONE_OUTPUT=true pnpm run build
+```
+
 ## License
 
 This project is privately licensed. See the project owner for details.

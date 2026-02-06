@@ -23,7 +23,3 @@ export async function getProductReviews(productId: string, page: number = 0, siz
 /**
  * Create a new product review
  */
-export async function createReview(data: any): Promise<Review> {
-  const response = await api.post<ReviewApiResponse>('/reviews', data);
-  return mapReview(response.data);
-}

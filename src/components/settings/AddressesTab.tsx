@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { createAddress, deleteAddress, getAddresses, setDefaultAddress, updateAddress } from '@/services/address.service';
 import { Address } from '@/types/address';
 
+type AddressUpsert = Parameters<typeof createAddress>[0];
+
 const DEFAULT_FORM = {
   label: 'home',
   fullName: '',
@@ -63,17 +65,13 @@ export function AddressesTab() {
     setIsSaving(true);
     try {
       if (editingId) {
-        const updated = await updateAddress(editingId, {
-          ...form,
-          label: form.label as 'home' | 'office' | 'other',
-        } as any);
+        const payload: Partial<AddressUpsert> = { ...form };
+        const updated = await updateAddress(editingId, payload);
         setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
         toast.success('Address updated');
       } else {
-        const created = await createAddress({
-          ...form,
-          label: form.label as 'home' | 'office' | 'other',
-        } as any);
+        const payload: AddressUpsert = { ...form };
+        const created = await createAddress(payload);
         setAddresses((prev) => [...prev, created]);
         toast.success('Address saved');
       }

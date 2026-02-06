@@ -4,6 +4,8 @@
 
 // --- Backend API Responses (DTOs) ---
 
+import type { AddressApiResponse } from './address';
+
 export interface SavedPaymentMethodApiResponse {
   id: string;
   method: string;
@@ -30,7 +32,7 @@ export interface UserApiResponse {
   twofaEnabled: boolean;
   createdAt: string;
   updatedAt: string;
-  addresses?: any[];
+  addresses?: AddressApiResponse[];
   savedPaymentMethods?: SavedPaymentMethodApiResponse[];
 }
 

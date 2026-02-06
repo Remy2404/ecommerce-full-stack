@@ -9,6 +9,7 @@ import { Disable2FADialog } from './Disable2FADialog';
 import { disable2FA } from '@/services/twofa.service';
 import { useAuth } from '@/hooks/auth-context';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/http-error';
 
 interface TwoFactorSectionProps {
   twofaEnabled: boolean;
@@ -27,8 +28,8 @@ export function TwoFactorSection({ twofaEnabled }: TwoFactorSectionProps) {
       await refresh();
       toast.success('Two-factor authentication disabled');
       setIsDisableDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to disable 2FA');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to disable 2FA'));
     } finally {
       setIsDisabling(false);
     }

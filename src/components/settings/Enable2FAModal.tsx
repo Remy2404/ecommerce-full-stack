@@ -16,6 +16,7 @@ import { setup2FA, enable2FA } from '@/services/twofa.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/auth-context';
 import { ShieldCheck, QrCode, Loader2, Copy, Check } from 'lucide-react';
+import { getErrorMessage } from '@/lib/http-error';
 
 interface Enable2FAModalProps {
   isOpen: boolean;
@@ -53,8 +54,8 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
       setSecret(response.secret);
       setStep('verify');
       toast.success('Authenticator configuration generated');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to setup 2FA');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to setup 2FA'));
     } finally {
       setIsLoading(false);
     }
@@ -72,8 +73,8 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
       await refresh();
       toast.success('Two-factor authentication enabled successfully');
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid verification code');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Invalid verification code'));
     } finally {
       setIsLoading(false);
     }

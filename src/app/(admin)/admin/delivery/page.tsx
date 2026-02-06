@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const statusOptions: DeliveryStatus[] = [
   'PENDING',
+  'ASSIGNED',
   'PICKED_UP',
   'IN_TRANSIT',
-  'OUT_FOR_DELIVERY',
   'DELIVERED',
   'FAILED'
 ];

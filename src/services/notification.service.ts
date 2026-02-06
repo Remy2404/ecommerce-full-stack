@@ -1,32 +1,34 @@
 import api from './api';
-import { PaginatedResponse, mapNotification } from '@/types';
+import { Notification, NotificationApiResponse, mapNotification } from '@/types';
 
 /**
  * Get user notifications
  */
-export async function getNotifications(page: number = 0, size: number = 20) {
-  const response = await api.get<PaginatedResponse<any>>(`/notifications?page=${page}&size=${size}`);
-  return {
-    notifications: response.data.content.map(mapNotification),
-    pagination: {
-      page: response.data.number,
-      limit: response.data.size,
-      total: response.data.totalElements,
-      totalPages: response.data.totalPages,
-    }
-  };
+export async function getNotifications(): Promise<Notification[]> {
+  const response = await api.get<NotificationApiResponse[]>('/notifications');
+  return response.data.map(mapNotification);
 }
 
 /**
  * Mark a notification as read
  */
 export async function markAsRead(notificationId: string) {
-  await api.put(`/notifications/${notificationId}/read`);
+  await markAsReadBulk([notificationId]);
+}
+
+/**
+ * Mark notifications as read (bulk)
+ */
+export async function markAsReadBulk(notificationIds: string[]) {
+  if (notificationIds.length === 0) return;
+  await api.post('/notifications/read', notificationIds);
 }
 
 /**
  * Mark all notifications as read
  */
 export async function markAllAsRead() {
-  await api.put('/notifications/read-all');
+  const notifications = await getNotifications();
+  const ids = notifications.map((n) => n.id);
+  await markAsReadBulk(ids);
 }

@@ -1,12 +1,26 @@
 import api from './api';
 import { Order, OrderApiResponse, mapOrder, PaginatedResponse } from '@/types';
 
+type AdminDashboardStatsApiResponse = {
+  totalUsers: number;
+  totalOrders: number;
+  totalProducts: number;
+  totalRevenue: number | null;
+  timestamp: string;
+};
+
+export type AdminDashboardStats = Omit<
+  AdminDashboardStatsApiResponse,
+  'totalRevenue'
+> & { totalRevenue?: number };
+
 /**
  * Get admin dashboard statistics
  */
-export async function getAdminDashboardStats(): Promise<any> {
-  const response = await api.get('/admin/dashboard');
-  return response.data;
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
+  const response = await api.get<AdminDashboardStatsApiResponse>('/admin/dashboard');
+  const data = response.data;
+  return { ...data, totalRevenue: data.totalRevenue ?? undefined };
 }
 
 /**

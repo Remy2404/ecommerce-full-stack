@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/auth-context';
@@ -9,26 +9,23 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      setAuthorized(false);
       const url = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
       router.push(url);
       return;
     }
 
     if (user?.role !== 'ADMIN') {
-      setAuthorized(false);
       router.push('/');
       return;
     }
-
-    setAuthorized(true);
   }, [isAuthenticated, isLoading, pathname, router, user?.role]);
+
+  const authorized = !isLoading && isAuthenticated && user?.role === 'ADMIN';
 
   if (isLoading || !authorized) {
     return (

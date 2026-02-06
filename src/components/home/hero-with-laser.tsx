@@ -8,27 +8,43 @@ import LaserFlow from '@/components/reactbit/LaserFlow';
 import GlitchText from '@/components/reactbit/GlitchText';
 import { Button } from '@/components/ui/button';
 
+type HeroCSSVars = React.CSSProperties & {
+    '--mx': string;
+    '--my': string;
+};
+
 export default function HeroWithLaser() {
     const containerRef = useRef<HTMLDivElement>(null);
-    const revealImgRef = useRef<HTMLImageElement>(null);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current || !revealImgRef.current) return;
+        if (!containerRef.current) return;
 
         const rect = containerRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const el = revealImgRef.current;
-        el.style.setProperty('--mx', `${x}px`);
-        el.style.setProperty('--my', `${y}px`);
+        containerRef.current.style.setProperty('--mx', `${x}px`);
+        containerRef.current.style.setProperty('--my', `${y}px`);
     };
 
     const handleMouseLeave = () => {
-        if (!revealImgRef.current) return;
-        const el = revealImgRef.current;
-        el.style.setProperty('--mx', '-9999px');
-        el.style.setProperty('--my', '-9999px');
+        if (!containerRef.current) return;
+        containerRef.current.style.setProperty('--mx', '-9999px');
+        containerRef.current.style.setProperty('--my', '-9999px');
+    };
+
+    const revealMaskStyle: React.CSSProperties = {
+        WebkitMaskImage:
+            'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.95) 80px, rgba(255,255,255,0.6) 160px, rgba(255,255,255,0.25) 240px, rgba(255,255,255,0) 320px)',
+        maskImage:
+            'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.95) 80px, rgba(255,255,255,0.6) 160px, rgba(255,255,255,0.25) 240px, rgba(255,255,255,0) 320px)',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+    };
+
+    const containerStyle: HeroCSSVars = {
+        '--mx': '-9999px',
+        '--my': '-9999px',
     };
 
     return (
@@ -37,6 +53,7 @@ export default function HeroWithLaser() {
             className="relative min-h-[600px] w-full overflow-hidden bg-slate-50 py-20 dark:bg-[#060010] lg:min-h-[800px] lg:py-32 group"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            style={containerStyle}
         >
             {/* Laser Flow Background */}
             <div className="absolute inset-0 z-0 opacity-40 dark:opacity-100">
@@ -89,19 +106,11 @@ export default function HeroWithLaser() {
 
             {/* Interactive Reveal Image (Optional Premium Touch) */}
             <Image
-                ref={revealImgRef as any}
                 src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1920"
                 alt="Premium Product Reveal"
                 fill
                 className="absolute inset-0 z-10 object-cover opacity-20 transition-all duration-700 filter group-hover:opacity-50 group-hover:brightness-[0.75] pointer-events-none dark:opacity-40 dark:group-hover:opacity-100"
-                style={{
-                    '--mx': '-9999px',
-                    '--my': '-9999px',
-                    WebkitMaskImage: 'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.95) 80px, rgba(255,255,255,0.6) 160px, rgba(255,255,255,0.25) 240px, rgba(255,255,255,0) 320px)',
-                    maskImage: 'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.95) 80px, rgba(255,255,255,0.6) 160px, rgba(255,255,255,0.25) 240px, rgba(255,255,255,0) 320px)',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskRepeat: 'no-repeat'
-                } as any}
+                style={revealMaskStyle}
             />
 
             {/* Floating Decorative Orbs */}

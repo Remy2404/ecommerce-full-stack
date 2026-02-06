@@ -14,7 +14,10 @@ export const DynamicIcon = ({ name, className, size = 24 }: DynamicIconProps) =>
         .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
         .join('');
 
-    const IconComponent = (LucideIcons as any)[normalizedName] as LucideIcon | undefined || (LucideIcons as any)[name] as LucideIcon | undefined;
+    const icons = LucideIcons as unknown as Record<string, unknown>;
+    const candidate = icons[normalizedName] ?? icons[name];
+    const IconComponent =
+        typeof candidate === 'function' ? (candidate as unknown as LucideIcon) : undefined;
 
     if (!IconComponent) {
         return null;

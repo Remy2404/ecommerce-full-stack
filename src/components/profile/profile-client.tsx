@@ -18,6 +18,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useWishlist } from '@/hooks/wishlist-context';
 import Image from 'next/image';
+import type { Order } from '@/types/order';
 
 interface ProfileClientProps {
   user: {
@@ -30,7 +31,7 @@ interface ProfileClientProps {
     orderCount: number;
     points: number;
   };
-  recentOrders: any[];
+  recentOrders: Order[];
 }
 
 export function ProfileClient({ user, stats, recentOrders }: ProfileClientProps) {

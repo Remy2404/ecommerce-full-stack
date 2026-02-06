@@ -33,7 +33,7 @@ export function Disable2FADialog({ isOpen, onClose, onConfirm, isLoading }: Disa
           </div>
           <AlertDialogDescription>
             Are you sure you want to disable two-factor authentication? This will 
-            significantly reduce your account security. You'll only need your password 
+            significantly reduce your account security. You&apos;ll only need your password 
             to log in.
           </AlertDialogDescription>
         </AlertDialogHeader>

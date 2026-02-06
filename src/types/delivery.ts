@@ -18,7 +18,8 @@ export interface DeliveryApiResponse {
 
 // --- Frontend Domain Models ---
 
-export type DeliveryStatus = 'PENDING' | 'PICKED_UP' | 'IN_TRANSIT' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'FAILED';
+// Keep in sync with backend enum: com.wing.ecommercebackendwing.model.enums.DeliveryStatus
+export type DeliveryStatus = 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
 
 export interface Delivery {
   id: string;
@@ -44,9 +45,9 @@ export function mapDelivery(raw: DeliveryApiResponse): Delivery {
 
 export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
   PENDING: 'Pending',
+  ASSIGNED: 'Assigned',
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
-  OUT_FOR_DELIVERY: 'Out for Delivery',
   DELIVERED: 'Delivered',
   FAILED: 'Failed',
 };

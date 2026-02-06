@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { ProfileClient } from '@/components/profile/profile-client';
 import { getUserDashboardStats, getUserOrders } from '@/actions/order.actions';
+import type { Order } from '@/types/order';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [stats, setStats] = useState({ orderCount: 0, points: 0 });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {

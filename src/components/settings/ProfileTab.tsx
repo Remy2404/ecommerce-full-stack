@@ -8,6 +8,7 @@ import { getUserProfile, updateProfile } from '@/services/user.service';
 import { User, UpdateProfileRequest } from '@/types/user';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { getErrorMessage } from '@/lib/http-error';
 
 export function ProfileTab() {
   const { user, refresh } = useAuth();
@@ -36,8 +37,8 @@ export function ProfileTab() {
       await updateProfile(data);
       await refresh();
       toast.success('Profile updated successfully');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to update profile'));
     } finally {
       setIsSaving(false);
     }

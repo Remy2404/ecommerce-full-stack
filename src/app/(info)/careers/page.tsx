@@ -162,7 +162,7 @@ export default function CareersPage() {
       {/* Don't See Your Role */}
       <section className="border-t border-border bg-muted/30 py-16">
         <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold">Don't see your role?</h2>
+          <h2 className="text-2xl font-bold">Don&apos;t see your role?</h2>
           <p className="mt-2 text-muted-foreground">
             We&apos;re always looking for talented people. Send us your resume and we&apos;ll 
             reach out when a matching position opens up.

@@ -43,8 +43,8 @@ const MenuItem: React.FC<MenuItemProps> = ({ link, text, image }) => {
     const imagesRef = useRef<(HTMLDivElement | null)[]>([]);
 
     // GSAP high-performance quickTo setters for lagging effect
-    const xTo = useRef<Function | null>(null);
-    const yTo = useRef<Function | null>(null);
+    const xTo = useRef<((value: number) => void) | null>(null);
+    const yTo = useRef<((value: number) => void) | null>(null);
 
     useEffect(() => {
         // Simple hover animation for the whole marquee

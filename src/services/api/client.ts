@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getErrorMessage } from '@/lib/http-error';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
@@ -195,12 +196,24 @@ api.interceptors.response.use(
 
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return api(originalRequest);
-    } catch (refreshError: any) {
+    } catch (refreshError: unknown) {
       if (isBrowser()) {
+        const axiosRefreshError =
+          refreshError instanceof AxiosError ? refreshError : null;
+        const data = axiosRefreshError?.response?.data;
+        const apiError =
+          data && typeof data === 'object' && 'error' in data
+            ? (data as { error?: unknown }).error
+            : undefined;
+        const apiCode =
+          data && typeof data === 'object' && 'code' in data
+            ? (data as { code?: unknown }).code
+            : undefined;
+
         console.error('[API] Refresh token failed:', {
-          status: refreshError.response?.status,
-          message: refreshError.response?.data?.error || refreshError.message,
-          code: refreshError.response?.data?.code
+          status: axiosRefreshError?.response?.status,
+          message: typeof apiError === 'string' ? apiError : getErrorMessage(refreshError, 'Refresh token failed'),
+          code: typeof apiCode === 'string' ? apiCode : undefined,
         });
       }
 

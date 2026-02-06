@@ -219,7 +219,7 @@ function CheckoutPageContent() {
       });
 
 
-      if (response.success && response.data) {
+      if (response.success) {
         setOrderNumber(response.data.orderNumber);
         setOrderId(response.data.orderId);
         

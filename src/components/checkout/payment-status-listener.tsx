@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { verifyPayment } from '@/services/payment.service';
 
 interface PaymentStatusListenerProps {
@@ -14,31 +14,22 @@ export function PaymentStatusListener({
   expiresAt,
   onSuccess,
 }: PaymentStatusListenerProps) {
-  const [polling, setPolling] = useState(true);
-
-  // Reset polling if MD5 changes (e.g., QR regenerated)
   useEffect(() => {
-    setPolling(true);
-  }, [md5]);
-
-  useEffect(() => {
-    if (!polling || !md5) return;
+    if (!md5) return;
 
     // Check if QR is expired locally first
     const checkExpiration = () => {
       if (expiresAt) {
         const expirationTime = new Date(expiresAt).getTime();
         const now = new Date().getTime();
-        if (now > expirationTime) {
-          setPolling(false);
-          return true;
-        }
+        if (now > expirationTime) return true;
       }
       return false;
     };
 
     if (checkExpiration()) return;
 
+    let cancelled = false;
     const pollInterval = setInterval(async () => {
       // Periodic expiration check
       if (checkExpiration()) {
@@ -50,8 +41,8 @@ export function PaymentStatusListener({
         const result = await verifyPayment(md5);
 
         if (result?.paid) {
-          setPolling(false);
           clearInterval(pollInterval);
+          if (cancelled) return;
           onSuccess();
         }
       } catch (error) {
@@ -59,8 +50,11 @@ export function PaymentStatusListener({
       }
     }, 3000); // Poll every 3 seconds
 
-    return () => clearInterval(pollInterval);
-  }, [md5, polling, expiresAt, onSuccess]);
+    return () => {
+      cancelled = true;
+      clearInterval(pollInterval);
+    };
+  }, [md5, expiresAt, onSuccess]);
 
   return null;
 }
