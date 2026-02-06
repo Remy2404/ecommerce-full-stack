@@ -27,6 +27,16 @@ const isPublicAuthPath = (path: string): boolean => {
   );
 };
 
+const isProtectedRoute = (path: string): boolean => {
+  return (
+    path.startsWith('/profile') ||
+    path.startsWith('/settings') ||
+    path.startsWith('/orders') ||
+    path.startsWith('/checkout') ||
+    path.startsWith('/admin')
+  );
+};
+
 export const getAccessToken = async (): Promise<string | null> => {
   // Browser: localStorage first
   if (isBrowser()) {
@@ -152,6 +162,17 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const requestUrl = originalRequest.url ?? '';
+    if (requestUrl.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
+    // Server-side refresh cannot reliably persist/clear cookies in the browser.
+    // Avoid refresh attempts on the server to prevent stale-cookie retry loops.
+    if (isServer()) {
+      return Promise.reject(error);
+    }
+
     if (isRefreshing) {
       return new Promise((resolve) => {
         subscribe((token) => {
@@ -169,24 +190,7 @@ api.interceptors.response.use(
         console.debug('[API] Token expired, attempting refresh...');
       }
 
-      const refreshConfig: { 
-        withCredentials: boolean; 
-        headers?: { Cookie: string } 
-      } = { withCredentials: true };
-
-      // Server-side cookie forwarding
-      if (isServer()) {
-        try {
-          const { cookies } = await import('next/headers');
-          const cookieStore = await cookies();
-          const refreshToken = cookieStore.get('refreshToken')?.value;
-          if (refreshToken) {
-            refreshConfig.headers = {
-              Cookie: `refreshToken=${refreshToken}`,
-            };
-          }
-        } catch {}
-      }
+      const refreshConfig: { withCredentials: boolean } = { withCredentials: true };
 
       const res = await axios.post(
         `${API_BASE_URL}/auth/refresh`,
@@ -231,7 +235,7 @@ api.interceptors.response.use(
 
       if (isBrowser()) {
         const path = window.location.pathname;
-        if (!isPublicAuthPath(path)) {
+        if (isProtectedRoute(path) && !isPublicAuthPath(path)) {
           window.location.href = '/login?reason=token_expired';
         }
       }

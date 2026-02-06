@@ -29,6 +29,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 import { useCart } from '@/hooks/cart-context';
 import { useWishlist } from '@/hooks/wishlist-context';
+import { ThemeToggle } from '@/components/common/theme-toggle';
 
 // User data is now provided by useAuth hook
 
@@ -143,6 +144,7 @@ export function Navbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               {/* Search Button */}
               <Button
                 variant="ghost"

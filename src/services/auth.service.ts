@@ -121,6 +121,10 @@ export async function logout(): Promise<void> {
  * Refresh access token (uses httpOnly refresh token cookie)
  */
 export async function refreshToken(): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
   try {
     const response = await api.post<AuthResponse>('/auth/refresh');
     const { token } = response.data;
