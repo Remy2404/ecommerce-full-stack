@@ -1,34 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileForm } from './ProfileForm';
 import { useAuth } from '@/hooks/auth-context';
-import { getUserProfile, updateProfile } from '@/services/user.service';
-import { User, UpdateProfileRequest } from '@/types/user';
+import { updateProfile, uploadAvatar } from '@/services/user.service';
+import { UpdateProfileRequest } from '@/types/user';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { getErrorMessage } from '@/lib/http-error';
 
 export function ProfileTab() {
-  const { user, refresh } = useAuth();
-  const [profile, setProfile] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile, refresh } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getUserProfile();
-        setProfile(data);
-      } catch (error) {
-        toast.error('Failed to load profile details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   const handleSubmit = async (data: UpdateProfileRequest) => {
     setIsSaving(true);
@@ -36,20 +19,25 @@ export function ProfileTab() {
       await updateProfile(data);
       await refresh();
       toast.success('Profile updated successfully');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to update profile'));
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const handleAvatarUpload = async (file: File) => {
+    setIsSaving(true);
+    try {
+      await uploadAvatar(file);
+      await refresh();
+      toast.success('Avatar updated successfully');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to upload avatar'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Card>
@@ -60,12 +48,15 @@ export function ProfileTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {profile && (
+        {profile ? (
           <ProfileForm 
             user={profile} 
             onSubmit={handleSubmit} 
+            onAvatarUpload={handleAvatarUpload}
             isLoading={isSaving} 
           />
+        ) : (
+          <p className="text-sm text-muted-foreground">Profile unavailable.</p>
         )}
       </CardContent>
     </Card>

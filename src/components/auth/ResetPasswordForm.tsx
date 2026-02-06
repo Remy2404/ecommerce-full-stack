@@ -80,7 +80,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           description: result.error,
         });
       }
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -112,7 +112,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           description: result.error,
         });
       }
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -173,7 +173,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 <div>
                   <h3 className="text-xl font-semibold">Check your email</h3>
                   <p className="mt-2 text-sm text-gray-400">
-                    We've sent password reset instructions to your email address.
+                    We&apos;ve sent password reset instructions to your email address.
                   </p>
                 </div>
                 <Link

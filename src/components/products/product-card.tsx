@@ -5,12 +5,10 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { 
-  Card, 
   CardInteractive 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  Badge, 
   LowStockBadge, 
   FeaturedBadge, 
   SaleBadge 
@@ -26,6 +24,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export interface Product {
   id: string;
+  merchantId?: string;
   name: string;
   slug: string;
   price: number;
@@ -45,7 +44,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, index = 0, size = 'default' }: ProductCardProps) {
-  const { addItem, openCart } = useCart();
+  const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   const inWishlist = isInWishlist(product.id);
@@ -67,6 +66,7 @@ export function ProductCard({ product, index = 0, size = 'default' }: ProductCar
     
     addItem({
       productId: product.id,
+      merchantId: product.merchantId,
       name: product.name,
       price: product.price,
       image: product.images[0] || '/placeholder.jpg',

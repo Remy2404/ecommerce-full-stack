@@ -33,7 +33,7 @@ export default function AdminUsersPage() {
         const result = await getAdminOrders(0, 50);
         if (!active) return;
         setOrders(result.orders);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setError('Unable to load admin orders to build the user list.');
       } finally {
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
     try {
       await revokeUser(userId);
       setRevokeStatus(`User ${userId} access revoked.`);
-    } catch (err) {
+    } catch {
       setRevokeStatus('Failed to revoke user access.');
     }
   };

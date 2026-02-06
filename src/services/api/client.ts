@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getErrorMessage } from '@/lib/http-error';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
@@ -15,6 +16,26 @@ const isServer = () => !isBrowser();
 /* ------------------------------------------------------------------ */
 
 const ACCESS_TOKEN_KEY = 'accessToken';
+
+const isPublicAuthPath = (path: string): boolean => {
+  return (
+    path.startsWith('/login') ||
+    path.startsWith('/register') ||
+    path.startsWith('/verify-email') ||
+    path.startsWith('/forgot-password') ||
+    path.startsWith('/reset-password')
+  );
+};
+
+const isProtectedRoute = (path: string): boolean => {
+  return (
+    path.startsWith('/profile') ||
+    path.startsWith('/settings') ||
+    path.startsWith('/orders') ||
+    path.startsWith('/checkout') ||
+    path.startsWith('/admin')
+  );
+};
 
 export const getAccessToken = async (): Promise<string | null> => {
   // Browser: localStorage first
@@ -141,6 +162,17 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const requestUrl = originalRequest.url ?? '';
+    if (requestUrl.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
+    // Server-side refresh cannot reliably persist/clear cookies in the browser.
+    // Avoid refresh attempts on the server to prevent stale-cookie retry loops.
+    if (isServer()) {
+      return Promise.reject(error);
+    }
+
     if (isRefreshing) {
       return new Promise((resolve) => {
         subscribe((token) => {
@@ -158,24 +190,7 @@ api.interceptors.response.use(
         console.debug('[API] Token expired, attempting refresh...');
       }
 
-      const refreshConfig: { 
-        withCredentials: boolean; 
-        headers?: { Cookie: string } 
-      } = { withCredentials: true };
-
-      // Server-side cookie forwarding
-      if (isServer()) {
-        try {
-          const { cookies } = await import('next/headers');
-          const cookieStore = await cookies();
-          const refreshToken = cookieStore.get('refreshToken')?.value;
-          if (refreshToken) {
-            refreshConfig.headers = {
-              Cookie: `refreshToken=${refreshToken}`,
-            };
-          }
-        } catch {}
-      }
+      const refreshConfig: { withCredentials: boolean } = { withCredentials: true };
 
       const res = await axios.post(
         `${API_BASE_URL}/auth/refresh`,
@@ -195,12 +210,24 @@ api.interceptors.response.use(
 
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return api(originalRequest);
-    } catch (refreshError: any) {
+    } catch (refreshError: unknown) {
       if (isBrowser()) {
+        const axiosRefreshError =
+          refreshError instanceof AxiosError ? refreshError : null;
+        const data = axiosRefreshError?.response?.data;
+        const apiError =
+          data && typeof data === 'object' && 'error' in data
+            ? (data as { error?: unknown }).error
+            : undefined;
+        const apiCode =
+          data && typeof data === 'object' && 'code' in data
+            ? (data as { code?: unknown }).code
+            : undefined;
+
         console.error('[API] Refresh token failed:', {
-          status: refreshError.response?.status,
-          message: refreshError.response?.data?.error || refreshError.message,
-          code: refreshError.response?.data?.code
+          status: axiosRefreshError?.response?.status,
+          message: typeof apiError === 'string' ? apiError : getErrorMessage(refreshError, 'Refresh token failed'),
+          code: typeof apiCode === 'string' ? apiCode : undefined,
         });
       }
 
@@ -208,7 +235,7 @@ api.interceptors.response.use(
 
       if (isBrowser()) {
         const path = window.location.pathname;
-        if (!path.startsWith('/login') && !path.startsWith('/register')) {
+        if (isProtectedRoute(path) && !isPublicAuthPath(path)) {
           window.location.href = '/login?reason=token_expired';
         }
       }

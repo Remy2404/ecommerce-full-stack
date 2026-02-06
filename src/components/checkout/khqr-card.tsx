@@ -19,8 +19,6 @@ export function formatUSD(amount: number): string {
 interface KhqrCardProps {
   /** QR code data string */
   qrString: string;
-  /** MD5 transaction hash */
-  md5: string;
   /** Order total amount in USD */
   amount: number;
   /** Order number/reference */
@@ -55,7 +53,6 @@ interface KhqrCardProps {
  */
 export function KhqrCard({
   qrString,
-  md5,
   amount,
   orderNumber,
   expiresAt,
@@ -208,15 +205,6 @@ export function KhqrCard({
             </div>
           </div>
 
-          {/* Transaction ID */}
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-gray-500 uppercase tracking-wider">
-              Transaction ID
-            </span>
-            <code className="font-mono font-medium text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-              {md5.slice(0, 8)}...{md5.slice(-4)}
-            </code>
-          </div>
         </div>
       </div>
     </div>

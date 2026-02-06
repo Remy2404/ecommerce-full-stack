@@ -9,13 +9,11 @@ import {
   Menu,
   X,
   ShoppingCart,
-  User,
   Search,
   Heart,
   Package,
   LogOut,
   Settings,
-  ChevronDown,
   UserCircle,
   LayoutGrid
 } from 'lucide-react';
@@ -31,6 +29,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 import { useCart } from '@/hooks/cart-context';
 import { useWishlist } from '@/hooks/wishlist-context';
+import { ThemeToggle } from '@/components/common/theme-toggle';
 
 // User data is now provided by useAuth hook
 
@@ -43,7 +42,7 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const { user, logout, isLoading: isAuthLoading } = useAuth();
+  const { user, logout } = useAuth();
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -145,6 +144,7 @@ export function Navbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               {/* Search Button */}
               <Button
                 variant="ghost"

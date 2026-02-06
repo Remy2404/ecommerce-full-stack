@@ -17,15 +17,3 @@ export async function getCategories(): Promise<Category[]> {
     return [];
   }
 }
-
-/**
- * Get category by slug
- */
-export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  try {
-    const response = await api.get<CategoryApiResponse>(`/categories/${slug}`);
-    return mapCategory(response.data);
-  } catch {
-    return null;
-  }
-}

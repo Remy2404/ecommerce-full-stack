@@ -5,6 +5,7 @@ import {
   User, 
   LoginCredentials as LoginRequest, 
   RegisterData as RegisterRequest,
+  UserRole,
   UserApiResponse,
   AuthResponse,
   AuthResult,
@@ -66,10 +67,8 @@ export async function register(data: RegisterRequest): Promise<AuthResult> {
   try {
     const response = await api.post<AuthResponse>('/auth/register', data);
 
-    const { token, user } = response.data;
-    setAccessToken(token);
-
-    return { success: true, user: mapAuthUser(user), token };
+    const { user } = response.data;
+    return { success: true, user: mapAuthUser(user) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
     
@@ -122,6 +121,10 @@ export async function logout(): Promise<void> {
  * Refresh access token (uses httpOnly refresh token cookie)
  */
 export async function refreshToken(): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
   try {
     const response = await api.post<AuthResponse>('/auth/refresh');
     const { token } = response.data;
@@ -173,7 +176,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     name?: string;
     firstName?: string;
     lastName?: string;
-    role: any;
+    role?: unknown;
     avatar?: string;
     exp: number;
   }>(token);
@@ -182,13 +185,25 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
 
+  const isUserRole = (value: unknown): value is UserRole => {
+    return (
+      typeof value === 'string' &&
+      (value === 'CUSTOMER' ||
+        value === 'ADMIN' ||
+        value === 'MERCHANT' ||
+        value === 'DELIVERY')
+    );
+  };
+
+  const role: UserRole = isUserRole(decoded.role) ? decoded.role : 'CUSTOMER';
+
   return mapAuthUser({
     id: decoded.id || decoded.sub, 
     email: decoded.email || decoded.sub,
     firstName: decoded.firstName || '',
     lastName: decoded.lastName || '',
     name: decoded.name,
-    role: decoded.role,
+    role,
     avatarUrl: decoded.avatar,
     isActive: true,
     emailVerified: true,
@@ -254,35 +269,5 @@ export async function changePassword(data: ChangePasswordRequest): Promise<AuthR
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
     return { success: false, error: axiosError.response?.data?.message || 'Password change failed' };
-  }
-}
-
-/**
- * Setup 2FA
- */
-export async function setup2FA(): Promise<{ success: boolean; qrCodeUrl?: string; secret?: string; error?: string }> {
-  try {
-    const response = await api.post<TwoFactorResponse>('/auth/2fa/setup');
-    return { 
-      success: true, 
-      qrCodeUrl: response.data.qrCodeUrl,
-      secret: response.data.secret
-    };
-  } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Failed to setup 2FA' };
-  }
-}
-
-/**
- * Verify 2FA code
- */
-export async function verify2FA(code: string): Promise<AuthResult> {
-  try {
-    await api.post('/auth/2fa/verify', { code });
-    return { success: true };
-  } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Invalid 2FA code' };
   }
 }

@@ -68,21 +68,19 @@ export default function RegisterForm() {
                 agreeToTerms: data.agreeToTerms,
             });
 
-            if (result.success && result.token) {
-                setAccessToken(result.token);
-                if (result.user) login(result.user);
-
+            if (result.success) {
                 toast.success('Registration successful!', {
-                    description: 'Your account has been created.',
+                    description: 'Please check your email and verify your account before logging in.',
+                    duration: 7000,
                 });
-                
-                router.push('/');
+
+                router.push(`/login?email=${encodeURIComponent(data.email)}`);
             } else if (result.error) {
                 toast.error('Registration failed', {
                     description: result.error,
                 });
             }
-        } catch (err) {
+        } catch {
             toast.error('Something went wrong', {
                 description: 'Please try again later.',
             });

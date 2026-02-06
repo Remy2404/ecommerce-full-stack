@@ -30,8 +30,11 @@ export async function createOrder(data: CreateOrderRequest): Promise<OrderResult
     const response = await api.post<OrderApiResponse>('/orders', data);
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    const message = axiosError.response?.data?.message || 'Failed to create order';
+    const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+    const message =
+      axiosError.response?.data?.error ||
+      axiosError.response?.data?.message ||
+      'Failed to create order';
     return { success: false, error: message };
   }
 }
@@ -102,7 +105,7 @@ export async function updateOrderStatus(
 ): Promise<OrderResult> {
   try {
     const response = await api.put<OrderApiResponse>(`/orders/${orderId}/status`, null, {
-      params: { status }
+      params: { status, ...(reason ? { reason } : {}) }
     });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {

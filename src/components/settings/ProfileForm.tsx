@@ -12,10 +12,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface ProfileFormProps {
   user: User;
   onSubmit: (data: UpdateProfileRequest) => Promise<void>;
+  onAvatarUpload: (file: File) => Promise<void>;
   isLoading: boolean;
 }
 
-export function ProfileForm({ user, onSubmit, isLoading }: ProfileFormProps) {
+export function ProfileForm({ user, onSubmit, onAvatarUpload, isLoading }: ProfileFormProps) {
   const [formData, setFormData] = useState<UpdateProfileRequest>({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -32,6 +33,16 @@ export function ProfileForm({ user, onSubmit, isLoading }: ProfileFormProps) {
     onSubmit(formData);
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+    await onAvatarUpload(file);
+    e.target.value = '';
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 pb-4 border-b border-border/50">
@@ -42,10 +53,22 @@ export function ProfileForm({ user, onSubmit, isLoading }: ProfileFormProps) {
               {user.firstName?.[0]}{user.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
+          <input
+            id="avatar-upload-input"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
           <button
             type="button"
-            className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
             aria-label="Change avatar"
+            disabled={isLoading}
+            onClick={() => {
+              const input = document.getElementById('avatar-upload-input') as HTMLInputElement | null;
+              input?.click();
+            }}
           >
             <Camera className="h-4 w-4" />
           </button>

@@ -26,7 +26,7 @@ export default function AdminReviewsPage() {
       if (!result || result.reviews.length === 0) {
         setMessage('No reviews found for this product.');
       }
-    } catch (err) {
+    } catch {
       setMessage('Unable to load product reviews.');
     } finally {
       setLoading(false);

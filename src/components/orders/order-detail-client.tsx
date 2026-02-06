@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { 
   Package, 
   MapPin, 
@@ -138,10 +138,13 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                   <div key={item.id} className="flex gap-4 p-6 hover:bg-muted/30 transition-colors">
                     <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-design bg-muted border">
                       {item.productImage ? (
-                        <img 
-                          src={item.productImage} 
-                          alt={item.productName} 
+                        <Image
+                          src={item.productImage}
+                          alt={item.productName}
+                          width={80}
+                          height={80}
                           className="h-full w-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
@@ -162,7 +165,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                       </div>
                       <div className="flex justify-end mt-4">
                         <Button variant="ghost" size="sm" asChild>
-                           <Link href={`/products/${item.id}`} className="text-xs">
+                           <Link href={`/products/${item.productSlug || item.productId}`} className="text-xs">
                              Buy Again
                              <ChevronRight className="h-3 w-3 ml-1" />
                            </Link>

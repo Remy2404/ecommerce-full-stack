@@ -2,13 +2,19 @@
 
 import * as orderService from '@/services/order.service';
 import { getCurrentUser } from '@/services/auth.service';
-import { CheckoutInput, Order, OrderListResult } from '@/types';
+import { CheckoutInput, Order } from '@/types';
+
+type ActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
 
 /**
  * Get all orders for the current user
  * Calls Spring Boot backend /api/orders
  */
-export async function getUserOrders(limit: number = 10) {
+export async function getUserOrders(
+  limit: number = 10
+): Promise<ActionResult<Order[]>> {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
@@ -16,17 +22,16 @@ export async function getUserOrders(limit: number = 10) {
 
   const result = await orderService.getUserOrders(0, limit);
 
-  return {
-    success: true,
-    data: result.orders
-  };
+  return { success: true, data: result.orders };
 }
 
 /**
  * Get dashboard stats for the current user
  * Note: This now uses the order count from the API
  */
-export async function getUserDashboardStats() {
+export async function getUserDashboardStats(): Promise<
+  ActionResult<{ orderCount: number; points: number; memberSince: string }>
+> {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
@@ -41,8 +46,40 @@ export async function getUserDashboardStats() {
     success: true,
     data: {
       orderCount: result.pagination.total,
-      points: points,
+      points,
       memberSince: 'Member',
+    },
+  };
+}
+
+/**
+ * Get profile page data in a single server action call
+ */
+export async function getProfileDashboardData(
+  limit: number = 5
+): Promise<
+  ActionResult<{
+    stats: { orderCount: number; points: number; memberSince: string };
+    recentOrders: Order[];
+  }>
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const result = await orderService.getUserOrders(0, limit);
+  const orderCount = result.pagination.total;
+
+  return {
+    success: true,
+    data: {
+      stats: {
+        orderCount,
+        points: orderCount * 10,
+        memberSince: 'Member',
+      },
+      recentOrders: result.orders,
     },
   };
 }
@@ -51,7 +88,9 @@ export async function getUserDashboardStats() {
  * Create a new order
  * Calls Spring Boot backend /api/orders
  */
-export async function createOrder(data: CheckoutInput) {
+export async function createOrder(
+  data: CheckoutInput
+): Promise<ActionResult<{ orderId: string; orderNumber: string }>> {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, error: 'Unauthorized' };
@@ -70,6 +109,7 @@ export async function createOrder(data: CheckoutInput) {
       variantId: item.variantId,
       quantity: item.quantity
     })),
+    shippingAddressId: data.shippingAddress.id,
     shippingAddress: {
       fullName: data.shippingAddress.fullName || `${user.name}`,
       phone: data.shippingAddress.phone || '',
@@ -83,7 +123,7 @@ export async function createOrder(data: CheckoutInput) {
   });
 
   if (!result.success) {
-    return { success: false, error: result.error };
+    return { success: false, error: result.error ?? 'Failed to create order' };
   }
 
   return {

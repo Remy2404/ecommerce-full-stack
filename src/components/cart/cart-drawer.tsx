@@ -8,12 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/cart-context';
 import { Button } from '@/components/ui/button';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, itemCount, updateQuantity, removeItem } = useCart();
@@ -115,7 +109,7 @@ export function CartDrawer() {
                   </div>
                   <h3 className="mb-2 text-lg font-medium">Your cart is empty</h3>
                   <p className="mb-6 text-sm text-muted-foreground">
-                    Looks like you haven't added anything yet.
+                    Looks like you haven&apos;t added anything yet.
                   </p>
                   <Button onClick={closeCart} asChild>
                     <Link href="/products">

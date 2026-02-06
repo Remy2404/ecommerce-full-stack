@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -16,6 +16,7 @@ import { setup2FA, enable2FA } from '@/services/twofa.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/auth-context';
 import { ShieldCheck, QrCode, Loader2, Copy, Check } from 'lucide-react';
+import { getErrorMessage } from '@/lib/http-error';
 
 interface Enable2FAModalProps {
   isOpen: boolean;
@@ -53,8 +54,8 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
       setSecret(response.secret);
       setStep('verify');
       toast.success('Authenticator configuration generated');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to setup 2FA');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to setup 2FA'));
     } finally {
       setIsLoading(false);
     }
@@ -72,8 +73,8 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
       await refresh();
       toast.success('Two-factor authentication enabled successfully');
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid verification code');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Invalid verification code'));
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +123,14 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="bg-white p-2 rounded-lg border">
                   {qrCode ? (
-                    <img src={qrCode} alt="QR Code" className="w-48 h-48" />
+                    <Image
+                      src={qrCode}
+                      alt="QR Code"
+                      width={192}
+                      height={192}
+                      className="w-48 h-48"
+                      unoptimized
+                    />
                   ) : (
                     <div className="w-48 h-48 flex items-center justify-center bg-muted rounded">
                       <QrCode className="h-10 w-10 text-muted-foreground animate-pulse" />

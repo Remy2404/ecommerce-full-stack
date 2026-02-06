@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { getOrderById } from '@/actions/order.actions';
 import { OrderDetailClient } from '@/components/orders/order-detail-client';
-import { Order, OrderStatus, mapOrder } from '@/types/order';
-import { PaymentStatus } from '@/types/payment';
+import { Order } from '@/types/order';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -36,10 +35,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         const orderData = result.data;
         if (!orderData) return;
 
-        // Use the centralized mapping logic
-        // Cast to any because the response from getOrderById might not match mapOrder's expected input perfectly yet
-        const formattedOrder = mapOrder(orderData as any);
-        setOrder(formattedOrder);
+        setOrder(orderData);
       } catch (error) {
         console.error('Failed to fetch order:', error);
         setNotFound(true);

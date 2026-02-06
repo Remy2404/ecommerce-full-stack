@@ -13,7 +13,7 @@ export function PasswordChangeForm() {
         <InfoIcon className="h-4 w-4" />
         <AlertDescription className="text-sm font-medium">
           Password changes are currently unavailable through the settings panel. 
-          Please use the "Forgot Password" flow at login if you need to reset your password.
+          Please use the &quot;Forgot Password&quot; flow at login if you need to reset your password.
         </AlertDescription>
       </Alert>
 

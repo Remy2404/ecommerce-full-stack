@@ -1,0 +1,18 @@
+{
+  "name": "Store | Premium E-commerce",
+  "short_name": "Store",
+  "description": "Discover premium products curated for modern living.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

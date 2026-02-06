@@ -26,6 +26,31 @@ type Props = {
     color?: string;
 };
 
+type LaserUniforms = {
+    iTime: THREE.IUniform<number>;
+    iResolution: THREE.IUniform<THREE.Vector3>;
+    iMouse: THREE.IUniform<THREE.Vector4>;
+    uWispDensity: THREE.IUniform<number>;
+    uTiltScale: THREE.IUniform<number>;
+    uFlowTime: THREE.IUniform<number>;
+    uFogTime: THREE.IUniform<number>;
+    uBeamXFrac: THREE.IUniform<number>;
+    uBeamYFrac: THREE.IUniform<number>;
+    uFlowSpeed: THREE.IUniform<number>;
+    uVLenFactor: THREE.IUniform<number>;
+    uHLenFactor: THREE.IUniform<number>;
+    uFogIntensity: THREE.IUniform<number>;
+    uFogScale: THREE.IUniform<number>;
+    uWSpeed: THREE.IUniform<number>;
+    uWIntensity: THREE.IUniform<number>;
+    uFlowStrength: THREE.IUniform<number>;
+    uDecay: THREE.IUniform<number>;
+    uFalloffStart: THREE.IUniform<number>;
+    uFogFallSpeed: THREE.IUniform<number>;
+    uColor: THREE.IUniform<THREE.Vector3>;
+    uFade: THREE.IUniform<number>;
+};
+
 const VERT = `
 precision highp float;
 attribute vec3 position;
@@ -286,7 +311,7 @@ export const LaserFlow: React.FC<Props> = ({
 }) => {
     const mountRef = useRef<HTMLDivElement | null>(null);
     const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-    const uniformsRef = useRef<any>(null);
+    const uniformsRef = useRef<LaserUniforms | null>(null);
     const hasFadedRef = useRef(false);
     const rectRef = useRef<DOMRect | null>(null);
     const baseDprRef = useRef<number>(1);
@@ -368,7 +393,7 @@ export const LaserFlow: React.FC<Props> = ({
             uColor: { value: new THREE.Vector3(1, 1, 1) },
             uFade: { value: hasFadedRef.current ? 1 : 0 }
         };
-        uniformsRef.current = uniforms;
+        uniformsRef.current = uniforms as unknown as LaserUniforms;
 
         const material = new THREE.RawShaderMaterial({
             vertexShader: VERT,
@@ -446,12 +471,12 @@ export const LaserFlow: React.FC<Props> = ({
             const hb = rect.height * ratio;
             mouseTarget.set(x * ratio, hb - y * ratio);
         };
-        const onMove = (ev: PointerEvent | MouseEvent) => updateMouse(ev.clientX, ev.clientY);
+        const onMove = (ev: PointerEvent) => updateMouse(ev.clientX, ev.clientY);
         const onLeave = () => mouseTarget.set(0, 0);
-        canvas.addEventListener('pointermove', onMove as any, { passive: true });
-        canvas.addEventListener('pointerdown', onMove as any, { passive: true });
-        canvas.addEventListener('pointerenter', onMove as any, { passive: true });
-        canvas.addEventListener('pointerleave', onLeave as any, { passive: true });
+        canvas.addEventListener('pointermove', onMove, { passive: true });
+        canvas.addEventListener('pointerdown', onMove, { passive: true });
+        canvas.addEventListener('pointerenter', onMove, { passive: true });
+        canvas.addEventListener('pointerleave', onLeave, { passive: true });
 
         const onCtxLost = (e: Event) => {
             e.preventDefault();
@@ -546,10 +571,10 @@ export const LaserFlow: React.FC<Props> = ({
             ro.disconnect();
             io.disconnect();
             document.removeEventListener('visibilitychange', onVis);
-            canvas.removeEventListener('pointermove', onMove as any);
-            canvas.removeEventListener('pointerdown', onMove as any);
-            canvas.removeEventListener('pointerenter', onMove as any);
-            canvas.removeEventListener('pointerleave', onLeave as any);
+            canvas.removeEventListener('pointermove', onMove);
+            canvas.removeEventListener('pointerdown', onMove);
+            canvas.removeEventListener('pointerenter', onMove);
+            canvas.removeEventListener('pointerleave', onLeave);
             canvas.removeEventListener('webglcontextlost', onCtxLost);
             canvas.removeEventListener('webglcontextrestored', onCtxRestored);
             geometry.dispose();

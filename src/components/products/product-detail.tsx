@@ -40,6 +40,7 @@ interface ProductVariant {
 interface ProductDetailProps {
   product: {
     id: string;
+    merchantId?: string;
     name: string;
     slug: string;
     description: string | null;
@@ -99,6 +100,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const handleAddToCart = () => {
     addItem({
       productId: product.id,
+      merchantId: product.merchantId,
       variantId: selectedVariant?.id,
       name: product.name,
       price: currentPrice,

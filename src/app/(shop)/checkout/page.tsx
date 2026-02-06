@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, CheckCircle2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ import { KHQR_COLORS } from '@/constants';
 import { KhqrCard } from '@/components/checkout/khqr-card';
 import { PaymentStatusListener } from '@/components/checkout/payment-status-listener';
 import { createKHQR } from '@/services/payment.service';
+import { createAddress, getAddresses } from '@/services/address.service';
 import { KHQRResult } from '@/types/payment';
 import { toast } from 'sonner';
 import { SHIPPING_CONFIG } from '@/constants';
@@ -40,11 +41,51 @@ function CheckoutPageContent() {
   // Form data states
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(false);
 
   // KHQR Payment states
   const [khqrResult, setKhqrResult] = useState<KHQRResult | null>(null);
   const [showKhqrModal, setShowKhqrModal] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAddresses() {
+      setAddressesLoading(true);
+      try {
+        const addresses = await getAddresses();
+        if (!isMounted) return;
+        const mapped = addresses.map((addr) => {
+          const [firstName, ...rest] = (addr.fullName || '').split(' ');
+          return {
+            id: addr.id,
+            firstName: firstName || '',
+            lastName: rest.join(' '),
+            email: '',
+            phone: addr.phone,
+            street: addr.street,
+            city: addr.city,
+            province: addr.state || '',
+            postalCode: addr.postalCode,
+            country: addr.country,
+            label: (addr.label as 'home' | 'office' | 'other') || 'home',
+            isDefault: addr.isDefault,
+          } as ShippingAddress;
+        });
+        setSavedAddresses(mapped);
+      } catch (error) {
+        console.error('Failed to load addresses', error);
+      } finally {
+        if (isMounted) setAddressesLoading(false);
+      }
+    }
+
+    loadAddresses();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Empty cart state
   if (items.length === 0 && !isComplete) {
@@ -108,7 +149,72 @@ function CheckoutPageContent() {
     );
   }
 
-  const handleShippingSubmit = (address: ShippingAddress) => {
+  const handleShippingSubmit = async (address: ShippingAddress) => {
+    const normalize = (value: string) => value.trim().toLowerCase();
+    const candidateFullName = `${address.firstName} ${address.lastName}`.trim();
+
+    const matchingSaved = !address.id
+      ? savedAddresses.find((saved) => {
+          const savedFullName = `${saved.firstName} ${saved.lastName}`.trim();
+          return (
+            normalize(saved.label) === normalize(address.label) &&
+            normalize(savedFullName) === normalize(candidateFullName) &&
+            normalize(saved.phone) === normalize(address.phone) &&
+            normalize(saved.street) === normalize(address.street) &&
+            normalize(saved.city) === normalize(address.city) &&
+            normalize(saved.province) === normalize(address.province) &&
+            normalize(saved.postalCode) === normalize(address.postalCode) &&
+            normalize(saved.country) === normalize(address.country)
+          );
+        })
+      : undefined;
+
+    if (!address.id && matchingSaved?.id) {
+      setShippingAddress({ ...address, id: matchingSaved.id });
+      setCurrentStep('payment');
+      return;
+    }
+
+    if (!address.id) {
+      try {
+        const created = await createAddress({
+          label: address.label,
+          fullName: candidateFullName,
+          phone: address.phone,
+          street: address.street,
+          city: address.city,
+          state: address.province,
+          postalCode: address.postalCode,
+          country: address.country,
+          isDefault: address.isDefault,
+        });
+        setSavedAddresses((prev) => [
+          ...prev.filter((a) => a.id !== created.id),
+          {
+            id: created.id,
+            firstName: address.firstName,
+            lastName: address.lastName,
+            email: address.email,
+            phone: created.phone,
+            street: created.street,
+            city: created.city,
+            province: created.state || '',
+            postalCode: created.postalCode,
+            country: created.country,
+            label: (created.label as 'home' | 'office' | 'other') || 'home',
+            isDefault: created.isDefault,
+          },
+        ]);
+
+        // Ensure we use the persisted address id for the order, so "back/continue" won't re-create it.
+        setShippingAddress({ ...address, id: created.id });
+        setCurrentStep('payment');
+        return;
+      } catch (error) {
+        console.error('Failed to save address:', error);
+      }
+    }
+
     setShippingAddress(address);
     setCurrentStep('payment');
   };
@@ -143,7 +249,7 @@ function CheckoutPageContent() {
       });
 
 
-      if (response.success && response.data) {
+      if (response.success) {
         setOrderNumber(response.data.orderNumber);
         setOrderId(response.data.orderId);
         
@@ -167,9 +273,14 @@ function CheckoutPageContent() {
         clearCart();
         setIsComplete(true);
       } else {
-        // Handle error (could add a toast or error state)
-        console.error('Order creation failed:', response.error);
-        toast.error(`Order creation failed: ${response.error}`);
+        const backendMessage = response.error || 'Failed to create order';
+        const prettyMessage = backendMessage.includes('same merchant') ||
+          backendMessage.includes('multiple merchants')
+          ? 'Your cart contains products from multiple stores. Please checkout one store at a time.'
+          : backendMessage;
+
+        console.error('Order creation failed:', backendMessage);
+        toast.error(`Order creation failed: ${prettyMessage}`);
       }
     } catch (error) {
       console.error('Error during checkout:', error);
@@ -240,8 +351,9 @@ function CheckoutPageContent() {
                 <div className="rounded-design-lg border border-border bg-background p-6 shadow-soft lg:p-8">
                   <h2 className="mb-6 text-xl font-semibold">Shipping Information</h2>
                   <ShippingForm 
+                    savedAddresses={savedAddresses}
                     onSubmit={handleShippingSubmit}
-                    isLoading={isLoading}
+                    isLoading={isLoading || addressesLoading}
                   />
                 </div>
               )}
@@ -301,7 +413,6 @@ function CheckoutPageContent() {
                   <div className="w-full">
                     <KhqrCard 
                       qrString={khqrResult.qrString}
-                      md5={khqrResult.md5}
                       amount={orderTotal}
                       orderNumber={orderNumber}
                       expiresAt={khqrResult.expiresAt}

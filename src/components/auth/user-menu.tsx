@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, LogOut, Package, Heart, Settings, ChevronDown, LayoutGrid } from 'lucide-react';
+import { LogOut, Package, Heart, Settings, ChevronDown, LayoutGrid } from 'lucide-react';
 import { signOutUser } from '@/actions/auth.actions';
 
 interface UserMenuProps {

@@ -6,12 +6,6 @@ import { Button } from '@/components/ui/button';
 import { type CartItem } from '@/hooks/cart-context';
 import { type ShippingAddress } from './shipping-form';
 import { type PaymentData } from './payment-form';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 interface OrderSummaryProps {
   items: CartItem[];

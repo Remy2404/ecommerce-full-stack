@@ -12,3 +12,5 @@ export * from './review.service';
 export * from './delivery.service';
 export * from './wing-points.service';
 export * from './admin.service';
+export * from './address.service';
+export * from './payment-method.service';

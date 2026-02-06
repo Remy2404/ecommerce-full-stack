@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Mail, Smartphone, Globe } from 'lucide-react';
+import { Mail, Smartphone, Globe } from 'lucide-react';
 
 export function NotificationsTab() {
   return (

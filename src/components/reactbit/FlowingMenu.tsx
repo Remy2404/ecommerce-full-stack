@@ -43,15 +43,15 @@ const MenuItem: React.FC<MenuItemProps> = ({ link, text, image }) => {
     const imagesRef = useRef<(HTMLDivElement | null)[]>([]);
 
     // GSAP high-performance quickTo setters for lagging effect
-    const xTo = useRef<Function | null>(null);
-    const yTo = useRef<Function | null>(null);
+    const xTo = useRef<((value: number) => void) | null>(null);
+    const yTo = useRef<((value: number) => void) | null>(null);
 
     useEffect(() => {
         // Simple hover animation for the whole marquee
         gsap.set(marqueeRef.current, { y: '101%' });
     }, []);
 
-    const handleMouseEnter = (ev: React.MouseEvent) => {
+    const handleMouseEnter = () => {
         const tl = gsap.timeline();
         // Reveal marquee with vertical slide
         tl.to(marqueeRef.current, {
