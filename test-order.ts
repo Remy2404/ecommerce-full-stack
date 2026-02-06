@@ -1,7 +1,7 @@
 import { createOrder } from './src/services/order.service';
 import { CreateOrderRequest } from './src/types/order';
 
-async function testOrderCreation() {
+export async function testOrderCreation() {
   const request: CreateOrderRequest = {
     items: [
       {

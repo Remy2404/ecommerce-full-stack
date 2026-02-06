@@ -3,8 +3,6 @@
  * Includes backend DTOs, frontend models, enums, and mapping logic
  */
 
-import { CategoryApiResponse, Category, mapCategory } from '@/types/category';
-
 // --- Backend API Responses (DTOs) ---
 
 export interface ProductApiResponse {

@@ -80,7 +80,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           description: result.error,
         });
       }
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });
@@ -112,7 +112,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           description: result.error,
         });
       }
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong', {
         description: 'Please try again later.',
       });

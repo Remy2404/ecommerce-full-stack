@@ -51,7 +51,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ link, text, image }) => {
         gsap.set(marqueeRef.current, { y: '101%' });
     }, []);
 
-    const handleMouseEnter = (ev: React.MouseEvent) => {
+    const handleMouseEnter = () => {
         const tl = gsap.timeline();
         // Reveal marquee with vertical slide
         tl.to(marqueeRef.current, {

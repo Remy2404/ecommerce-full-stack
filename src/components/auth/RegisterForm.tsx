@@ -82,7 +82,7 @@ export default function RegisterForm() {
                     description: result.error,
                 });
             }
-        } catch (err) {
+        } catch {
             toast.error('Something went wrong', {
                 description: 'Please try again later.',
             });

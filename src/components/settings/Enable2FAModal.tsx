@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -123,7 +123,14 @@ export function Enable2FAModal({ isOpen, onOpenChange }: Enable2FAModalProps) {
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="bg-white p-2 rounded-lg border">
                   {qrCode ? (
-                    <img src={qrCode} alt="QR Code" className="w-48 h-48" />
+                    <Image
+                      src={qrCode}
+                      alt="QR Code"
+                      width={192}
+                      height={192}
+                      className="w-48 h-48"
+                      unoptimized
+                    />
                   ) : (
                     <div className="w-48 h-48 flex items-center justify-center bg-muted rounded">
                       <QrCode className="h-10 w-10 text-muted-foreground animate-pulse" />

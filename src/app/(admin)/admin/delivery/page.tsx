@@ -37,7 +37,7 @@ export default function AdminDeliveryPage() {
       } else {
         setMessage('No delivery record found for this order.');
       }
-    } catch (err) {
+    } catch {
       setMessage('Unable to fetch delivery information.');
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ export default function AdminDeliveryPage() {
     try {
       await updateDeliveryStatus(delivery.id, status, notes);
       setMessage('Delivery status updated.');
-    } catch (err) {
+    } catch {
       setMessage('Failed to update delivery status.');
     } finally {
       setLoading(false);

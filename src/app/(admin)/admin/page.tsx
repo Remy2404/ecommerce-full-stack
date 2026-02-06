@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
           .filter((product) => product.stock <= 10)
           .slice(0, 6);
         setLowStock(lowStockProducts);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setError('Unable to load admin dashboard data.');
       } finally {

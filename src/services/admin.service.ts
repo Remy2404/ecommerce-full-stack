@@ -1,5 +1,5 @@
 import api from './api';
-import { Order, OrderApiResponse, mapOrder, PaginatedResponse } from '@/types';
+import { OrderApiResponse, mapOrder, PaginatedResponse } from '@/types';
 
 type AdminDashboardStatsApiResponse = {
   totalUsers: number;

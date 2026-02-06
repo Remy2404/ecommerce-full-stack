@@ -9,13 +9,11 @@ import {
   Menu,
   X,
   ShoppingCart,
-  User,
   Search,
   Heart,
   Package,
   LogOut,
   Settings,
-  ChevronDown,
   UserCircle,
   LayoutGrid
 } from 'lucide-react';
@@ -43,7 +41,7 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const { user, logout, isLoading: isAuthLoading } = useAuth();
+  const { user, logout } = useAuth();
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);

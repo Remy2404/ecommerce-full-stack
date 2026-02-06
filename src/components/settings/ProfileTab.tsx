@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { getErrorMessage } from '@/lib/http-error';
 
 export function ProfileTab() {
-  const { user, refresh } = useAuth();
+  const { refresh } = useAuth();
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -21,7 +21,7 @@ export function ProfileTab() {
       try {
         const data = await getUserProfile();
         setProfile(data);
-      } catch (error) {
+      } catch {
         toast.error('Failed to load profile details');
       } finally {
         setIsLoading(false);

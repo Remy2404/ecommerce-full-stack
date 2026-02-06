@@ -37,7 +37,7 @@ export function AddressesTab() {
       try {
         const data = await getAddresses();
         setAddresses(data);
-      } catch (error) {
+      } catch {
         toast.error('Failed to load addresses');
       } finally {
         setIsLoading(false);
@@ -77,7 +77,7 @@ export function AddressesTab() {
       }
       setForm({ ...DEFAULT_FORM });
       setEditingId(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to save address');
     } finally {
       setIsSaving(false);
@@ -89,7 +89,7 @@ export function AddressesTab() {
       await deleteAddress(id);
       setAddresses((prev) => prev.filter((a) => a.id !== id));
       toast.success('Address deleted');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete address');
     }
   };
@@ -99,7 +99,7 @@ export function AddressesTab() {
       const updated = await setDefaultAddress(id);
       setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === updated.id })));
       toast.success('Default address updated');
-    } catch (error) {
+    } catch {
       toast.error('Failed to set default address');
     }
   };

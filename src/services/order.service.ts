@@ -102,7 +102,7 @@ export async function updateOrderStatus(
 ): Promise<OrderResult> {
   try {
     const response = await api.put<OrderApiResponse>(`/orders/${orderId}/status`, null, {
-      params: { status }
+      params: { status, ...(reason ? { reason } : {}) }
     });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {

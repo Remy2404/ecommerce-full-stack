@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, HTMLAttributes } from 'react';
+import Image from 'next/image';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -125,10 +126,13 @@ const CardImage = forwardRef<HTMLDivElement, CardImageProps>(
         )}
         {...props}
       >
-        <img
+        <Image
           src={src}
           alt={alt}
+          width={600}
+          height={600}
           className="h-full w-full object-cover transition-transform duration-slow hover:scale-105"
+          unoptimized
         />
       </div>
     );

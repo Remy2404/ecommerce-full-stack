@@ -1,5 +1,5 @@
 import api from './api';
-import { Review, ReviewApiResponse, mapReview, PaginatedResponse } from '@/types';
+import { ReviewApiResponse, mapReview, PaginatedResponse } from '@/types';
 
 /**
  * Get reviews for a specific product

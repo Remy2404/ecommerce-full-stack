@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { gsap } from 'gsap';
 
 export type PillNavItem = {
@@ -54,6 +55,8 @@ const PillNav: React.FC<PillNavProps> = ({
     const logoRef = useRef<HTMLAnchorElement | HTMLElement | null>(null);
 
     useEffect(() => {
+        const timelineRefs = tlRefs.current;
+        const tweenRefs = activeTweenRefs.current;
         const layout = () => {
             circleRefs.current.forEach(circle => {
                 if (!circle?.parentElement) return;
@@ -142,8 +145,8 @@ const PillNav: React.FC<PillNavProps> = ({
 
         return () => {
             window.removeEventListener('resize', onResize);
-            tlRefs.current.forEach(tl => tl?.kill());
-            activeTweenRefs.current.forEach(tw => tw?.kill());
+            timelineRefs.forEach(tl => tl?.kill());
+            tweenRefs.forEach(tw => tw?.kill());
             logoTweenRef.current?.kill();
         };
     }, [items, ease, initialLoadAnimation]);
@@ -279,7 +282,17 @@ const PillNav: React.FC<PillNavProps> = ({
                                 background: 'var(--base, #000)'
                             }}
                         >
-                            {logoElement ? logoElement : <img src={logo} alt={logoAlt} ref={logoImgRef} className="w-full h-full object-cover block" />}
+                            {logoElement ? logoElement : (
+                                <Image
+                                    src={logo || '/logo.svg'}
+                                    alt={logoAlt}
+                                    ref={logoImgRef}
+                                    width={36}
+                                    height={36}
+                                    className="w-full h-full object-cover block"
+                                    unoptimized
+                                />
+                            )}
                         </Link>
                     ) : (
                         <a
@@ -296,7 +309,17 @@ const PillNav: React.FC<PillNavProps> = ({
                                 background: 'var(--base, #000)'
                             }}
                         >
-                            {logoElement ? logoElement : <img src={logo} alt={logoAlt} ref={logoImgRef} className="w-full h-full object-cover block" />}
+                            {logoElement ? logoElement : (
+                                <Image
+                                    src={logo || '/logo.svg'}
+                                    alt={logoAlt}
+                                    ref={logoImgRef}
+                                    width={36}
+                                    height={36}
+                                    className="w-full h-full object-cover block"
+                                    unoptimized
+                                />
+                            )}
                         </a>
                     )
                 )}

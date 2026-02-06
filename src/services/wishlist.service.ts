@@ -2,7 +2,6 @@ import api from './api';
 import { 
   Product, 
   ProductApiResponse, 
-  WishlistApiResponse, 
   mapProduct 
 } from '@/types';
 

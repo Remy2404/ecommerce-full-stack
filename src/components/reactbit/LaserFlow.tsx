@@ -472,7 +472,7 @@ export const LaserFlow: React.FC<Props> = ({
             mouseTarget.set(x * ratio, hb - y * ratio);
         };
         const onMove = (ev: PointerEvent) => updateMouse(ev.clientX, ev.clientY);
-        const onLeave = (_ev: PointerEvent) => mouseTarget.set(0, 0);
+        const onLeave = () => mouseTarget.set(0, 0);
         canvas.addEventListener('pointermove', onMove, { passive: true });
         canvas.addEventListener('pointerdown', onMove, { passive: true });
         canvas.addEventListener('pointerenter', onMove, { passive: true });

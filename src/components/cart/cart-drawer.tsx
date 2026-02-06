@@ -8,12 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/cart-context';
 import { Button } from '@/components/ui/button';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, subtotal, itemCount, updateQuantity, removeItem } = useCart();

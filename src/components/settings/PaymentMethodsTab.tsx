@@ -39,7 +39,7 @@ export function PaymentMethodsTab() {
       try {
         const data = await getPaymentMethods();
         setMethods(data);
-      } catch (error) {
+      } catch {
         toast.error('Failed to load payment methods');
       } finally {
         setIsLoading(false);
@@ -91,7 +91,7 @@ export function PaymentMethodsTab() {
       }
       setForm({ ...DEFAULT_FORM });
       setEditingId(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to save payment method');
     } finally {
       setIsSaving(false);
@@ -103,7 +103,7 @@ export function PaymentMethodsTab() {
       await deletePaymentMethod(id);
       setMethods((prev) => prev.filter((m) => m.id !== id));
       toast.success('Payment method deleted');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete payment method');
     }
   };
@@ -113,7 +113,7 @@ export function PaymentMethodsTab() {
       const updated = await setDefaultPaymentMethod(id);
       setMethods((prev) => prev.map((m) => ({ ...m, isDefault: m.id === updated.id })));
       toast.success('Default payment method updated');
-    } catch (error) {
+    } catch {
       toast.error('Failed to set default payment method');
     }
   };

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getCurrentUser, isLoggedIn, logout, type AuthUser } from '@/services';
+import { getCurrentUser, logout, type AuthUser } from '@/services';
 import { getUserProfile } from '@/services/user.service';
 import { mapUser } from '@/types/user';
 

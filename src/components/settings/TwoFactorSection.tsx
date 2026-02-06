@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, ShieldCheck, ShieldAlert, Loader2 } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Enable2FAModal } from './Enable2FAModal';
 import { Disable2FADialog } from './Disable2FADialog';
 import { disable2FA } from '@/services/twofa.service';

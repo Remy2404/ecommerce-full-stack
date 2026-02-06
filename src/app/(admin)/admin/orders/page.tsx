@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
 import { getAdminOrders } from '@/services/admin.service';
 import { updateOrderStatus } from '@/services/order.service';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(20);
+  const [size] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +41,7 @@ export default function AdminOrdersPage() {
         setOrders(result.orders);
         setTotalPages(result.pagination.totalPages);
         setSelectedOrder(result.orders[0] || null);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setError('Unable to load orders.');
       } finally {
@@ -60,7 +59,7 @@ export default function AdminOrdersPage() {
     if (selectedOrder) {
       setStatusUpdate(selectedOrder.status);
     }
-  }, [selectedOrder?.id]);
+  }, [selectedOrder]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
