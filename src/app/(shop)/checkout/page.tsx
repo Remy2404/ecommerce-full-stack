@@ -150,11 +150,36 @@ function CheckoutPageContent() {
   }
 
   const handleShippingSubmit = async (address: ShippingAddress) => {
+    const normalize = (value: string) => value.trim().toLowerCase();
+    const candidateFullName = `${address.firstName} ${address.lastName}`.trim();
+
+    const matchingSaved = !address.id
+      ? savedAddresses.find((saved) => {
+          const savedFullName = `${saved.firstName} ${saved.lastName}`.trim();
+          return (
+            normalize(saved.label) === normalize(address.label) &&
+            normalize(savedFullName) === normalize(candidateFullName) &&
+            normalize(saved.phone) === normalize(address.phone) &&
+            normalize(saved.street) === normalize(address.street) &&
+            normalize(saved.city) === normalize(address.city) &&
+            normalize(saved.province) === normalize(address.province) &&
+            normalize(saved.postalCode) === normalize(address.postalCode) &&
+            normalize(saved.country) === normalize(address.country)
+          );
+        })
+      : undefined;
+
+    if (!address.id && matchingSaved?.id) {
+      setShippingAddress({ ...address, id: matchingSaved.id });
+      setCurrentStep('payment');
+      return;
+    }
+
     if (!address.id) {
       try {
         const created = await createAddress({
           label: address.label,
-          fullName: `${address.firstName} ${address.lastName}`.trim(),
+          fullName: candidateFullName,
           phone: address.phone,
           street: address.street,
           city: address.city,
@@ -180,6 +205,11 @@ function CheckoutPageContent() {
             isDefault: created.isDefault,
           },
         ]);
+
+        // Ensure we use the persisted address id for the order, so "back/continue" won't re-create it.
+        setShippingAddress({ ...address, id: created.id });
+        setCurrentStep('payment');
+        return;
       } catch (error) {
         console.error('Failed to save address:', error);
       }
@@ -243,9 +273,14 @@ function CheckoutPageContent() {
         clearCart();
         setIsComplete(true);
       } else {
-        // Handle error (could add a toast or error state)
-        console.error('Order creation failed:', response.error);
-        toast.error(`Order creation failed: ${response.error}`);
+        const backendMessage = response.error || 'Failed to create order';
+        const prettyMessage = backendMessage.includes('same merchant') ||
+          backendMessage.includes('multiple merchants')
+          ? 'Your cart contains products from multiple stores. Please checkout one store at a time.'
+          : backendMessage;
+
+        console.error('Order creation failed:', backendMessage);
+        toast.error(`Order creation failed: ${prettyMessage}`);
       }
     } catch (error) {
       console.error('Error during checkout:', error);
@@ -378,7 +413,6 @@ function CheckoutPageContent() {
                   <div className="w-full">
                     <KhqrCard 
                       qrString={khqrResult.qrString}
-                      md5={khqrResult.md5}
                       amount={orderTotal}
                       orderNumber={orderNumber}
                       expiresAt={khqrResult.expiresAt}

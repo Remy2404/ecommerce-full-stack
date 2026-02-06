@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getCurrentUser, logout, type AuthUser } from '@/services';
 import { getUserProfile } from '@/services/user.service';
 import { mapUser, type User } from '@/types/user';
+import { usePathname } from 'next/navigation';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -18,10 +19,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const refreshInFlightRef = React.useRef<Promise<void> | null>(null);
+  const isPublicAuthRoute =
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/register') ||
+    pathname?.startsWith('/verify-email') ||
+    pathname?.startsWith('/forgot-password') ||
+    pathname?.startsWith('/reset-password');
 
   const refresh = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -58,6 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isPublicAuthRoute) {
+      setIsLoading(false);
+      setUser(null);
+      setProfile(null);
+      return;
+    }
+
     // Initialize auth state from local storage on mount
     refresh();
 
@@ -70,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refresh]);
+  }, [refresh, isPublicAuthRoute]);
 
   const login = useCallback((userData: AuthUser) => {
     setUser(userData);

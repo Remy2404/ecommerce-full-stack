@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { createAddress, deleteAddress, getAddresses, setDefaultAddress, updateAddress } from '@/services/address.service';
 import { Address } from '@/types/address';
+import { getErrorMessage } from '@/lib/http-error';
 
 type AddressUpsert = Parameters<typeof createAddress>[0];
 
@@ -89,9 +90,17 @@ export function AddressesTab() {
       await deleteAddress(id);
       setAddresses((prev) => prev.filter((a) => a.id !== id));
       toast.success('Address deleted');
-    } catch {
-      toast.error('Failed to delete address');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to delete address'));
     }
+  };
+
+  const handleDeleteClick = (address: Address) => {
+    if (address.inUse) {
+      toast.error('This address is used by an existing order and cannot be deleted.');
+      return;
+    }
+    handleDelete(address.id);
   };
 
   const handleDefault = async (id: string) => {
@@ -151,7 +160,12 @@ export function AddressesTab() {
                           Set Default
                         </Button>
                       )}
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(address.id)}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={Boolean(address.inUse)}
+                        onClick={() => handleDeleteClick(address)}
+                      >
                         Delete
                       </Button>
                     </div>
@@ -160,7 +174,10 @@ export function AddressesTab() {
                   <p className="text-sm text-muted-foreground">
                     {address.street}, {address.city}, {address.state} {address.postalCode}, {address.country}
                   </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{address.label}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{address.label}</p>
+                    {address.inUse && <Badge variant="outline">In Use</Badge>}
+                  </div>
                 </div>
               ))}
             </div>

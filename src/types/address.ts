@@ -8,6 +8,7 @@ export interface AddressApiResponse {
   id: string;
   userId: string;
   label: string; // Home, Work, etc.
+  inUse?: boolean;
   fullName: string;
   phone: string;
   street: string;
@@ -26,6 +27,7 @@ export interface Address {
   id: string;
   userId: string;
   label: string;
+  inUse?: boolean;
   fullName: string;
   phone: string;
   street: string;

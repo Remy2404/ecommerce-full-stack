@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileForm } from './ProfileForm';
 import { useAuth } from '@/hooks/auth-context';
-import { updateProfile } from '@/services/user.service';
+import { updateProfile, uploadAvatar } from '@/services/user.service';
 import { UpdateProfileRequest } from '@/types/user';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/http-error';
@@ -26,6 +26,19 @@ export function ProfileTab() {
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    setIsSaving(true);
+    try {
+      await uploadAvatar(file);
+      await refresh();
+      toast.success('Avatar updated successfully');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to upload avatar'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -39,6 +52,7 @@ export function ProfileTab() {
           <ProfileForm 
             user={profile} 
             onSubmit={handleSubmit} 
+            onAvatarUpload={handleAvatarUpload}
             isLoading={isSaving} 
           />
         ) : (

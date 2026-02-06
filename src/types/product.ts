@@ -7,6 +7,7 @@
 
 export interface ProductApiResponse {
   id: string;
+  merchantId?: string;
   name: string;
   slug: string;
   description: string | null;
@@ -28,6 +29,7 @@ export interface ProductApiResponse {
 
 export interface Product {
   id: string;
+  merchantId?: string;
   name: string;
   slug: string;
   description?: string;
@@ -61,6 +63,7 @@ export interface ProductVariant {
 export function mapProduct(raw: ProductApiResponse): Product {
   return {
     id: raw.id,
+    merchantId: raw.merchantId,
     name: raw.name,
     slug: raw.slug,
     description: raw.description || undefined,

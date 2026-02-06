@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { verifyPayment } from '@/services/payment.service';
+import { toast } from 'sonner';
 
 interface PaymentStatusListenerProps {
   md5: string;
@@ -39,11 +40,24 @@ export function PaymentStatusListener({
 
       try {
         const result = await verifyPayment(md5);
+        if (!result) return;
 
-        if (result?.paid) {
+        if (result.paid) {
           clearInterval(pollInterval);
           if (cancelled) return;
           onSuccess();
+          return;
+        }
+
+        const isExpired =
+          result.expired === true ||
+          /expired|time.?out|timed out/i.test(result.message || '');
+
+        if (isExpired) {
+          clearInterval(pollInterval);
+          if (!cancelled) {
+            toast.error(result.message || 'Transaction timed out. Please generate a new QR code.');
+          }
         }
       } catch (error) {
         console.error('Error polling payment status:', error);

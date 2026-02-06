@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import api from '@/services/api/client';
+import { setAccessToken } from '@/services/api/client';
 import { getErrorMessage } from '@/lib/http-error';
 
 interface VerifyEmailFormProps {
@@ -15,6 +16,9 @@ interface VerifyEmailFormProps {
 }
 
 type VerificationState = 'verifying' | 'success' | 'error' | 'no-token';
+type VerifyAndLoginResponse = {
+  token?: string;
+};
 
 export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   const router = useRouter();
@@ -22,22 +26,30 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
     token ? 'verifying' : 'no-token'
   );
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [canResend, setCanResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const hasVerifiedRef = useRef(false);
 
   useEffect(() => {
     if (!token) return;
+    if (hasVerifiedRef.current) return;
+    hasVerifiedRef.current = true;
 
     const verifyEmail = async () => {
       try {
-        await api.post('/auth/verify-email', { token });
+        const response = await api.post<VerifyAndLoginResponse>('/auth/verify-email/auto-login', { token });
+        if (response.data?.token) {
+          setAccessToken(response.data.token);
+        }
         
         setState('success');
         toast.success('Email verified!', {
-          description: 'Your account has been activated.',
+          description: 'Your account has been activated and you are now logged in.',
         });
 
         // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push('/login');
+          router.push('/profile');
         }, 3000);
       } catch (error: unknown) {
         const message = getErrorMessage(
@@ -45,6 +57,7 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
           'Verification failed. The link may be invalid or expired.'
         );
         setErrorMessage(message);
+        setCanResend(message.toLowerCase().includes('expired'));
         setState('error');
         
         toast.error('Verification failed', {
@@ -55,6 +68,23 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
 
     verifyEmail();
   }, [token, router]);
+
+  const handleResend = async () => {
+    if (!token) return;
+    setIsResending(true);
+    try {
+      await api.post('/auth/resend-verification/by-token', { token });
+      toast.success('Verification email sent', {
+        description: 'Please check your inbox for a new verification link.',
+      });
+    } catch (error: unknown) {
+      toast.error('Failed to resend verification email', {
+        description: getErrorMessage(error, 'Please try again later.'),
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   return (
     <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
@@ -111,7 +141,7 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
                   Your account has been successfully activated.
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Redirecting to login...
+                  Redirecting to your account...
                 </p>
               </div>
               <motion.div
@@ -119,10 +149,10 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
                 whileTap={{ scale: 0.98 }}
               >
                 <Link
-                  href="/login"
+                  href="/profile"
                   className="inline-flex items-center gap-2 rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200"
                 >
-                  Continue to login
+                  Continue
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </motion.div>
@@ -145,6 +175,18 @@ export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
                 </p>
               </div>
               <div className="space-y-3">
+                {canResend && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={handleResend}
+                    disabled={isResending}
+                    className="block w-full rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200 disabled:opacity-60"
+                  >
+                    {isResending ? 'Sending...' : 'Resend verification email'}
+                  </motion.button>
+                )}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}

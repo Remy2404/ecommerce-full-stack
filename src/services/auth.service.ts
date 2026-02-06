@@ -67,10 +67,8 @@ export async function register(data: RegisterRequest): Promise<AuthResult> {
   try {
     const response = await api.post<AuthResponse>('/auth/register', data);
 
-    const { token, user } = response.data;
-    setAccessToken(token);
-
-    return { success: true, user: mapAuthUser(user), token };
+    const { user } = response.data;
+    return { success: true, user: mapAuthUser(user) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
     

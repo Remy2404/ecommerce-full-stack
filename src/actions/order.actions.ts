@@ -109,6 +109,7 @@ export async function createOrder(
       variantId: item.variantId,
       quantity: item.quantity
     })),
+    shippingAddressId: data.shippingAddress.id,
     shippingAddress: {
       fullName: data.shippingAddress.fullName || `${user.name}`,
       phone: data.shippingAddress.phone || '',

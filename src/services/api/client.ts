@@ -17,6 +17,16 @@ const isServer = () => !isBrowser();
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 
+const isPublicAuthPath = (path: string): boolean => {
+  return (
+    path.startsWith('/login') ||
+    path.startsWith('/register') ||
+    path.startsWith('/verify-email') ||
+    path.startsWith('/forgot-password') ||
+    path.startsWith('/reset-password')
+  );
+};
+
 export const getAccessToken = async (): Promise<string | null> => {
   // Browser: localStorage first
   if (isBrowser()) {
@@ -221,7 +231,7 @@ api.interceptors.response.use(
 
       if (isBrowser()) {
         const path = window.location.pathname;
-        if (!path.startsWith('/login') && !path.startsWith('/register')) {
+        if (!isPublicAuthPath(path)) {
           window.location.href = '/login?reason=token_expired';
         }
       }

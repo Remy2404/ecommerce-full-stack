@@ -24,6 +24,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export interface Product {
   id: string;
+  merchantId?: string;
   name: string;
   slug: string;
   price: number;
@@ -65,6 +66,7 @@ export function ProductCard({ product, index = 0, size = 'default' }: ProductCar
     
     addItem({
       productId: product.id,
+      merchantId: product.merchantId,
       name: product.name,
       price: product.price,
       image: product.images[0] || '/placeholder.jpg',
