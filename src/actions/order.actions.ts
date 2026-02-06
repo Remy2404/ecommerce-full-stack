@@ -53,6 +53,38 @@ export async function getUserDashboardStats(): Promise<
 }
 
 /**
+ * Get profile page data in a single server action call
+ */
+export async function getProfileDashboardData(
+  limit: number = 5
+): Promise<
+  ActionResult<{
+    stats: { orderCount: number; points: number; memberSince: string };
+    recentOrders: Order[];
+  }>
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const result = await orderService.getUserOrders(0, limit);
+  const orderCount = result.pagination.total;
+
+  return {
+    success: true,
+    data: {
+      stats: {
+        orderCount,
+        points: orderCount * 10,
+        memberSince: 'Member',
+      },
+      recentOrders: result.orders,
+    },
+  };
+}
+
+/**
  * Create a new order
  * Calls Spring Boot backend /api/orders
  */

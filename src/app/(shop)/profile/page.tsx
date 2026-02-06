@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { ProfileClient } from '@/components/profile/profile-client';
-import { getUserDashboardStats, getUserOrders } from '@/actions/order.actions';
+import { getProfileDashboardData } from '@/actions/order.actions';
 import type { Order } from '@/types/order';
 
 export default function ProfilePage() {
@@ -24,20 +24,13 @@ export default function ProfilePage() {
       if (!isAuthenticated) return;
       
       try {
-        const [statsResult, ordersResult] = await Promise.all([
-          getUserDashboardStats(),
-          getUserOrders(5),
-        ]);
-
-        if (statsResult.success && statsResult.data) {
+        const result = await getProfileDashboardData(5);
+        if (result.success && result.data) {
           setStats({
-            orderCount: statsResult.data.orderCount || 0,
-            points: statsResult.data.points || 0,
+            orderCount: result.data.stats.orderCount || 0,
+            points: result.data.stats.points || 0,
           });
-        }
-
-        if (ordersResult.success && ordersResult.data) {
-          setRecentOrders(ordersResult.data);
+          setRecentOrders(result.data.recentOrders || []);
         }
       } catch (error) {
         console.error('Failed to fetch profile data:', error);

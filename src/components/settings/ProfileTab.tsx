@@ -1,35 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileForm } from './ProfileForm';
 import { useAuth } from '@/hooks/auth-context';
-import { getUserProfile, updateProfile } from '@/services/user.service';
-import { User, UpdateProfileRequest } from '@/types/user';
+import { updateProfile } from '@/services/user.service';
+import { UpdateProfileRequest } from '@/types/user';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
 import { getErrorMessage } from '@/lib/http-error';
 
 export function ProfileTab() {
-  const { refresh } = useAuth();
-  const [profile, setProfile] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile, refresh } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getUserProfile();
-        setProfile(data);
-      } catch {
-        toast.error('Failed to load profile details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   const handleSubmit = async (data: UpdateProfileRequest) => {
     setIsSaving(true);
@@ -44,14 +26,6 @@ export function ProfileTab() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -61,12 +35,14 @@ export function ProfileTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {profile && (
+        {profile ? (
           <ProfileForm 
             user={profile} 
             onSubmit={handleSubmit} 
             isLoading={isSaving} 
           />
+        ) : (
+          <p className="text-sm text-muted-foreground">Profile unavailable.</p>
         )}
       </CardContent>
     </Card>
