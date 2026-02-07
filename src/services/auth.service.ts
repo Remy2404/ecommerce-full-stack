@@ -1,5 +1,6 @@
 import api, { setAccessToken, removeAccessToken, getAccessToken, decodeToken } from './api';
 import { AxiosError } from 'axios';
+import { getErrorMessage } from '@/lib/http-error';
 import { 
   AuthUser, 
   User, 
@@ -54,9 +55,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     setAccessToken(token);
     return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    const message = axiosError.response?.data?.message || 'Invalid email or password';
-    return { success: false, error: message };
+    return { success: false, error: getErrorMessage(error, 'Invalid email or password') };
   }
 }
 
@@ -98,9 +97,7 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
 
     return { success: true, user: mapAuthUser(user), token };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    const message = axiosError.response?.data?.message || 'Google authentication failed';
-    return { success: false, error: message };
+    return { success: false, error: getErrorMessage(error, 'Google authentication failed') };
   }
 }
 
@@ -228,8 +225,7 @@ export async function verifyEmail(email: string, code: string): Promise<AuthResu
     await api.post('/auth/verify-email', { email, code });
     return { success: true };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Verification failed' };
+    return { success: false, error: getErrorMessage(error, 'Verification failed') };
   }
 }
 
@@ -241,8 +237,7 @@ export async function forgotPassword(email: string): Promise<AuthResult> {
     await api.post('/auth/forgot-password', { email });
     return { success: true };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Request failed' };
+    return { success: false, error: getErrorMessage(error, 'Request failed') };
   }
 }
 
@@ -254,8 +249,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
     await api.post('/auth/reset-password', { token, newPassword });
     return { success: true };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Password reset failed' };
+    return { success: false, error: getErrorMessage(error, 'Password reset failed') };
   }
 }
 
@@ -267,7 +261,6 @@ export async function changePassword(data: ChangePasswordRequest): Promise<AuthR
     await api.post('/auth/change-password', data);
     return { success: true };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return { success: false, error: axiosError.response?.data?.message || 'Password change failed' };
+    return { success: false, error: getErrorMessage(error, 'Password change failed') };
   }
 }

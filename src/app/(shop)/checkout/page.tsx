@@ -36,6 +36,7 @@ function CheckoutPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string>('');
+  const [orderNumbers, setOrderNumbers] = useState<string[]>([]);
   const [orderId, setOrderId] = useState<string>('');
 
   // Form data states
@@ -130,9 +131,21 @@ function CheckoutPageContent() {
           </div>
           <h1 className="text-2xl font-bold">Order Confirmed!</h1>
           <p className="mt-2 text-muted-foreground">
-            Thank you for your order. Your order number is:
+            Thank you for your order.
           </p>
-          <p className="mt-2 text-xl font-mono font-bold">{orderNumber}</p>
+          {orderNumbers.length > 1 ? (
+            <div className="mt-3 space-y-1">
+              <p className="text-sm text-muted-foreground">Order numbers:</p>
+              {orderNumbers.map((number) => (
+                <p key={number} className="text-lg font-mono font-bold">{number}</p>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">Your order number is:</p>
+              <p className="mt-2 text-xl font-mono font-bold">{orderNumber}</p>
+            </>
+          )}
           <p className="mt-4 text-sm text-muted-foreground">
             We&apos;ve sent a confirmation email with order details.
           </p>
@@ -236,52 +249,79 @@ function CheckoutPageContent() {
       const total = subtotal + shippingFee + tax - discount;
       setOrderTotal(total);
 
-      const response = await createOrder({
-        // items should be null if checking out from cart, so backend carries cart-clearing logic
-        items: items.length > 0 ? items : [], // This part needs to be careful: the backend refactor uses null or empty to mean "cart checkout"
-        shippingAddress,
-        paymentData,
-        subtotal,
-        deliveryFee: shippingFee,
-        discount,
-        tax,
-        total,
-      });
+      // Group cart by merchant to support checkout with products from multiple stores.
+      const groupedItems = items.reduce<Record<string, typeof items>>((acc, item) => {
+        const key = item.merchantId || `single-product-${item.productId}`;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+      const itemGroups = Object.values(groupedItems);
 
+      if (itemGroups.length > 1 && paymentData.method === 'KHQR') {
+        toast.error('KHQR checkout currently supports one store at a time. Use Card/Cash for mixed-store checkout.');
+        return;
+      }
 
-      if (response.success) {
-        setOrderNumber(response.data.orderNumber);
-        setOrderId(response.data.orderId);
-        
-        if (paymentData.method === 'KHQR') {
-          try {
-            const khqr = await createKHQR(response.data.orderId);
-            if (khqr) {
-              setKhqrResult(khqr);
-              setShowKhqrModal(true);
-              return;
-            } else {
-              toast.error('Failed to generate KHQR. Please contact support.');
-            }
-          } catch (err) {
-            console.error('KHQR generation error:', err);
-            toast.error('An error occurred while generating payment QR.');
-          }
+      const createdOrders: Array<{ orderId: string; orderNumber: string }> = [];
+
+      for (const group of itemGroups) {
+        const groupSubtotal = group.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const groupShippingFee = groupSubtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
+        const groupTax = groupSubtotal * 0.1;
+        const groupTotal = groupSubtotal + groupShippingFee + groupTax;
+
+        const response = await createOrder({
+          items: group,
+          shippingAddress,
+          paymentData,
+          subtotal: groupSubtotal,
+          deliveryFee: groupShippingFee,
+          discount: 0,
+          tax: groupTax,
+          total: groupTotal,
+        });
+
+        if (!response.success) {
+          const backendMessage = response.error || 'Failed to create order';
+          console.error('Order creation failed:', backendMessage);
+          toast.error(`Order creation failed: ${backendMessage}`);
+          return;
         }
 
-        // For COD or Card (if automated) or fallback
-        clearCart();
-        setIsComplete(true);
-      } else {
-        const backendMessage = response.error || 'Failed to create order';
-        const prettyMessage = backendMessage.includes('same merchant') ||
-          backendMessage.includes('multiple merchants')
-          ? 'Your cart contains products from multiple stores. Please checkout one store at a time.'
-          : backendMessage;
-
-        console.error('Order creation failed:', backendMessage);
-        toast.error(`Order creation failed: ${prettyMessage}`);
+        createdOrders.push({
+          orderId: response.data.orderId,
+          orderNumber: response.data.orderNumber,
+        });
       }
+
+      if (createdOrders.length === 0) {
+        toast.error('No orders were created.');
+        return;
+      }
+
+      setOrderNumbers(createdOrders.map((o) => o.orderNumber));
+      setOrderNumber(createdOrders[0].orderNumber);
+      setOrderId(createdOrders[0].orderId);
+      
+      if (paymentData.method === 'KHQR') {
+        try {
+          const khqr = await createKHQR(createdOrders[0].orderId);
+          if (khqr) {
+            setKhqrResult(khqr);
+            setShowKhqrModal(true);
+            return;
+          } else {
+            toast.error('Failed to generate KHQR. Please contact support.');
+          }
+        } catch (err) {
+          console.error('KHQR generation error:', err);
+          toast.error('An error occurred while generating payment QR.');
+        }
+      }
+
+      clearCart();
+      setIsComplete(true);
     } catch (error) {
       console.error('Error during checkout:', error);
       toast.error('An unexpected error occurred during checkout. Please try again.');

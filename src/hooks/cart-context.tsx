@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useReducer, useEffect, ReactNode, useState } from 'react';
-import { toast } from 'sonner';
 
 // Cart Item Type
 export interface CartItem {
@@ -175,20 +174,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Actions
   const addItem = (item: Omit<CartItem, 'id'>) => {
-    const existingMerchantIds = state.items
-      .map((cartItem) => cartItem.merchantId)
-      .filter((merchantId): merchantId is string => Boolean(merchantId));
-    const currentMerchantId = item.merchantId;
-
-    if (
-      currentMerchantId &&
-      existingMerchantIds.length > 0 &&
-      existingMerchantIds.some((merchantId) => merchantId !== currentMerchantId)
-    ) {
-      toast.error('Cart supports one store per checkout. Please checkout or clear your cart first.');
-      return;
-    }
-
     const id = `${item.productId}-${item.variantId || 'default'}-${Date.now()}`;
     dispatch({ type: 'ADD_ITEM', payload: { ...item, id } });
   };

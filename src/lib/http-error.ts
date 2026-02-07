@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 
 type MessageShape = { message?: string };
+type ErrorShape = { error?: string };
 
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (!error) return fallback;
@@ -9,6 +10,11 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     const data = error.response?.data as unknown;
     if (data && typeof data === 'object' && 'message' in data) {
       const msg = (data as MessageShape).message;
+      if (typeof msg === 'string' && msg.trim()) return msg;
+    }
+
+    if (data && typeof data === 'object' && 'error' in data) {
+      const msg = (data as ErrorShape).error;
       if (typeof msg === 'string' && msg.trim()) return msg;
     }
 
@@ -25,4 +31,3 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 
   return fallback;
 }
-
