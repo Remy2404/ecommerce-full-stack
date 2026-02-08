@@ -62,7 +62,8 @@ export default function TwoFactorPage() {
       }
       
       toast.success('Login successful!');
-      router.push('/dashboard');
+      const redirectPath = result.data.user?.role === 'ADMIN' ? '/admin' : '/';
+      router.push(redirectPath);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
       
