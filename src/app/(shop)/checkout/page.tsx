@@ -49,6 +49,22 @@ function CheckoutPageContent() {
   const [khqrResult, setKhqrResult] = useState<KHQRResult | null>(null);
   const [showKhqrModal, setShowKhqrModal] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+  const [khqrOrders, setKhqrOrders] = useState<Array<{ orderId: string; orderNumber: string; total: number }>>([]);
+  const [currentKhqrIndex, setCurrentKhqrIndex] = useState(0);
+
+  const openKhqrForOrder = async (order: { orderId: string; orderNumber: string; total: number }) => {
+    const khqr = await createKHQR(order.orderId);
+    if (!khqr) {
+      return false;
+    }
+
+    setKhqrResult(khqr);
+    setOrderId(order.orderId);
+    setOrderNumber(order.orderNumber);
+    setOrderTotal(order.total);
+    setShowKhqrModal(true);
+    return true;
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -258,12 +274,7 @@ function CheckoutPageContent() {
       }, {});
       const itemGroups = Object.values(groupedItems);
 
-      if (itemGroups.length > 1 && paymentData.method === 'KHQR') {
-        toast.error('KHQR checkout currently supports one store at a time. Use Card/Cash for mixed-store checkout.');
-        return;
-      }
-
-      const createdOrders: Array<{ orderId: string; orderNumber: string }> = [];
+      const createdOrders: Array<{ orderId: string; orderNumber: string; total: number }> = [];
 
       for (const group of itemGroups) {
         const groupSubtotal = group.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -292,6 +303,7 @@ function CheckoutPageContent() {
         createdOrders.push({
           orderId: response.data.orderId,
           orderNumber: response.data.orderNumber,
+          total: groupTotal,
         });
       }
 
@@ -306,10 +318,10 @@ function CheckoutPageContent() {
       
       if (paymentData.method === 'KHQR') {
         try {
-          const khqr = await createKHQR(createdOrders[0].orderId);
-          if (khqr) {
-            setKhqrResult(khqr);
-            setShowKhqrModal(true);
+          setKhqrOrders(createdOrders);
+          setCurrentKhqrIndex(0);
+          const opened = await openKhqrForOrder(createdOrders[0]);
+          if (opened) {
             return;
           } else {
             toast.error('Failed to generate KHQR. Please contact support.');
@@ -528,7 +540,23 @@ function CheckoutPageContent() {
               <PaymentStatusListener 
                 md5={khqrResult.md5}
                 expiresAt={khqrResult.expiresAt}
-                onSuccess={() => {
+                onSuccess={async () => {
+                  const nextIndex = currentKhqrIndex + 1;
+                  if (nextIndex < khqrOrders.length) {
+                    setCurrentKhqrIndex(nextIndex);
+                    const opened = await openKhqrForOrder(khqrOrders[nextIndex]);
+                    if (opened) {
+                      toast.success(`Payment received. Continue with order ${nextIndex + 1} of ${khqrOrders.length}.`);
+                      return;
+                    }
+
+                    setShowKhqrModal(false);
+                    clearCart();
+                    setIsComplete(true);
+                    toast.error('Payment received, but next KHQR could not be generated. Remaining orders are in your order history.');
+                    return;
+                  }
+
                   setShowKhqrModal(false);
                   clearCart();
                   setIsComplete(true);
