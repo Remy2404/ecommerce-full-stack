@@ -1,18 +1,27 @@
 import api from './api';
 import { AxiosError } from 'axios';
-import { 
-  Product, 
-  Category, 
-  ProductApiResponse, 
+import {
+  type Category,
+  type CategoryApiResponse,
+  mapCategory,
+  mapProduct,
+  type PaginatedResponse,
+  type Pagination,
+  type Product,
+  type ProductApiResponse,
+  type ProductFilterParams,
+} from '@/types';
+import { getErrorMessage } from '@/lib/http-error';
+
+export type {
+  Product,
+  Category,
+  ProductApiResponse,
   CategoryApiResponse,
   ProductFilterParams,
   PaginatedResponse,
   Pagination,
-  mapProduct,
-  mapCategory
-} from '@/types';
-
-export type { Product, Category, ProductApiResponse, CategoryApiResponse, ProductFilterParams, PaginatedResponse, Pagination };
+};
 export { mapProduct, mapCategory };
 
 export interface ProductListResult {
@@ -20,28 +29,40 @@ export interface ProductListResult {
   pagination: Pagination;
 }
 
-/**
- * Get products with filtering and pagination
- */
+export interface UpsertProductPayload {
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  categoryId: string;
+  stock: number;
+  images: string[];
+}
+
+const EMPTY_PAGE: Pagination = {
+  page: 0,
+  limit: 20,
+  total: 0,
+  totalPages: 0,
+};
+
 export async function getProducts(params: ProductFilterParams = {}): Promise<ProductListResult> {
   try {
     const queryParams = new URLSearchParams();
-    
     if (params.page !== undefined) queryParams.set('page', String(params.page));
     if (params.size !== undefined) queryParams.set('size', String(params.size));
-    if (params.category) queryParams.set('category', params.category);
-    if (params.featured !== undefined) queryParams.set('featured', String(params.featured));
+    if (params.categoryId) queryParams.set('categoryId', params.categoryId);
+    if (!params.categoryId && params.category) queryParams.set('categoryId', params.category);
+    if (params.searchQuery) queryParams.set('searchQuery', params.searchQuery);
+    if (!params.searchQuery && params.search) queryParams.set('searchQuery', params.search);
     if (params.minPrice !== undefined) queryParams.set('minPrice', String(params.minPrice));
     if (params.maxPrice !== undefined) queryParams.set('maxPrice', String(params.maxPrice));
-    if (params.search) queryParams.set('search', params.search);
-    if (params.sort) queryParams.set('sort', params.sort);
 
     const response = await api.get<PaginatedResponse<ProductApiResponse>>(
       `/products?${queryParams.toString()}`
     );
 
     const data = response.data;
-    
     return {
       products: data.content.map(mapProduct),
       pagination: {
@@ -51,61 +72,74 @@ export async function getProducts(params: ProductFilterParams = {}): Promise<Pro
         totalPages: data.totalPages,
       },
     };
-  } catch (error) {
-    console.error('Failed to fetch products:', error);
-    return {
-      products: [],
-      pagination: { page: 0, limit: 12, total: 0, totalPages: 0 },
-    };
+  } catch {
+    return { products: [], pagination: EMPTY_PAGE };
   }
 }
 
-/**
- * Get all products without pagination
- */
-/**
- * Get product by slug
- */
+export async function getAllProducts(): Promise<Product[]> {
+  try {
+    const response = await api.get<ProductApiResponse[]>('/products/all');
+    return response.data.map(mapProduct);
+  } catch {
+    return [];
+  }
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const response = await api.get<ProductApiResponse>(`/products/${slug}`);
+    const response = await api.get<ProductApiResponse>(`/products/${encodeURIComponent(slug)}`);
     return mapProduct(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
-    if (axiosError.response?.status === 404) {
-      return null;
-    }
-    console.error('Failed to fetch product:', error);
+    if (axiosError.response?.status === 404) return null;
     return null;
   }
 }
 
-/**
- * Get featured products
- */
-export async function getFeaturedProducts(limit: number = 8): Promise<Product[]> {
-  try {
-    const response = await api.get<PaginatedResponse<ProductApiResponse>>(
-      `/products?featured=true&size=${limit}`
-    );
-    return response.data.content.map(mapProduct);
-  } catch (error) {
-    console.error('Failed to fetch featured products:', error);
-    return [];
-  }
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const result = await getProducts({ page: 0, size: limit });
+  return result.products.slice(0, limit);
 }
 
-/**
- * Get new arrivals (sorted by newest)
- */
-export async function getNewArrivals(limit: number = 8): Promise<Product[]> {
+export async function getNewArrivals(limit = 8): Promise<Product[]> {
+  const result = await getProducts({ page: 0, size: limit });
+  return result.products.slice(0, limit);
+}
+
+export async function createProduct(payload: UpsertProductPayload): Promise<Product> {
+  const response = await api.post<ProductApiResponse>('/products', {
+    ...payload,
+    price: Number(payload.price),
+    stock: Number(payload.stock),
+  });
+  return mapProduct(response.data);
+}
+
+export async function updateProduct(slug: string, payload: UpsertProductPayload): Promise<Product> {
+  const response = await api.put<ProductApiResponse>(`/products/${encodeURIComponent(slug)}`, {
+    name: payload.name,
+    description: payload.description,
+    price: Number(payload.price),
+    categoryId: payload.categoryId,
+    stock: Number(payload.stock),
+    images: payload.images,
+  });
+  return mapProduct(response.data);
+}
+
+export async function deleteProduct(slug: string): Promise<void> {
+  await api.delete(`/products/${encodeURIComponent(slug)}`);
+}
+
+export async function safeDeleteProduct(slug: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await api.get<PaginatedResponse<ProductApiResponse>>(
-      `/products?sort=newest&size=${limit}`
-    );
-    return response.data.content.map(mapProduct);
+    await deleteProduct(slug);
+    return { success: true };
   } catch (error) {
-    console.error('Failed to fetch new arrivals:', error);
-    return [];
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Failed to delete product'),
+    };
   }
 }

@@ -3,31 +3,45 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutGrid,
-  PackageSearch,
-  Users,
-  Gift,
-  Truck,
-  MessageSquareWarning,
   Bell,
-  X
+  Gift,
+  LayoutGrid,
+  MessageSquareWarning,
+  PackageSearch,
+  QrCode,
+  Tag,
+  Truck,
+  Users,
+  X,
+  Boxes,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/auth-context';
+import { isMerchantRole, roleLabel } from '@/lib/roles';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-const navItems = [
+const adminNavItems = [
   { href: '/admin', label: 'Overview', icon: LayoutGrid },
+  { href: '/admin/products', label: 'Products', icon: Boxes },
   { href: '/admin/orders', label: 'Orders', icon: PackageSearch },
   { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/loyalty', label: 'Promotions & Points', icon: Gift },
+  { href: '/admin/promotions', label: 'Promotions', icon: Tag },
+  { href: '/admin/payments', label: 'Payments', icon: QrCode },
+  { href: '/admin/loyalty', label: 'Loyalty', icon: Gift },
   { href: '/admin/delivery', label: 'Delivery', icon: Truck },
   { href: '/admin/reviews', label: 'Reviews', icon: MessageSquareWarning },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+];
+
+const merchantNavItems = [
+  { href: '/merchant', label: 'Overview', icon: LayoutGrid },
+  { href: '/merchant/orders', label: 'Orders', icon: PackageSearch },
+  { href: '/merchant/payments', label: 'Payments', icon: QrCode },
 ];
 
 interface AdminSidebarProps {
@@ -37,6 +51,10 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const merchantMode = isMerchantRole(user?.role);
+  const navItems = merchantMode ? merchantNavItems : adminNavItems;
+  const workspace = merchantMode ? 'Merchant Console' : 'Admin Console';
 
   return (
     <>
@@ -61,7 +79,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             </div>
             <div>
               <p className="text-sm font-semibold text-muted-foreground">Wing</p>
-              <p className="text-base font-semibold">Admin Console</p>
+              <p className="text-base font-semibold">{workspace}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
@@ -72,7 +90,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <nav className="mt-8 space-y-1">
           {navItems.map((item) => {
             const isActive =
-              pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+              pathname === item.href || (item.href !== '/admin' && item.href !== '/merchant' && pathname.startsWith(item.href));
             const Icon = item.icon;
 
             return (
@@ -95,11 +113,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         </nav>
 
         <div className="mt-auto rounded-design-lg border border-border bg-muted/40 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">System Status</p>
-          <p className="mt-2 text-sm font-medium text-foreground">Operational</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            API and background jobs are running normally.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session</p>
+          <p className="mt-2 text-sm font-medium text-foreground">{user?.name || 'Operator'}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{roleLabel(user?.role)}</p>
         </div>
       </aside>
     </>

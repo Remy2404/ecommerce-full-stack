@@ -1,90 +1,59 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getErrorMessage } from '@/lib/http-error';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
-/* ------------------------------------------------------------------ */
-/* Environment helpers */
-/* ------------------------------------------------------------------ */
+const PUBLIC_PATH_PREFIXES = [
+  '/login',
+  '/register',
+  '/verify-email',
+  '/forgot-password',
+  '/reset-password',
+  '/2fa',
+];
 
-const isBrowser = () => typeof window !== 'undefined';
-const isServer = () => !isBrowser();
+const PROTECTED_PATH_PREFIXES = [
+  '/profile',
+  '/settings',
+  '/orders',
+  '/checkout',
+  '/admin',
+  '/merchant',
+];
 
-/* ------------------------------------------------------------------ */
-/* Token utilities */
-/* ------------------------------------------------------------------ */
+type AccessTokenListener = (token: string | null) => void;
+let accessTokenMemory: string | null = null;
+const accessTokenListeners = new Set<AccessTokenListener>();
 
-const ACCESS_TOKEN_KEY = 'accessToken';
+const isBrowser = typeof window !== 'undefined';
 
-const isPublicAuthPath = (path: string): boolean => {
-  return (
-    path.startsWith('/login') ||
-    path.startsWith('/register') ||
-    path.startsWith('/verify-email') ||
-    path.startsWith('/forgot-password') ||
-    path.startsWith('/reset-password')
-  );
+const isPublicPath = (pathname: string): boolean =>
+  PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+const isProtectedPath = (pathname: string): boolean =>
+  PROTECTED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+const notifyAccessTokenListeners = (): void => {
+  accessTokenListeners.forEach((listener) => listener(accessTokenMemory));
 };
 
-const isProtectedRoute = (path: string): boolean => {
-  return (
-    path.startsWith('/profile') ||
-    path.startsWith('/settings') ||
-    path.startsWith('/orders') ||
-    path.startsWith('/checkout') ||
-    path.startsWith('/admin')
-  );
-};
-
-export const getAccessToken = async (): Promise<string | null> => {
-  // Browser: localStorage first
-  if (isBrowser()) {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (token) return token;
-  }
-
-  // Server: next/headers cookies
-  if (isServer()) {
-    try {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      return cookieStore.get(ACCESS_TOKEN_KEY)?.value ?? null;
-    } catch {
-      // cookies() not available (safe to ignore)
-    }
-  }
-
-  // Browser fallback: document.cookie
-  if (isBrowser()) {
-    const match = document.cookie.match(
-      new RegExp(`(^| )${ACCESS_TOKEN_KEY}=([^;]+)`)
-    );
-    return match?.[2] ?? null;
-  }
-
-  return null;
-};
+export const getAccessToken = (): string | null => accessTokenMemory;
 
 export const setAccessToken = (token: string): void => {
-  if (!isBrowser()) return;
-
-  localStorage.setItem(ACCESS_TOKEN_KEY, token);
-
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  document.cookie = `${ACCESS_TOKEN_KEY}=${token};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  accessTokenMemory = token;
+  notifyAccessTokenListeners();
 };
 
 export const removeAccessToken = (): void => {
-  if (!isBrowser()) return;
-
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  document.cookie = `${ACCESS_TOKEN_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+  accessTokenMemory = null;
+  notifyAccessTokenListeners();
 };
 
-/* ------------------------------------------------------------------ */
-/* JWT helpers */
-/* ------------------------------------------------------------------ */
+export const subscribeAccessToken = (
+  listener: AccessTokenListener
+): (() => void) => {
+  accessTokenListeners.add(listener);
+  return () => accessTokenListeners.delete(listener);
+};
 
 type JwtPayload = {
   exp: number;
@@ -99,17 +68,17 @@ export const decodeToken = <T = JwtPayload>(token: string): T | null => {
   }
 };
 
-export const isAuthenticated = async (): Promise<boolean> => {
-  const token = await getAccessToken();
-  if (!token) return false;
-
-  const payload = decodeToken(token);
-  return !!payload && payload.exp * 1000 > Date.now();
+export const isTokenExpired = (token: string, skewMs = 5_000): boolean => {
+  const payload = decodeToken<JwtPayload>(token);
+  if (!payload?.exp) return true;
+  return payload.exp * 1000 <= Date.now() + skewMs;
 };
 
-/* ------------------------------------------------------------------ */
-/* Axios instance */
-/* ------------------------------------------------------------------ */
+export const hasValidAccessToken = (): boolean => {
+  const token = getAccessToken();
+  if (!token) return false;
+  return !isTokenExpired(token);
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -117,65 +86,67 @@ const api = axios.create({
   withCredentials: true,
 });
 
-/* ------------------------------------------------------------------ */
-/* Request interceptor */
-/* ------------------------------------------------------------------ */
-
-api.interceptors.request.use(async (config) => {
-  const token = await getAccessToken();
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
   if (token) {
+    config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-/* ------------------------------------------------------------------ */
-/* Refresh token queue */
-/* ------------------------------------------------------------------ */
-
 let isRefreshing = false;
-let subscribers: Array<(token: string) => void> = [];
+let refreshSubscribers: Array<(token: string) => void> = [];
 
-const subscribe = (cb: (token: string) => void) => subscribers.push(cb);
-
-const notifySubscribers = (token: string) => {
-  subscribers.forEach((cb) => cb(token));
-  subscribers = [];
+const subscribeRefresh = (cb: (token: string) => void): void => {
+  refreshSubscribers.push(cb);
 };
 
-/* ------------------------------------------------------------------ */
-/* Response interceptor */
-/* ------------------------------------------------------------------ */
+const publishRefresh = (token: string): void => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+const redirectToLoginIfProtectedPath = (): void => {
+  if (!isBrowser) return;
+  const pathname = window.location.pathname;
+  if (isProtectedPath(pathname) && !isPublicPath(pathname)) {
+    window.location.href = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
+  }
+};
+
+const shouldSkipRefresh = (requestUrl?: string): boolean => {
+  if (!requestUrl) return false;
+  return (
+    requestUrl.includes('/auth/login') ||
+    requestUrl.includes('/auth/register') ||
+    requestUrl.includes('/auth/refresh') ||
+    requestUrl.includes('/auth/verify-2fa')
+  );
+};
 
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as
       | (InternalAxiosRequestConfig & { _retry?: boolean })
       | undefined;
 
-    if (
-      error.response?.status !== 401 ||
-      !originalRequest ||
-      originalRequest._retry
-    ) {
+    if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    const requestUrl = originalRequest.url ?? '';
-    if (requestUrl.includes('/auth/refresh')) {
+    if (shouldSkipRefresh(originalRequest.url)) {
       return Promise.reject(error);
     }
 
-    // Server-side refresh cannot reliably persist/clear cookies in the browser.
-    // Avoid refresh attempts on the server to prevent stale-cookie retry loops.
-    if (isServer()) {
+    if (!isBrowser) {
       return Promise.reject(error);
     }
 
     if (isRefreshing) {
       return new Promise((resolve) => {
-        subscribe((token) => {
+        subscribeRefresh((token) => {
           originalRequest.headers.Authorization = `Bearer ${token}`;
           resolve(api(originalRequest));
         });
@@ -186,60 +157,25 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      if (isBrowser()) {
-        console.debug('[API] Token expired, attempting refresh...');
-      }
-
-      const refreshConfig: { withCredentials: boolean } = { withCredentials: true };
-
-      const res = await axios.post(
+      const refreshResponse = await axios.post<{ token?: string; accessToken?: string }>(
         `${API_BASE_URL}/auth/refresh`,
         {},
-        refreshConfig
+        { withCredentials: true }
       );
 
-      const token = res.data.accessToken ?? res.data.token;
-      if (!token) throw new Error('No access token returned from refresh');
-
-      if (isBrowser()) {
-        console.debug('[API] Token refreshed successfully');
+      const refreshedToken = refreshResponse.data.token ?? refreshResponse.data.accessToken;
+      if (!refreshedToken) {
+        throw new Error('Refresh endpoint returned no access token');
       }
 
-      setAccessToken(token);
-      notifySubscribers(token);
+      setAccessToken(refreshedToken);
+      publishRefresh(refreshedToken);
 
-      originalRequest.headers.Authorization = `Bearer ${token}`;
+      originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
       return api(originalRequest);
-    } catch (refreshError: unknown) {
-      if (isBrowser()) {
-        const axiosRefreshError =
-          refreshError instanceof AxiosError ? refreshError : null;
-        const data = axiosRefreshError?.response?.data;
-        const apiError =
-          data && typeof data === 'object' && 'error' in data
-            ? (data as { error?: unknown }).error
-            : undefined;
-        const apiCode =
-          data && typeof data === 'object' && 'code' in data
-            ? (data as { code?: unknown }).code
-            : undefined;
-
-        console.error('[API] Refresh token failed:', {
-          status: axiosRefreshError?.response?.status,
-          message: typeof apiError === 'string' ? apiError : getErrorMessage(refreshError, 'Refresh token failed'),
-          code: typeof apiCode === 'string' ? apiCode : undefined,
-        });
-      }
-
+    } catch (refreshError) {
       removeAccessToken();
-
-      if (isBrowser()) {
-        const path = window.location.pathname;
-        if (isProtectedRoute(path) && !isPublicAuthPath(path)) {
-          window.location.href = '/login?reason=token_expired';
-        }
-      }
-
+      redirectToLoginIfProtectedPath();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

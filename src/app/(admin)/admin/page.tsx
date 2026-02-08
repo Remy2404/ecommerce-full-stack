@@ -105,7 +105,9 @@ export default function AdminDashboardPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline">Last 7 days</Button>
           <Button variant="outline">Last 30 days</Button>
-          <Button>Open Promotions</Button>
+          <Button asChild>
+            <Link href="/admin/promotions">Open Promotions</Link>
+          </Button>
         </div>
       </div>
 

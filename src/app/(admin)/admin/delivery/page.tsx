@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { MapPin, Truck } from 'lucide-react';
-import { getDeliveryStatus, updateDeliveryStatus } from '@/services/delivery.service';
-import { Delivery, DeliveryStatus } from '@/types';
+import { assignDeliveryDriver, getDeliveryStatus, updateDeliveryStatus } from '@/services/delivery.service';
+import { type Delivery, type DeliveryStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 const statusOptions: DeliveryStatus[] = [
   'PENDING',
@@ -14,11 +15,12 @@ const statusOptions: DeliveryStatus[] = [
   'PICKED_UP',
   'IN_TRANSIT',
   'DELIVERED',
-  'FAILED'
+  'FAILED',
 ];
 
 export default function AdminDeliveryPage() {
   const [orderId, setOrderId] = useState('');
+  const [driverId, setDriverId] = useState('');
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [status, setStatus] = useState<DeliveryStatus>('IN_TRANSIT');
   const [notes, setNotes] = useState('');
@@ -29,30 +31,41 @@ export default function AdminDeliveryPage() {
     if (!orderId) return;
     setLoading(true);
     setMessage(null);
+    const result = await getDeliveryStatus(orderId);
+    setLoading(false);
+    setDelivery(result);
+
+    if (!result) {
+      setMessage('No delivery record found for this order.');
+      return;
+    }
+
+    setStatus(result.status);
+  };
+
+  const handleAssignDriver = async () => {
+    if (!delivery || !driverId) return;
+    setLoading(true);
     try {
-      const result = await getDeliveryStatus(orderId);
-      setDelivery(result);
-      if (result) {
-        setStatus(result.status);
-      } else {
-        setMessage('No delivery record found for this order.');
-      }
+      await assignDeliveryDriver(delivery.id, driverId);
+      toast.success('Driver assigned');
+      await handleLookup();
     } catch {
-      setMessage('Unable to fetch delivery information.');
+      toast.error('Failed to assign driver');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdateStatus = async () => {
     if (!delivery) return;
     setLoading(true);
-    setMessage(null);
     try {
       await updateDeliveryStatus(delivery.id, status, notes);
-      setMessage('Delivery status updated.');
+      toast.success('Delivery status updated');
+      await handleLookup();
     } catch {
-      setMessage('Failed to update delivery status.');
+      toast.error('Failed to update delivery status');
     } finally {
       setLoading(false);
     }
@@ -63,15 +76,12 @@ export default function AdminDeliveryPage() {
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Delivery Tracking</p>
         <h1 className="text-3xl font-semibold">Delivery Status</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Lookup an order delivery and adjust status updates in real time.
-        </p>
       </div>
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-3 pt-6">
           <Input
-            placeholder="Enter order ID"
+            placeholder="Order ID"
             value={orderId}
             onChange={(event) => setOrderId(event.target.value)}
           />
@@ -95,30 +105,34 @@ export default function AdminDeliveryPage() {
               <CardTitle>Delivery Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-xs uppercase text-muted-foreground">Delivery ID</p>
-                <p className="text-sm font-semibold">{delivery.id}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase text-muted-foreground">Order ID</p>
-                <p className="text-sm">{delivery.orderId}</p>
-              </div>
               <div className="grid gap-3 rounded-design border border-border p-4 text-sm">
                 <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Delivery ID</span>
+                  <span className="font-medium">{delivery.id}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Order ID</span>
+                  <span>{delivery.orderId}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Driver ID</span>
+                  <span>{delivery.driverId || 'Unassigned'}</span>
+                </div>
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium">{delivery.status}</span>
+                  <span>{delivery.status}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Carrier</span>
-                  <span>{delivery.carrier || '—'}</span>
+                  <span className="text-muted-foreground">Notes</span>
+                  <span>{delivery.driverNotes || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Tracking</span>
-                  <span>{delivery.trackingNumber || '—'}</span>
+                  <span className="text-muted-foreground">Pickup</span>
+                  <span>{delivery.pickupTime ? new Date(delivery.pickupTime).toLocaleString() : '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">ETA</span>
-                  <span>{delivery.estimatedArrival || '—'}</span>
+                  <span className="text-muted-foreground">Delivered</span>
+                  <span>{delivery.deliveredTime ? new Date(delivery.deliveredTime).toLocaleString() : '—'}</span>
                 </div>
               </div>
             </CardContent>
@@ -126,30 +140,44 @@ export default function AdminDeliveryPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Update Status</CardTitle>
+              <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <label className="text-xs uppercase text-muted-foreground">New Status</label>
-              <select
-                value={status}
-                onChange={(event) => setStatus(event.target.value as DeliveryStatus)}
-                className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
-              <Input
-                placeholder="Update notes or location"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                icon={<MapPin className="h-4 w-4" />}
-              />
-              <Button onClick={handleUpdate} disabled={loading} className="w-full">
-                Save Update
-              </Button>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs uppercase text-muted-foreground">Assign Driver</label>
+                <Input
+                  placeholder="Driver UUID"
+                  value={driverId}
+                  onChange={(event) => setDriverId(event.target.value)}
+                />
+                <Button variant="outline" className="w-full" onClick={handleAssignDriver} disabled={loading || !driverId}>
+                  Assign Driver
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs uppercase text-muted-foreground">Update Status</label>
+                <select
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value as DeliveryStatus)}
+                  className="h-10 w-full rounded-design border border-input bg-background px-3 text-sm"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  placeholder="Driver notes"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  icon={<MapPin className="h-4 w-4" />}
+                />
+                <Button onClick={handleUpdateStatus} disabled={loading} className="w-full">
+                  Save Update
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

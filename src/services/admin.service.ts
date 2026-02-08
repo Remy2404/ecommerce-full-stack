@@ -46,3 +46,8 @@ export async function getAdminOrders(page: number = 0, size: number = 20) {
 export async function revokeUser(userId: string): Promise<void> {
   await api.post(`/admin/users/${userId}/revoke`);
 }
+
+export async function archiveLegacyOrderDeliveryAddresses(): Promise<unknown> {
+  const response = await api.post('/admin/maintenance/addresses/archive-order-delivery');
+  return response.data;
+}

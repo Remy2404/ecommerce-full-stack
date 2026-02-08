@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BellRing } from 'lucide-react';
 import {
   getNotifications,
@@ -33,6 +33,13 @@ export function AdminNotificationsClient({
     }
   };
 
+  useEffect(() => {
+    if (initialNotifications.length === 0) {
+      void loadNotifications();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleSelected = (id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -41,16 +48,24 @@ export function AdminNotificationsClient({
 
   const handleMarkSelected = async () => {
     if (selected.length === 0) return;
-    await markAsReadBulk(selected);
-    setSelected([]);
-    setMessage('Selected notifications marked as read.');
-    await loadNotifications();
+    try {
+      await markAsReadBulk(selected);
+      setSelected([]);
+      setMessage('Selected notifications marked as read.');
+      await loadNotifications();
+    } catch {
+      setMessage('Unable to mark selected notifications as read.');
+    }
   };
 
   const handleMarkAll = async () => {
-    await markAllAsRead();
-    setMessage('All notifications marked as read.');
-    await loadNotifications();
+    try {
+      await markAllAsRead();
+      setMessage('All notifications marked as read.');
+      await loadNotifications();
+    } catch {
+      setMessage('Unable to mark all notifications as read.');
+    }
   };
 
   return (
@@ -146,4 +161,3 @@ export function AdminNotificationsClient({
     </div>
   );
 }
-

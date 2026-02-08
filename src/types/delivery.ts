@@ -7,11 +7,11 @@
 export interface DeliveryApiResponse {
   id: string;
   orderId: string;
-  trackingNumber?: string;
-  carrier?: string;
+  driverId?: string;
   status: DeliveryStatus;
-  estimatedArrival?: string;
-  actualArrival?: string;
+  driverNotes?: string;
+  pickupTime?: string;
+  deliveredTime?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,11 +24,11 @@ export type DeliveryStatus = 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'IN_TRANSIT'
 export interface Delivery {
   id: string;
   orderId: string;
-  trackingNumber?: string;
-  carrier?: string;
+  driverId?: string;
   status: DeliveryStatus;
-  estimatedArrival?: string;
-  actualArrival?: string;
+  driverNotes?: string;
+  pickupTime?: string;
+  deliveredTime?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -3,14 +3,20 @@
  * These types mirror the Spring Boot backend models
  */
 
-import { UserApiResponse, AuthUser, UserRole } from './user';
+import { AuthUser, UserRole } from './user';
 
 // --- Backend API Responses (DTOs) ---
 
 export interface AuthResponse {
-  token: string;
+  token?: string;
   refreshToken?: string;
-  user: UserApiResponse;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    role?: string;
+    avatar?: string;
+  };
   tempToken?: string; 
 }
 
@@ -33,6 +39,7 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   phone?: string;
+  confirmPassword?: string;
 }
 
 export interface VerifyEmailRequest {
@@ -70,11 +77,11 @@ export interface AuthResult {
 export interface JwtPayload {
   id?: string;
   sub: string;
-  email: string;
+  email?: string;
   name?: string;
   firstName?: string;
   lastName?: string;
-  role: UserRole | UserRole[];
+  role?: UserRole | string | Array<UserRole | string>;
   avatar?: string;
   exp: number;
 }

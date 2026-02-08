@@ -23,11 +23,11 @@ async function verifyPaymentFlow() {
 
     if (result) {
       console.log('\n✅ Verification Result:');
-      console.log(`- Paid: ${result.paid}`);
-      console.log(`- Amount: ${result.paidAmount} ${result.currency}`);
+      console.log(`- Paid: ${result.isPaid}`);
+      console.log(`- Amount: ${result.paidAmount ?? 0} ${result.currency}`);
       console.log(`- Message: ${result.message}`);
       
-      if (result.paid) {
+      if (result.isPaid) {
         console.log('\nSUCCESS: Frontend would now transition to success screen.');
       } else {
         console.log('\nPENDING: Frontend would continue polling.');

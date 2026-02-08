@@ -4,245 +4,171 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Loader2, Mail, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-
-import api from '@/services/api/client';
-import { setAccessToken } from '@/services/api/client';
-import { getErrorMessage } from '@/lib/http-error';
+import { resendVerificationByToken, verifyEmailAndAutoLogin } from '@/services/auth.service';
+import { useAuth } from '@/hooks/auth-context';
+import { isAdminRole, isMerchantRole } from '@/lib/roles';
 
 interface VerifyEmailFormProps {
   token?: string;
 }
 
 type VerificationState = 'verifying' | 'success' | 'error' | 'no-token';
-type VerifyAndLoginResponse = {
-  token?: string;
-};
 
 export default function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   const router = useRouter();
-  const [state, setState] = useState<VerificationState>(() =>
-    token ? 'verifying' : 'no-token'
-  );
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const { login } = useAuth();
+  const [state, setState] = useState<VerificationState>(token ? 'verifying' : 'no-token');
+  const [errorMessage, setErrorMessage] = useState('');
   const [canResend, setCanResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const hasVerifiedRef = useRef(false);
 
   useEffect(() => {
-    if (!token) return;
-    if (hasVerifiedRef.current) return;
+    if (!token || hasVerifiedRef.current) return;
     hasVerifiedRef.current = true;
 
-    const verifyEmail = async () => {
-      try {
-        const response = await api.post<VerifyAndLoginResponse>('/auth/verify-email/auto-login', { token });
-        if (response.data?.token) {
-          setAccessToken(response.data.token);
-        }
-        
-        setState('success');
-        toast.success('Email verified!', {
-          description: 'Your account has been activated and you are now logged in.',
-        });
+    const verify = async () => {
+      const result = await verifyEmailAndAutoLogin(token);
 
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          router.push('/profile');
-        }, 3000);
-      } catch (error: unknown) {
-        const message = getErrorMessage(
-          error,
-          'Verification failed. The link may be invalid or expired.'
-        );
+      if (!result.success) {
+        const message = result.error || 'Verification failed. The link may be invalid or expired.';
         setErrorMessage(message);
         setCanResend(message.toLowerCase().includes('expired'));
         setState('error');
-        
-        toast.error('Verification failed', {
-          description: message,
-        });
+        toast.error('Verification failed', { description: message });
+        return;
       }
+
+      if (result.user) {
+        login(result.user);
+      }
+
+      setState('success');
+      toast.success('Email verified successfully');
+
+      const redirectPath = isAdminRole(result.user?.role)
+        ? '/admin'
+        : isMerchantRole(result.user?.role)
+          ? '/merchant'
+          : '/profile';
+      setTimeout(() => router.replace(redirectPath), 2000);
     };
 
-    verifyEmail();
-  }, [token, router]);
+    void verify();
+  }, [login, router, token]);
 
   const handleResend = async () => {
     if (!token) return;
     setIsResending(true);
-    try {
-      await api.post('/auth/resend-verification/by-token', { token });
-      toast.success('Verification email sent', {
-        description: 'Please check your inbox for a new verification link.',
-      });
-    } catch (error: unknown) {
-      toast.error('Failed to resend verification email', {
-        description: getErrorMessage(error, 'Please try again later.'),
-      });
-    } finally {
-      setIsResending(false);
+    const result = await resendVerificationByToken(token);
+    setIsResending(false);
+
+    if (!result.success) {
+      toast.error(result.error || 'Unable to resend verification email.');
+      return;
     }
+
+    toast.success('Verification email sent. Check your inbox.');
   };
 
   return (
     <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
       <div className="mx-auto w-full max-w-sm lg:w-96">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/" className="text-2xl font-bold text-white">
             Store
           </Link>
-          <h1 className="mt-8 text-3xl font-bold tracking-tight">
-            Email Verification
-          </h1>
+          <h1 className="mt-8 text-3xl font-bold tracking-tight">Email Verification</h1>
         </motion.div>
 
         <div className="mt-10">
           {state === 'verifying' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center space-y-6"
-            >
-              <div className="mx-auto w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-white animate-spin" />
+            <div className="space-y-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold">Verifying your email...</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  Please wait while we confirm your email address.
-                </p>
+                <p className="mt-2 text-sm text-gray-400">Please wait while we activate your account.</p>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {state === 'success' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center space-y-6"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center"
-              >
+            <div className="space-y-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
-              </motion.div>
-              <div>
-                <h3 className="text-xl font-semibold text-green-500">Email verified!</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  Your account has been successfully activated.
-                </p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Redirecting to your account...
-                </p>
               </div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <div>
+                <h3 className="text-xl font-semibold text-green-500">Email verified</h3>
+                <p className="mt-2 text-sm text-gray-400">Your account is now active.</p>
+              </div>
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-black transition-colors hover:bg-gray-200"
               >
-                <Link
-                  href="/profile"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200"
-                >
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </motion.div>
-            </motion.div>
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           )}
 
           {state === 'error' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center space-y-6"
-            >
-              <div className="mx-auto w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
+            <div className="space-y-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
                 <XCircle className="h-8 w-8 text-red-500" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-red-500">Verification failed</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  {errorMessage}
-                </p>
+                <p className="mt-2 text-sm text-gray-400">{errorMessage}</p>
               </div>
               <div className="space-y-3">
                 {canResend && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  <button
                     type="button"
                     onClick={handleResend}
                     disabled={isResending}
-                    className="block w-full rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200 disabled:opacity-60"
+                    className="block w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition-colors hover:bg-gray-200 disabled:opacity-60"
                   >
                     {isResending ? 'Sending...' : 'Resend verification email'}
-                  </motion.button>
+                  </button>
                 )}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    href="/register"
-                    className="block w-full rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200"
-                  >
-                    Create new account
-                  </Link>
-                </motion.div>
                 <Link
-                  href="/login"
-                  className="block text-sm text-gray-400 hover:text-white transition-colors"
+                  href="/register"
+                  className="block w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition-colors hover:bg-gray-200"
                 >
+                  Create new account
+                </Link>
+                <Link href="/login" className="block text-sm text-gray-400 transition-colors hover:text-white">
                   Back to login
                 </Link>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {state === 'no-token' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center space-y-6"
-            >
-              <div className="mx-auto w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center">
+            <div className="space-y-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/10">
                 <Mail className="h-8 w-8 text-yellow-500" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold">No verification token</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  Please check your email for the verification link.
-                </p>
+                <p className="mt-2 text-sm text-gray-400">Please open the verification link from your email.</p>
               </div>
               <div className="space-y-3">
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    href="/register"
-                    className="block w-full rounded-xl bg-white text-black px-6 py-3 font-semibold transition-colors hover:bg-gray-200"
-                  >
-                    Register
-                  </Link>
-                </motion.div>
                 <Link
-                  href="/login"
-                  className="block text-sm text-gray-400 hover:text-white transition-colors"
+                  href="/register"
+                  className="block w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition-colors hover:bg-gray-200"
                 >
+                  Register
+                </Link>
+                <Link href="/login" className="block text-sm text-gray-400 transition-colors hover:text-white">
                   Back to login
                 </Link>
               </div>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

@@ -42,7 +42,7 @@ export function PaymentStatusListener({
         const result = await verifyPayment(md5);
         if (!result) return;
 
-        if (result.paid) {
+        if (result.isPaid) {
           clearInterval(pollInterval);
           if (cancelled) return;
           onSuccess();

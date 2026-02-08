@@ -97,7 +97,8 @@ export async function getCurrentUser() {
  * Verify email with verification code
  */
 export async function verifyEmail(email: string, code: string): Promise<AuthResult> {
-  return authService.verifyEmail(email, code);
+  const token = code || email;
+  return authService.verifyEmail(token);
 }
 
 /**

@@ -7,16 +7,14 @@
 export interface PromotionApiResponse {
   id: string;
   code: string;
+  name: string;
   description?: string;
-  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
-  discountValue: number;
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  value: number;
   minOrderAmount?: number;
-  maxDiscountAmount?: number;
-  startDate: string;
+  maxDiscount?: number;
   endDate: string;
   isActive: boolean;
-  usageCount: number;
-  usageLimit?: number;
 }
 
 export interface PromotionUsageApiResponse {
@@ -33,12 +31,12 @@ export interface PromotionUsageApiResponse {
 export interface Promotion {
   id: string;
   code: string;
+  name: string;
   description?: string;
-  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
-  discountValue: number;
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  value: number;
   minOrderAmount: number;
-  maxDiscountAmount?: number;
-  startDate: string;
+  maxDiscount?: number;
   endDate: string;
   isActive: boolean;
 }
@@ -56,10 +54,16 @@ export interface PromotionUsage {
 
 export function mapPromotion(raw: PromotionApiResponse): Promotion {
   return {
-    ...raw,
-    discountValue: Number(raw.discountValue),
+    id: raw.id,
+    code: raw.code,
+    name: raw.name,
+    description: raw.description,
+    type: raw.type,
+    value: Number(raw.value),
     minOrderAmount: Number(raw.minOrderAmount || 0),
-    maxDiscountAmount: raw.maxDiscountAmount ? Number(raw.maxDiscountAmount) : undefined,
+    maxDiscount: raw.maxDiscount ? Number(raw.maxDiscount) : undefined,
+    endDate: raw.endDate,
+    isActive: Boolean(raw.isActive),
   };
 }
 

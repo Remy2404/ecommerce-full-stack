@@ -25,7 +25,7 @@ export default function AdminLoyaltyPage() {
       const results = await Promise.allSettled([
         getPromotions(),
         getWingPointsBalance(),
-        getWingPointTransactions(0, 10)
+        getWingPointTransactions()
       ]);
 
       if (!active) return;
@@ -109,9 +109,9 @@ export default function AdminLoyaltyPage() {
                     <tr key={promo.id} className="hover:bg-muted/40">
                       <td className="px-4 py-3 font-medium">{promo.code}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {promo.discountType === 'PERCENTAGE'
-                          ? `${promo.discountValue}%`
-                          : formatCurrency(promo.discountValue)}
+                        {promo.type === 'PERCENTAGE'
+                          ? `${promo.value}%`
+                          : formatCurrency(promo.value)}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{formatCurrency(promo.minOrderAmount)}</td>
                       <td className="px-4 py-3">
@@ -151,13 +151,13 @@ export default function AdminLoyaltyPage() {
               <Sparkles className="h-4 w-4" />
               Validate Code
             </Button>
-            {promoResult && (
+                  {promoResult && (
               <div className="rounded-design-lg border border-border bg-muted/30 p-3 text-sm">
                 <p className="font-semibold">{promoResult.code}</p>
                 <p className="text-muted-foreground">
-                  {promoResult.discountType === 'PERCENTAGE'
-                    ? `${promoResult.discountValue}% off`
-                    : `${formatCurrency(promoResult.discountValue)} off`}
+                  {promoResult.type === 'PERCENTAGE'
+                    ? `${promoResult.value}% off`
+                    : `${formatCurrency(promoResult.value)} off`}
                 </p>
               </div>
             )}

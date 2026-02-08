@@ -10,6 +10,8 @@ import { WishlistProvider } from "@/hooks/wishlist-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "sonner";
 import { GoogleOAuthProviderWrapper } from "@/components/providers/google-oauth-provider";
+import { AppQueryProvider } from "@/components/providers/query-provider";
+import { RouteSecurityGate } from "@/components/providers/route-security-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -80,22 +82,24 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <GoogleOAuthProviderWrapper>
-          <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <div className="flex min-h-screen flex-col">
-                  <Navbar />
-                  <main className="flex-1">
-                    {children}
-                  </main>
-                  <Footer />
-                  <MobileNav />
-                  <CartDrawer />
-                  <Toaster position="top-right" richColors closeButton />
-                </div>
-              </WishlistProvider>
-            </CartProvider>
-          </AuthProvider>
+          <AppQueryProvider>
+            <AuthProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <Navbar />
+                    <main className="flex-1">
+                      <RouteSecurityGate>{children}</RouteSecurityGate>
+                    </main>
+                    <Footer />
+                    <MobileNav />
+                    <CartDrawer />
+                    <Toaster position="top-right" richColors closeButton />
+                  </div>
+                </WishlistProvider>
+              </CartProvider>
+            </AuthProvider>
+          </AppQueryProvider>
         </GoogleOAuthProviderWrapper>
       </body>
     </html>

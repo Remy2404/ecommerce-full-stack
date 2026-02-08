@@ -1,0 +1,330 @@
+/* ================================
+   Datetime Picker Shell
+================================ */
+
+.admin-datetime-picker {
+  width: 100%;
+  border: 1px solid hsl(var(--input));
+  border-radius: var(--radius);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    background-color var(--transition-base),
+    color var(--transition-base);
+}
+
+.admin-datetime-picker:hover {
+  border-color: hsl(var(--ring) / 0.5);
+}
+
+.admin-datetime-picker:focus-within {
+  border-color: hsl(var(--ring));
+  box-shadow:
+    0 0 0 2px hsl(var(--ring)),
+    0 0 0 4px hsl(var(--background));
+}
+
+.admin-datetime-picker .react-datetime-picker__wrapper {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  gap: 0.25rem;
+  border: none;
+}
+
+/* ================================
+   Input Group
+================================ */
+
+.admin-datetime-picker .react-datetime-picker__inputGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__inputGroup__input {
+  color: inherit;
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__inputGroup__input:invalid {
+  background: transparent !important;
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__inputGroup__divider,
+.admin-datetime-picker
+  .react-datetime-picker__inputGroup__leadingZero {
+  color: hsl(var(--muted-foreground));
+}
+
+/* ================================
+   Picker Buttons
+================================ */
+
+.admin-datetime-picker .react-datetime-picker__button {
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  color: hsl(var(--muted-foreground));
+  transition:
+    color var(--transition-base),
+    background-color var(--transition-base);
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__button:enabled:hover,
+.admin-datetime-picker
+  .react-datetime-picker__button:enabled:focus-visible {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__button:disabled {
+  color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* SVG icons */
+.admin-datetime-picker
+  .react-datetime-picker__button svg {
+  stroke: hsl(var(--muted-foreground));
+  transition: stroke var(--transition-base);
+}
+
+.admin-datetime-picker
+  .react-datetime-picker__button:enabled:hover svg,
+.admin-datetime-picker
+  .react-datetime-picker__button:enabled:focus-visible svg {
+  stroke: hsl(var(--foreground));
+}
+
+/* ================================
+   Calendar Container
+================================ */
+
+.admin-calendar {
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  box-shadow: var(--shadow-lg) !important;
+  font-family: inherit !important;
+}
+
+/* ================================
+   Calendar Navigation
+================================ */
+
+.admin-calendar .react-calendar__navigation {
+  background: hsl(var(--popover)) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.admin-calendar .react-calendar__navigation button {
+  min-width: 44px !important;
+  background: transparent !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.admin-calendar
+  .react-calendar__navigation button:enabled:hover,
+.admin-calendar
+  .react-calendar__navigation button:enabled:focus {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.admin-calendar
+  .react-calendar__navigation button:disabled {
+  color: hsl(var(--muted-foreground) / 0.6) !important;
+}
+
+/* ================================
+   Weekdays Header
+================================ */
+
+.admin-calendar
+  .react-calendar__month-view__weekdays {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.admin-calendar
+  .react-calendar__month-view__weekdays abbr {
+  text-decoration: none !important;
+}
+
+/* ================================
+   Base Day Tile (RESET)
+================================ */
+
+.admin-calendar .react-calendar__tile {
+  background: transparent !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75em 0.5em !important;
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
+}
+
+/* ================================
+   Today (NOT selected)
+================================ */
+
+.admin-calendar
+  .react-calendar__tile--now:not(.react-calendar__tile--active) {
+  background: hsl(var(--accent) / 0.25) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  font-weight: 500 !important;
+}
+
+/* ================================
+   Active (Selected Day)
+================================ */
+
+.admin-calendar .react-calendar__tile--active {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 600 !important;
+  border-radius: 999px !important;
+}
+
+/* ======================================
+   RANGE MIDDLE - BASE (NO HOVER)
+====================================== */
+
+.dark .admin-calendar
+  .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+html.dark .admin-calendar
+  .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+:root.dark .admin-calendar
+  .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd) {
+  background: hsl(var(--accent) / 0.45) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  border-radius: 0 !important;
+}
+
+/* ======================================
+   RANGE MIDDLE - HOVER
+====================================== */
+
+.dark .admin-calendar
+  .react-calendar__tile--range:enabled:hover:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+html.dark .admin-calendar
+  .react-calendar__tile--range:enabled:hover:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+:root.dark .admin-calendar
+  .react-calendar__tile--range:enabled:hover:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd) {
+  background: hsl(var(--accent) / 0.6) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* ======================================
+   RANGE MIDDLE - FOCUS
+======================================= */
+
+.dark .admin-calendar
+  .react-calendar__tile--range:focus-visible:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+html.dark .admin-calendar
+  .react-calendar__tile--range:focus-visible:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
+:root.dark .admin-calendar
+  .react-calendar__tile--range:focus-visible:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd) {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* ================================
+   Hover
+================================ */
+
+.admin-calendar
+  .react-calendar__tile:enabled:hover,
+.admin-calendar
+  .react-calendar__tile:enabled:focus {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* ================================
+   Weekend (never override active)
+================================ */
+
+.admin-calendar
+  .react-calendar__month-view__days__day--weekend:not(.react-calendar__tile--active) {
+  color: hsl(var(--popover-foreground)) !important;
+}
+
+/* ================================
+   Neighboring Month
+================================ */
+
+.admin-calendar
+  .react-calendar__month-view__days__day--neighboringMonth {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* ================================
+   Disabled
+================================ */
+
+.admin-calendar .react-calendar__tile:disabled {
+  background: transparent !important;
+  color: hsl(var(--muted-foreground) / 0.32) !important;
+  cursor: not-allowed !important;
+}
+
+/* ================================
+   Range Selection
+================================ */
+
+.admin-calendar .react-calendar__tile--range {
+  background: hsl(var(--accent) / 0.4) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  border-radius: 0 !important;
+}
+
+.admin-calendar
+  .react-calendar__tile--rangeStart,
+.admin-calendar
+  .react-calendar__tile--rangeEnd {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+
+/* ================================
+   Clock
+================================ */
+
+.admin-clock {
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--popover)) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.admin-clock .react-clock__face {
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--popover)) !important;
+}
+
+.admin-clock .react-clock__face__number {
+  color: hsl(var(--popover-foreground)) !important;
+}
+
+.admin-clock .react-clock__hand {
+  background: hsl(var(--primary)) !important;
+}
+
+.admin-clock .react-clock__mark__body {
+  background: hsl(var(--muted-foreground)) !important;
+}

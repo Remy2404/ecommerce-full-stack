@@ -160,13 +160,13 @@ export async function getOrderById(orderId: string): Promise<{ success: boolean;
 /**
  * Update order status (Admin/Merchant only)
  */
-export async function updateOrderStatus(orderId: string, status: string, reason?: string) {
+export async function updateOrderStatus(orderId: string, status: string) {
   const user = await getCurrentUser();
   if (!user || (user.role !== 'ADMIN' && user.role !== 'MERCHANT')) {
     return { success: false, error: 'Unauthorized: Admin or Merchant privileges required' };
   }
 
-  const result = await orderService.updateOrderStatus(orderId, status, reason);
+  const result = await orderService.updateOrderStatus(orderId, status);
   
   if (!result.success) {
     return { success: false, error: result.error };
@@ -184,7 +184,8 @@ export async function performCancelOrder(orderId: string, reason?: string) {
     return { success: false, error: 'Unauthorized' };
   }
 
-  const result = await orderService.cancelOrder(orderId, reason);
+  void reason;
+  const result = await orderService.cancelOrder(orderId);
   
   if (!result.success) {
     return { success: false, error: result.error };

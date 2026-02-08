@@ -25,9 +25,9 @@ export interface KHQRResult {
 }
 
 export interface KHQRVerificationResponse {
-  paid: boolean;
+  isPaid: boolean;
   expired?: boolean;
-  paidAmount: number;
+  paidAmount?: number;
   currency: string;
   message: string;
 }

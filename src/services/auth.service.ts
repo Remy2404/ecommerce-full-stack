@@ -1,264 +1,285 @@
-import api, { setAccessToken, removeAccessToken, getAccessToken, decodeToken } from './api';
 import { AxiosError } from 'axios';
+import api, {
+  decodeToken,
+  getAccessToken,
+  hasValidAccessToken,
+  removeAccessToken,
+  setAccessToken,
+} from './api';
 import { getErrorMessage } from '@/lib/http-error';
-import { 
-  AuthUser, 
-  User, 
-  LoginCredentials as LoginRequest, 
-  RegisterData as RegisterRequest,
-  UserRole,
-  UserApiResponse,
-  AuthResponse,
+import { normalizeUserRole } from '@/lib/roles';
+import type {
   AuthResult,
-  JwtPayload,
+  AuthUser,
   ChangePasswordRequest,
-  TwoFactorResponse,
-  mapAuthUser,
+  JwtPayload,
+  LoginRequest,
+  RegisterRequest,
 } from '@/types';
 
-export type { 
-  AuthUser, 
-  User, 
-  LoginRequest, 
-  RegisterRequest, 
-  UserApiResponse,
-  AuthResponse,
-  AuthResult,
-  JwtPayload,
-  ChangePasswordRequest,
-  TwoFactorResponse
+type AuthResponse = {
+  token?: string;
+  tempToken?: string;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    role?: string;
+    avatar?: string;
+  };
 };
-export { mapAuthUser };
 
-// ============================================================================
-// Auth Service
-// ============================================================================
+type MessageResponse = {
+  success: boolean;
+  message: string;
+};
 
-/**
- * Login with email and password
- */
+const TEMP_2FA_KEY = '2fa_temp_token';
+
+const isBrowser = typeof window !== 'undefined';
+
+const mapAuthSummary = (user?: AuthResponse['user']): AuthUser | undefined => {
+  if (!user?.id || !user.email) return undefined;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name || user.email,
+    role: normalizeUserRole(user.role),
+    avatarUrl: user.avatar,
+    emailVerified: true,
+    twofaEnabled: false,
+  };
+};
+
+export const setPendingTwoFactorToken = (tempToken: string): void => {
+  if (!isBrowser) return;
+  sessionStorage.setItem(TEMP_2FA_KEY, tempToken);
+};
+
+export const getPendingTwoFactorToken = (): string | null => {
+  if (!isBrowser) return null;
+  return sessionStorage.getItem(TEMP_2FA_KEY);
+};
+
+export const clearPendingTwoFactorToken = (): void => {
+  if (!isBrowser) return;
+  sessionStorage.removeItem(TEMP_2FA_KEY);
+};
+
 export async function login(email: string, password: string): Promise<AuthResult> {
   try {
-    const response = await api.post<AuthResponse>('/auth/login', {
-      email,
-      password,
-    });
+    const response = await api.post<AuthResponse>('/auth/login', { email, password } satisfies LoginRequest);
+    const { token, tempToken, user } = response.data;
 
-    const { token, user, tempToken } = response.data;
-    
-    // If tempToken is present, 2FA is required
     if (tempToken) {
+      setPendingTwoFactorToken(tempToken);
       return { success: true, tempToken };
     }
-    
-    // Normal login flow
+
+    if (!token) {
+      return { success: false, error: 'Access token is missing from response' };
+    }
+
     setAccessToken(token);
-    return { success: true, user: mapAuthUser(user), token };
+    clearPendingTwoFactorToken();
+    return { success: true, token, user: mapAuthSummary(user) };
   } catch (error) {
-    return { success: false, error: getErrorMessage(error, 'Invalid email or password') };
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Invalid email or password'),
+    };
   }
 }
 
-/**
- * Register a new user
- */
+export async function completeTwoFactorLogin(
+  tempToken: string,
+  otp: string
+): Promise<AuthResult> {
+  try {
+    const response = await api.post<AuthResponse>('/auth/verify-2fa', { tempToken, otp });
+    const { token, user } = response.data;
+
+    if (!token) {
+      return { success: false, error: 'Access token is missing from response' };
+    }
+
+    setAccessToken(token);
+    clearPendingTwoFactorToken();
+    return { success: true, token, user: mapAuthSummary(user) };
+  } catch (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Two-factor verification failed'),
+    };
+  }
+}
+
 export async function register(data: RegisterRequest): Promise<AuthResult> {
   try {
     const response = await api.post<AuthResponse>('/auth/register', data);
-
-    const { user } = response.data;
-    return { success: true, user: mapAuthUser(user) };
+    return { success: true, user: mapAuthSummary(response.data.user) };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-    
-    // Handle validation errors
-    if (axiosError.response?.data?.errors) {
-      const errors = axiosError.response.data.errors;
-      const firstError = Object.values(errors).flat()[0];
-      return { success: false, error: firstError || 'Validation failed' };
-    }
-    
-    const message = axiosError.response?.data?.message || 'Registration failed';
-    return { success: false, error: message };
+    const axiosError = error as AxiosError<{ errors?: Record<string, string> }>;
+    const validationErrors = axiosError.response?.data?.errors;
+    const firstValidationError = validationErrors ? Object.values(validationErrors)[0] : undefined;
+
+    return {
+      success: false,
+      error: firstValidationError || getErrorMessage(error, 'Registration failed'),
+    };
   }
 }
 
-/**
- * Login with Google ID token
- */
 export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
   try {
-    const response = await api.post<AuthResponse>('/auth/google/login', {
-      idToken,
-    });
-
+    const response = await api.post<AuthResponse>('/auth/google/login', { idToken });
     const { token, user } = response.data;
-    setAccessToken(token);
 
-    return { success: true, user: mapAuthUser(user), token };
+    if (!token) {
+      return { success: false, error: 'Access token is missing from response' };
+    }
+
+    setAccessToken(token);
+    clearPendingTwoFactorToken();
+    return { success: true, token, user: mapAuthSummary(user) };
   } catch (error) {
-    return { success: false, error: getErrorMessage(error, 'Google authentication failed') };
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Google authentication failed'),
+    };
   }
 }
 
-/**
- * Logout current user
- */
 export async function logout(): Promise<void> {
   try {
     await api.post('/auth/logout');
   } catch {
-    // Ignore errors, still clear local token
+    // Best effort: always clear client auth state.
   } finally {
     removeAccessToken();
+    clearPendingTwoFactorToken();
   }
 }
 
-/**
- * Refresh access token (uses httpOnly refresh token cookie)
- */
 export async function refreshToken(): Promise<boolean> {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
   try {
     const response = await api.post<AuthResponse>('/auth/refresh');
-    const { token } = response.data;
-    
-    if (token) {
-      setAccessToken(token);
-      return true;
+    const token = response.data.token;
+    if (!token) {
+      removeAccessToken();
+      return false;
     }
-    return false;
+    setAccessToken(token);
+    return true;
   } catch {
     removeAccessToken();
     return false;
   }
 }
 
-/**
- * Get current user from stored JWT
- * Updated to be async to support cookies() in server actions
- */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  let token = await getAccessToken();
+  const token = getAccessToken();
 
-  // If no token or token expired, try to refresh
-  let shouldRefresh = !token;
-  
-  if (token) {
-    const decoded = decodeToken<{ exp: number }>(token);
-    if (!decoded || decoded.exp * 1000 < Date.now()) {
-      shouldRefresh = true;
-    }
-  }
-
-  if (shouldRefresh) {
-    // Attempt refresh (works if httpOnly cookie is present)
-    const refreshed = await refreshToken();
-    if (refreshed) {
-      token = await getAccessToken();
-    } else {
-      return null;
-    }
-  }
-
-  if (!token) return null;
-
-  const decoded = decodeToken<{
-    id: string; 
-    sub: string; 
-    email: string;
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    role?: unknown;
-    avatar?: string;
-    exp: number;
-  }>(token);
-
-  if (!decoded || decoded.exp * 1000 < Date.now()) {
+  if (!token && !(await refreshToken())) {
     return null;
   }
 
-  const isUserRole = (value: unknown): value is UserRole => {
-    return (
-      typeof value === 'string' &&
-      (value === 'CUSTOMER' ||
-        value === 'ADMIN' ||
-        value === 'MERCHANT' ||
-        value === 'DELIVERY')
-    );
-  };
+  const activeToken = getAccessToken();
+  if (!activeToken || !hasValidAccessToken()) {
+    removeAccessToken();
+    return null;
+  }
 
-  const role: UserRole = isUserRole(decoded.role) ? decoded.role : 'CUSTOMER';
+  const decoded = decodeToken<JwtPayload & { avatar?: string }>(activeToken);
+  if (!decoded?.sub) return null;
 
-  return mapAuthUser({
-    id: decoded.id || decoded.sub, 
-    email: decoded.email || decoded.sub,
-    firstName: decoded.firstName || '',
-    lastName: decoded.lastName || '',
-    name: decoded.name,
-    role,
-    avatarUrl: decoded.avatar,
-    isActive: true,
+  const id = typeof decoded.id === 'string' ? decoded.id : decoded.sub;
+  const email = decoded.email || decoded.sub;
+  const roleRaw =
+    typeof decoded.role === 'string'
+      ? decoded.role
+      : Array.isArray(decoded.role)
+        ? decoded.role[0]
+        : 'CUSTOMER';
+
+  return {
+    id,
+    email,
+    name: decoded.name || `${decoded.firstName || ''} ${decoded.lastName || ''}`.trim() || email,
+    role: normalizeUserRole(roleRaw),
+    avatarUrl: typeof decoded.avatar === 'string' ? decoded.avatar : undefined,
     emailVerified: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  } as UserApiResponse);
+    twofaEnabled: false,
+  };
 }
 
-/**
- * Check if user is authenticated
- */
 export async function isLoggedIn(): Promise<boolean> {
   const user = await getCurrentUser();
-  return user !== null;
+  return Boolean(user);
 }
 
-/**
- * Verify email with code
- */
-export async function verifyEmail(email: string, code: string): Promise<AuthResult> {
+export async function verifyEmail(token: string): Promise<AuthResult> {
   try {
-    await api.post('/auth/verify-email', { email, code });
+    await api.post<MessageResponse>('/auth/verify-email', { token });
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error, 'Verification failed') };
   }
 }
 
-/**
- * Request password reset
- */
+export async function verifyEmailAndAutoLogin(token: string): Promise<AuthResult> {
+  try {
+    const response = await api.post<AuthResponse>('/auth/verify-email/auto-login', { token });
+    if (!response.data.token) {
+      return { success: true };
+    }
+
+    setAccessToken(response.data.token);
+    clearPendingTwoFactorToken();
+    return {
+      success: true,
+      token: response.data.token,
+      user: mapAuthSummary(response.data.user),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Email verification failed'),
+    };
+  }
+}
+
+export async function resendVerificationByToken(token: string): Promise<AuthResult> {
+  try {
+    await api.post<MessageResponse>('/auth/resend-verification/by-token', { token });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Failed to resend verification email') };
+  }
+}
+
 export async function forgotPassword(email: string): Promise<AuthResult> {
   try {
-    await api.post('/auth/forgot-password', { email });
+    await api.post<MessageResponse>('/auth/forgot-password', { email });
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error, 'Request failed') };
   }
 }
 
-/**
- * Reset password with token
- */
 export async function resetPassword(token: string, newPassword: string): Promise<AuthResult> {
   try {
-    await api.post('/auth/reset-password', { token, newPassword });
+    await api.post<MessageResponse>('/auth/reset-password', { token, newPassword });
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error, 'Password reset failed') };
   }
 }
 
-/**
- * Change user password
- */
 export async function changePassword(data: ChangePasswordRequest): Promise<AuthResult> {
   try {
-    await api.post('/auth/change-password', data);
+    await api.post<MessageResponse>('/auth/change-password', data);
+    removeAccessToken();
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error, 'Password change failed') };

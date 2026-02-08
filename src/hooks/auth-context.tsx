@@ -1,35 +1,73 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getCurrentUser, logout, type AuthUser } from '@/services';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {
+  clearPendingTwoFactorToken,
+  getCurrentUser,
+  getPendingTwoFactorToken,
+  logout as logoutRequest,
+  setPendingTwoFactorToken,
+} from '@/services/auth.service';
 import { getUserProfile } from '@/services/user.service';
-import { mapUser, type User } from '@/types/user';
-import { usePathname } from 'next/navigation';
+import { type AuthUser, type User } from '@/types/user';
+import { usePathname, useRouter } from 'next/navigation';
+import { getAccessToken, subscribeAccessToken } from '@/services/api';
 
 interface AuthContextType {
   user: AuthUser | null;
   profile: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (user: AuthUser) => void;
+  requiresTwoFactor: boolean;
+  pendingTwoFactorToken: string | null;
+  login: (authUser: AuthUser) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  setPendingTwoFactor: (tempToken: string) => void;
+  clearPendingTwoFactor: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const isPublicRoute = (pathname: string | null): boolean => {
+  if (!pathname) return true;
+  return (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/verify-email') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/2fa')
+  );
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingTwoFactorToken, setPendingTwoFactorTokenState] = useState<string | null>(null);
   const refreshInFlightRef = React.useRef<Promise<void> | null>(null);
-  const isPublicAuthRoute =
-    pathname?.startsWith('/login') ||
-    pathname?.startsWith('/register') ||
-    pathname?.startsWith('/verify-email') ||
-    pathname?.startsWith('/forgot-password') ||
-    pathname?.startsWith('/reset-password');
+
+  const setPendingTwoFactor = useCallback((tempToken: string) => {
+    setPendingTwoFactorToken(tempToken);
+    setPendingTwoFactorTokenState(tempToken);
+    setUser(null);
+    setProfile(null);
+  }, []);
+
+  const clearPendingTwoFactor = useCallback(() => {
+    clearPendingTwoFactorToken();
+    setPendingTwoFactorTokenState(null);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -37,107 +75,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const task = (async () => {
-      // Fast path: decode local token/refresh cookie first so UI can render quickly.
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setProfile(null);
-      setIsLoading(false);
+      const pendingToken = getPendingTwoFactorToken();
+      setPendingTwoFactorTokenState(pendingToken);
 
-      // Slow path: hydrate full profile in the background.
-      if (!currentUser) {
+      if (pendingToken && !getAccessToken()) {
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
         return;
       }
 
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setUser(currentUser);
+      setIsLoading(false);
+
       try {
-        const profile = await getUserProfile();
-        setUser(mapUser(profile));
-        setProfile(profile);
-      } catch (error) {
-        console.error('Failed to refresh user profile:', error);
+        const userProfile = await getUserProfile();
+        setProfile(userProfile);
+        setUser(userProfile);
+        clearPendingTwoFactor();
+      } catch {
+        // Profile endpoint is best-effort. Keep decoded token identity for session continuity.
       }
     })();
 
     refreshInFlightRef.current = task;
+
     try {
       await task;
     } finally {
       refreshInFlightRef.current = null;
     }
-  }, []);
+  }, [clearPendingTwoFactor]);
 
   useEffect(() => {
-    if (isPublicAuthRoute) {
+    if (isPublicRoute(pathname)) {
       setIsLoading(false);
-      setUser(null);
-      setProfile(null);
+      if (!pathname?.startsWith('/2fa')) {
+        clearPendingTwoFactor();
+      }
       return;
     }
 
-    // Initialize auth state from local storage on mount
-    refresh();
+    void refresh();
+  }, [pathname, refresh, clearPendingTwoFactor]);
 
-    // Listen for storage events (login/logout from other tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'accessToken') {
-        refresh();
-      }
-    };
+  useEffect(() => {
+    return subscribeAccessToken(() => {
+      void refresh();
+    });
+  }, [refresh]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refresh, isPublicAuthRoute]);
-
-  const login = useCallback((userData: AuthUser) => {
-    setUser(userData);
+  const login = useCallback((authUser: AuthUser) => {
+    setUser(authUser);
     setProfile(null);
-  }, []);
+    clearPendingTwoFactor();
+    setIsLoading(false);
+  }, [clearPendingTwoFactor]);
 
-  const logoutHander = useCallback(async () => {
-    await logout();
+  const logout = useCallback(async () => {
+    await logoutRequest();
+    clearPendingTwoFactor();
     setUser(null);
     setProfile(null);
-    // Redirect to login page
-    window.location.href = '/login';
-  }, []);
+    router.push('/login');
+  }, [clearPendingTwoFactor, router]);
 
-  const value: AuthContextType = {
-    user,
-    profile,
-    isAuthenticated: user !== null,
-    isLoading,
-    login,
-    logout: logoutHander,
-    refresh,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      profile,
+      isAuthenticated: Boolean(user),
+      isLoading,
+      requiresTwoFactor: Boolean(pendingTwoFactorToken && !user),
+      pendingTwoFactorToken,
+      login,
+      logout,
+      refresh,
+      setPendingTwoFactor,
+      clearPendingTwoFactor,
+    }),
+    [
+      clearPendingTwoFactor,
+      isLoading,
+      login,
+      logout,
+      pendingTwoFactorToken,
+      refresh,
+      setPendingTwoFactor,
+      user,
+      profile,
+    ]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-/**
- * Hook to require authentication
- * Redirects to login if not authenticated
- */
-export function useRequireAuth() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      const callbackUrl = encodeURIComponent(window.location.pathname);
-      window.location.href = `/login?callbackUrl=${callbackUrl}`;
-    }
-  }, [isAuthenticated, isLoading]);
-
-  return { isAuthenticated, isLoading };
 }

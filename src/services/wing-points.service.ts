@@ -1,53 +1,34 @@
 import api from './api';
-import {
-  WingPoints,
-  WingPointsApiResponse,
-  WingPointTransaction,
-  WingPointTransactionApiResponse,
-  mapWingPoints,
-  mapWingPointTransaction,
-  PaginatedResponse,
-} from '@/types';
+import { mapWingPoints, type WingPoints } from '@/types';
 
-/**
- * Get current user's wing points balance
- */
+type WingPointsBalanceApiResponse = {
+  balance: number;
+  userId: string;
+};
+
 export async function getWingPointsBalance(): Promise<WingPoints | null> {
   try {
-    const response = await api.get<WingPointsApiResponse>('/wing-points/balance');
-    return mapWingPoints(response.data);
-  } catch (error) {
-    console.error('Failed to fetch wing points balance:', error);
+    const response = await api.get<WingPointsBalanceApiResponse>('/wing-points/balance');
+    const now = new Date().toISOString();
+    return mapWingPoints({
+      id: response.data.userId,
+      userId: response.data.userId,
+      balance: response.data.balance,
+      lifetimeEarned: response.data.balance,
+      lifetimeSpent: 0,
+      updatedAt: now,
+    });
+  } catch {
     return null;
   }
 }
 
-/**
- * Get wing point transactions
- */
-export async function getWingPointTransactions(
-  page: number = 0,
-  size: number = 20
-): Promise<{
-  transactions: WingPointTransaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+export async function getWingPointTransactions(): Promise<{
+  transactions: [];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
 }> {
-  const response = await api.get<PaginatedResponse<WingPointTransactionApiResponse>>(
-    `/wing-points/transactions?page=${page}&size=${size}`
-  );
-  
   return {
-    transactions: response.data.content.map(mapWingPointTransaction),
-    pagination: {
-      page: response.data.number,
-      limit: response.data.size,
-      total: response.data.totalElements,
-      totalPages: response.data.totalPages,
-    }
+    transactions: [],
+    pagination: { page: 0, limit: 0, total: 0, totalPages: 0 },
   };
 }

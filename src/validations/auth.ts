@@ -8,7 +8,7 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+    .min(8, 'Password must be at least 8 characters'),
 });
 
 export const registerSchema = z.object({
@@ -27,7 +27,7 @@ export const registerSchema = z.object({
   phone: z
     .string()
     .min(1, 'Phone number is required')
-    .regex(/^[0-9+\-\s()]+$/, 'Please enter a valid phone number'),
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Use international phone format, e.g. +85512345678'),
   password: z
     .string()
     .min(1, 'Password is required')

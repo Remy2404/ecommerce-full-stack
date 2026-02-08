@@ -90,11 +90,13 @@ export type ProductSortOption = 'newest' | 'price-low' | 'price-high' | 'rating'
 
 export interface ProductFilterParams {
   category?: string;
+  categoryId?: string;
   featured?: boolean;
   sale?: boolean;
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  searchQuery?: string;
   sort?: string;
   page?: number;
   size?: number;

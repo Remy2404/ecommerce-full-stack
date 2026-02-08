@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LogOut, Package, Heart, Settings, ChevronDown, LayoutGrid } from 'lucide-react';
-import { signOutUser } from '@/actions/auth.actions';
+import { useAuth } from '@/hooks/auth-context';
+import { isAdminRole, isMerchantRole } from '@/lib/roles';
 
 interface UserMenuProps {
   user: {
@@ -18,10 +19,12 @@ interface UserMenuProps {
 export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { logout } = useAuth();
 
   const handleSignOut = async () => {
     setIsLoading(true);
-    await signOutUser();
+    await logout();
+    setIsLoading(false);
   };
 
   const initials = user.name
@@ -73,7 +76,7 @@ export function UserMenu({ user }: UserMenuProps) {
             </div>
 
             <div className="p-1">
-              {user.role === 'ADMIN' && (
+              {isAdminRole(user.role) && (
                 <Link
                   href="/admin"
                   onClick={() => setIsOpen(false)}
@@ -81,6 +84,16 @@ export function UserMenu({ user }: UserMenuProps) {
                 >
                   <LayoutGrid className="h-4 w-4" />
                   Admin Dashboard
+                </Link>
+              )}
+              {isMerchantRole(user.role) && (
+                <Link
+                  href="/merchant"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  Merchant Dashboard
                 </Link>
               )}
               <Link
@@ -100,7 +113,7 @@ export function UserMenu({ user }: UserMenuProps) {
                 Wishlist
               </Link>
               <Link
-                href="/account"
+                href="/settings"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
               >

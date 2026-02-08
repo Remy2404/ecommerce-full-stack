@@ -1,37 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/auth-context';
-import { Loader2 } from 'lucide-react';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isLoading) {
-        if (!isAuthenticated) {
-          const url = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
-          router.push(url);
-        }
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, isLoading, router, pathname]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return <>{children}</>;
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }

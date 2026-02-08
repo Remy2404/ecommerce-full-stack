@@ -1,25 +1,29 @@
 import api from './api';
-import { ReviewApiResponse, mapReview, PaginatedResponse } from '@/types';
+import type { Review, ReviewApiResponse } from '@/types';
+import { mapReview } from '@/types';
+import { getErrorMessage } from '@/lib/http-error';
 
-/**
- * Get reviews for a specific product
- */
-export async function getProductReviews(productId: string, page: number = 0, size: number = 10) {
-  const response = await api.get<PaginatedResponse<ReviewApiResponse>>(
-    `/reviews/product/${productId}?page=${page}&size=${size}`
-  );
-  
-  return {
-    reviews: response.data.content.map(mapReview),
-    pagination: {
-      page: response.data.number,
-      limit: response.data.size,
-      total: response.data.totalElements,
-      totalPages: response.data.totalPages,
-    }
-  };
+export interface CreateReviewPayload {
+  productId: string;
+  orderId?: string;
+  rating: number;
+  comment?: string;
+  images?: string[];
 }
 
-/**
- * Create a new product review
- */
+export async function getProductReviews(productId: string): Promise<Review[]> {
+  const response = await api.get<ReviewApiResponse[]>(`/reviews/products/${productId}`);
+  return response.data.map(mapReview);
+}
+
+export async function createReview(payload: CreateReviewPayload): Promise<{ success: boolean; review?: Review; error?: string }> {
+  try {
+    const response = await api.post<ReviewApiResponse>('/reviews', payload);
+    return { success: true, review: mapReview(response.data) };
+  } catch (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Failed to submit review'),
+    };
+  }
+}

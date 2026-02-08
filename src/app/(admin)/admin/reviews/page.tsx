@@ -21,9 +21,9 @@ export default function AdminReviewsPage() {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await getProductReviews(productId, 0, 20);
-      setReviews(result?.reviews || []);
-      if (!result || result.reviews.length === 0) {
+      const result = await getProductReviews(productId);
+      setReviews(result || []);
+      if (!result || result.length === 0) {
         setMessage('No reviews found for this product.');
       }
     } catch {
@@ -34,7 +34,7 @@ export default function AdminReviewsPage() {
   };
 
   const filteredReviews = reviews.filter((review) => {
-    const text = `${review.title || ''} ${review.comment || ''} ${review.userName || ''}`.toLowerCase();
+    const text = `${review.comment || ''} ${review.userId || ''}`.toLowerCase();
     return text.includes(query.toLowerCase());
   });
 
@@ -98,13 +98,13 @@ export default function AdminReviewsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium">{review.title || 'Untitled'}</p>
+                      <p className="font-medium">Review</p>
                       <p className="text-xs text-muted-foreground line-clamp-1">{review.comment || '—'}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{review.userName || review.userId}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{review.userId}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={review.isVerified ? 'success' : 'secondary'}>
-                        {review.isVerified ? 'Verified' : 'Unverified'}
+                      <Badge variant="secondary">
+                        Submitted
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">

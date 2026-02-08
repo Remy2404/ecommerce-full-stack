@@ -1,221 +1,137 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, Truck, Zap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Truck, Zap, ShieldCheck } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
-
-import { signInWithCredentials } from '@/actions/auth.actions';
-import { loginWithGoogle } from '@/services/auth.service';
-import { loginSchema, type LoginFormData } from '@/validations/auth';
+import { motion } from 'framer-motion';
+import { GoogleAuthButton } from '@/components/auth/google-auth-button';
 import { useAuth } from '@/hooks/auth-context';
-import { setAccessToken } from '@/services/api';
+import { isAdminRole, isMerchantRole } from '@/lib/roles';
+import { login as loginWithCredentials, loginWithGoogle } from '@/services/auth.service';
+import { loginSchema, type LoginFormData } from '@/validations/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
-  
-  const getSafeRedirectUrl = (url: string) => {
-    if (!url) return '/';
-    if (url.startsWith('/') && !url.startsWith('//')) {
-      return url;
-    }
-    return '/';
-  };
-
-  const safeCallbackUrl = getSafeRedirectUrl(callbackUrl);
-  const { login, isAuthenticated } = useAuth();
-  
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, router]);
-
+  const { login, isAuthenticated, setPendingTwoFactor } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ... form setup ...
+  const safeCallbackUrl = useMemo(() => {
+    if (callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) return callbackUrl;
+    return '/';
+  }, [callbackUrl]);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace('/');
+  }, [isAuthenticated, router]);
+
   const {
     register,
     handleSubmit,
-    formState: { errors, dirtyFields },
-    watch,
+    formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
     mode: 'onChange',
   });
 
-  const emailValue = watch('email');
+  const redirectByRole = (role?: string) => {
+    if (isAdminRole(role)) return '/admin';
+    if (isMerchantRole(role)) return '/merchant';
+    return safeCallbackUrl;
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
+    const result = await loginWithCredentials(data.email, data.password);
+    setIsLoading(false);
 
-    try {
-      const result = await signInWithCredentials(
-        data.email,
-        data.password
-      );
-
-      if (result.success && result.tempToken) {
-        // 2FA required - store temp token and redirect
-        sessionStorage.setItem('2fa_temp_token', result.tempToken);
-        toast.info('2FA verification required', {
-          description: 'Enter your authenticator code to continue',
-        });
-        router.push('/2fa');
-      } else if (result.success && result.token) {
-        setAccessToken(result.token);
-        if (result.user) login(result.user);
-        
-        toast.success('Login successful!', {
-          description: 'Welcome back to our store.',
-        });
-        
-        router.push(safeCallbackUrl);
-      } else if (result.error) {
-        // Handle specific error cases
-        if (result.error === 'EMAIL_NOT_VERIFIED') {
-          toast.error('Please verify your email address', {
-            description: 'Check your inbox for the verification link we sent you.',
-            duration: 6000,
-          });
-        } else {
-          toast.error('Login failed', {
-            description: result.error,
-          });
-        }
-      }
-    } catch {
-      toast.error('Something went wrong', {
-        description: 'Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
+    if (!result.success) {
+      toast.error('Login failed', { description: result.error || 'Invalid credentials' });
+      return;
     }
+
+    if (result.tempToken) {
+      setPendingTwoFactor(result.tempToken);
+      toast.info('2FA verification required');
+      router.replace('/2fa');
+      return;
+    }
+
+    if (result.user) {
+      login(result.user);
+      toast.success('Login successful');
+      router.replace(redirectByRole(result.user.role));
+      return;
+    }
+
+    toast.error('Login failed', { description: 'Unexpected authentication response' });
   };
 
-  // Google OAuth login hook
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        // Use client-side service directly
-        const result = await loginWithGoogle(tokenResponse.access_token);
-        
-        if (result.success && result.token) {
-          setAccessToken(result.token);
-          if (result.user) login(result.user);
-
-          toast.success('Login successful!', {
-            description: 'Welcome back to our store.',
-          });
-          
-          router.push(safeCallbackUrl);
-        } else if (result.error) {
-            console.error("Backend refused login:", result.error);
-          toast.error('Google Sign In failed', {
-            description: result.error,
-          });
-        }
-      } catch (err) {
-        const error = err as Error;
-        console.error("Login exception:", error);
-        toast.error('Login error', { description: error.message || 'Unknown error' });
-      }
-    },
-    onError: () => {
-      console.error("Google OAuth failed");
-      toast.error('Google Sign In failed', {
-        description: 'Could not connect to Google. Please try again.',
-      });
-    },
-    flow: 'implicit', // Use implicit flow to get access_token
-    scope: 'email profile openid', // Ensure scopes
-  });
-
-  const handleGoogleSignIn = () => {
+  const handleGoogleSuccess = async (idToken: string) => {
     setIsGoogleLoading(true);
-    googleLogin();
+    const result = await loginWithGoogle(idToken);
+    setIsGoogleLoading(false);
+
+    if (!result.success || !result.user) {
+      toast.error('Google Sign-In failed', {
+        description: result.error || 'Authentication failed',
+      });
+      return;
+    }
+
+    login(result.user);
+    toast.success('Login successful');
+    router.replace(redirectByRole(result.user.role));
   };
 
   return (
     <div className="flex min-h-screen bg-black text-white">
-      {/* Left side - Form */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
         className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24"
       >
         <div className="mx-auto w-full max-w-sm lg:w-96">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            <Link href="/" className="text-2xl font-bold text-white">
-              Store
+          <Link href="/" className="text-2xl font-bold text-white">
+            Store
+          </Link>
+          <h1 className="mt-8 text-3xl font-bold tracking-tight">Welcome back</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-medium text-white hover:underline">
+              Sign up
             </Link>
-            <h1 className="mt-8 text-3xl font-bold tracking-tight">
-              Welcome back
-            </h1>
-            <p className="mt-2 text-sm text-gray-400">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-white hover:underline font-medium">
-                Sign up
-              </Link>
-            </p>
-          </motion.div>
+          </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-10">
-            {/* Google Sign In */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-800 disabled:opacity-50"
-                onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
-              >
-                {isGoogleLoading ? (
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-10 space-y-5">
+            <div className="rounded-xl border border-gray-800 bg-gray-950 p-4">
+              {isGoogleLoading ? (
+                <div className="flex items-center justify-center">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                )}
-                Continue with Google
-              </button>
-            </motion.div>
+                </div>
+              ) : (
+                <GoogleAuthButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={() =>
+                    toast.error('Google Sign-In failed', {
+                      description: 'Could not connect to Google. Please try again.',
+                    })
+                  }
+                />
+              )}
+            </div>
 
-            <div className="relative my-6">
+            <div className="relative my-2">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-800" />
               </div>
@@ -224,195 +140,109 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email/Password Fields */}
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Email address <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
-                  <input
-                    {...register('email')}
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    disabled={isLoading}
-                    suppressHydrationWarning
-                    className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.email
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-700 focus:border-white focus:ring-white'
-                      }`}
-                  />
-                  <AnimatePresence>
-                    {emailValue && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                      >
-                        {!errors.email && dirtyFields.email ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : errors.email ? (
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        ) : null}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Password <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                    suppressHydrationWarning
-                    className={`w-full rounded-xl border bg-gray-900 pl-10 pr-10 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-colors ${errors.password
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-700 focus:border-white focus:ring-white'
-                      }`}
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </motion.button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-gray-700 bg-gray-900 text-white focus:ring-0 focus:ring-offset-0" />
-                  <span className="text-gray-400">Remember me</span>
-                </label>
-                <Link href="/reset-password" className="text-white hover:underline font-medium">
-                  Forgot password?
-                </Link>
-              </div>
-
-              {/* Sign In Button */}
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <button
-                  type="submit"
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Email address <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+                <input
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
                   disabled={isLoading}
-                  className="w-full rounded-xl bg-white text-black py-3 font-medium transition-colors hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    'Sign in'
-                  )}
-                </button>
-              </motion.div>
+                  className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 pl-10 pr-4 text-sm placeholder:text-gray-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+                />
+              </div>
+              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
             </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Password <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                  className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 pl-10 pr-10 text-sm placeholder:text-gray-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-white"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Secure login with refresh-cookie sessions</span>
+              <Link href="/reset-password" className="font-medium text-white hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 font-medium text-black transition-colors hover:bg-gray-200 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
           </form>
         </div>
       </motion.div>
 
-      {/* Right side - Animated Background with Image */}
-      <div className="relative hidden w-0 flex-1 lg:block overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          className="absolute inset-0"
-        >
-          {/* Background Image with Overlay */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: "url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop')"
-            }}
-          />
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70" />
+      <div className="relative hidden w-0 flex-1 overflow-hidden lg:block">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70" />
 
-          {/* Animated Circles */}
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{
-              scale: [1.2, 1, 1.2],
-              rotate: [360, 180, 0],
-            }}
-            transition={{
-              duration: 15,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl"
-          />
-
-          <div className="flex h-full items-center justify-center p-12 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="max-w-lg text-center"
-            >
-              <h2 className="text-4xl font-bold mb-4">Shop the best products</h2>
-              <p className="text-gray-400 text-lg">
-                Discover our curated collection of premium products at unbeatable prices.
-              </p>
-
-              {/* Feature Cards */}
-              <div className="mt-12 flex justify-center gap-6">
-                {[
-                  { icon: Truck, title: "Free Shipping", desc: "On orders $50+" },
-                  { icon: Zap, title: "Fast Delivery", desc: "2-3 business days" },
-                  { icon: ShieldCheck, title: "Secure Payment", desc: "100% protected" },
-                ].map((feature, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 + i * 0.1 }}
-                    whileHover={{ y: -5, scale: 1.05 }}
-                    className="w-32 p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-center cursor-pointer group"
-                  >
-                    <div className="mb-2 group-hover:scale-110 transition-transform flex justify-center">
-                      <feature.icon className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-sm font-semibold mb-1">{feature.title}</div>
-                    <div className="text-xs text-gray-400">{feature.desc}</div>
-                  </motion.div>
-                ))}
+        <div className="relative z-10 flex h-full items-center justify-center p-12">
+          <div className="max-w-lg text-center">
+            <h2 className="mb-4 text-4xl font-bold">Shop the best products</h2>
+            <p className="text-lg text-gray-400">
+              Discover our curated collection of premium products at unbeatable prices.
+            </p>
+            <div className="mt-12 flex justify-center gap-6">
+              <div className="w-32 rounded-2xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur-sm">
+                <Truck className="mx-auto mb-2 h-8 w-8 text-white" />
+                <div className="text-sm font-semibold">Free Shipping</div>
+                <div className="text-xs text-gray-400">On orders $50+</div>
               </div>
-            </motion.div>
+              <div className="w-32 rounded-2xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur-sm">
+                <Zap className="mx-auto mb-2 h-8 w-8 text-white" />
+                <div className="text-sm font-semibold">Fast Delivery</div>
+                <div className="text-xs text-gray-400">2-3 business days</div>
+              </div>
+              <div className="w-32 rounded-2xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur-sm">
+                <ShieldCheck className="mx-auto mb-2 h-8 w-8 text-white" />
+                <div className="text-sm font-semibold">Secure Payment</div>
+                <div className="text-xs text-gray-400">100% protected</div>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

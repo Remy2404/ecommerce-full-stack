@@ -5,6 +5,7 @@
 // --- Backend API Responses (DTOs) ---
 
 import type { AddressApiResponse } from './address';
+import { normalizeUserRole } from '@/lib/roles';
 
 export interface SavedPaymentMethodApiResponse {
   id: string;
@@ -24,7 +25,7 @@ export interface UserApiResponse {
   firstName: string;
   lastName: string;
   name?: string; // Unified name
-  role: UserRole;
+  role: string;
   isActive: boolean;
   emailVerified: boolean;
   phoneNumber?: string;
@@ -43,7 +44,7 @@ export interface RefreshTokenApiResponse {
 
 // --- Frontend Domain Models ---
 
-export type UserRole = 'CUSTOMER' | 'ADMIN' | 'MERCHANT' | 'DELIVERY';
+export type UserRole = 'CUSTOMER' | 'USER' | 'ADMIN' | 'MERCHANT' | 'DELIVERY';
 
 export interface AuthUser {
   id: string;
@@ -107,14 +108,15 @@ export interface UpdateProfileRequest {
 // --- Transformation Logic ---
 
 export function mapAuthUser(raw: UserApiResponse): AuthUser {
+  const normalizedRole = normalizeUserRole(raw.role);
   return {
     id: raw.id,
     email: raw.email,
     name: raw.name || `${raw.firstName} ${raw.lastName}`.trim(),
-    role: raw.role,
+    role: normalizedRole,
     avatarUrl: raw.avatarUrl,
-    emailVerified: raw.emailVerified,
-    twofaEnabled: raw.twofaEnabled,
+    emailVerified: Boolean(raw.emailVerified),
+    twofaEnabled: Boolean(raw.twofaEnabled),
   };
 }
 
