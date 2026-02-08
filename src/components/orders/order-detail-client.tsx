@@ -93,10 +93,10 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
       {/* Order Progress */}
       <Card className="mb-8 overflow-hidden">
-        <CardContent className="pt-8 pb-10">
-          <div className="relative flex justify-between">
+        <CardContent className="pt-8 pb-15 px-6">
+          <div className="relative flex justify-between h-10">
             {/* Progress Line */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 w-full bg-muted" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 w-full bg-muted " />
             <div 
               className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary transition-all duration-500" 
               style={{ width: `${(steps.filter(s => s.completed).length - 1) * 33.33}%` }}
