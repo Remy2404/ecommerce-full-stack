@@ -46,6 +46,7 @@ export interface KHQRVerificationApiResponse {
 
 // --- Frontend Domain Models ---
 
+export type PaymentMethod = 'COD' | 'CARD' | 'KHQR';
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export interface Payment {

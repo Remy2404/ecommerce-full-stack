@@ -73,6 +73,7 @@ export interface Order {
   userId: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: 'COD' | 'CARD' | 'KHQR' | null;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;

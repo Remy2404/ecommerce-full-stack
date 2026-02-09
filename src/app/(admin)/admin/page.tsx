@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   ArrowUpRight,
@@ -8,14 +8,22 @@ import {
   DollarSign,
   Package,
   ShoppingBag,
-  Users
+  Users,
+  RefreshCcw,
 } from 'lucide-react';
 import { getAdminDashboardStats, getAdminOrders } from '@/services/admin.service';
 import { getProducts } from '@/services/product.service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, Order, Product } from '@/types';
+import {
+  OrdersTimelineChart,
+  RevenueBarChart,
+  OrderStatusPieChart,
+  PaymentMethodPieChart,
+  TopProductsChart,
+} from '@/components/admin/charts';
 
 interface AdminStats {
   totalUsers?: number;
@@ -158,6 +166,42 @@ export default function AdminDashboardPage() {
             <p className="mt-2 text-xs text-muted-foreground">Live catalog items</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Analytics Charts Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <OrdersTimelineChart
+          orders={orders}
+          isLoading={isLoading}
+          isError={!!error}
+          errorMessage={error || undefined}
+          onRetry={() => window.location.reload()}
+        />
+        <RevenueBarChart
+          orders={orders}
+          isLoading={isLoading}
+          isError={!!error}
+          errorMessage={error || undefined}
+          onRetry={() => window.location.reload()}
+        />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <OrderStatusPieChart
+          orders={orders}
+          isLoading={isLoading}
+          isError={!!error}
+        />
+        <PaymentMethodPieChart
+          orders={orders}
+          isLoading={isLoading}
+          isError={!!error}
+        />
+        <TopProductsChart
+          orders={orders}
+          isLoading={isLoading}
+          isError={!!error}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
