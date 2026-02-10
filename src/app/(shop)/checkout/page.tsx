@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, CheckCircle2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,6 +51,11 @@ function CheckoutPageContent() {
   const [orderTotal, setOrderTotal] = useState(0);
   const [khqrOrders, setKhqrOrders] = useState<Array<{ orderId: string; orderNumber: string; total: number }>>([]);
   const [currentKhqrIndex, setCurrentKhqrIndex] = useState(0);
+  const checkoutRequestSeed = useRef<string>(
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`
+  );
 
   const openKhqrForOrder = async (order: { orderId: string; orderNumber: string; total: number }) => {
     const khqr = await createKHQR(order.orderId);
@@ -276,11 +281,13 @@ function CheckoutPageContent() {
 
       const createdOrders: Array<{ orderId: string; orderNumber: string; total: number }> = [];
 
-      for (const group of itemGroups) {
+      for (let groupIndex = 0; groupIndex < itemGroups.length; groupIndex++) {
+        const group = itemGroups[groupIndex];
         const groupSubtotal = group.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const groupShippingFee = groupSubtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
         const groupTax = groupSubtotal * 0.1;
         const groupTotal = groupSubtotal + groupShippingFee + groupTax;
+        const idempotencyKey = `${checkoutRequestSeed.current}:${groupIndex}`;
 
         const response = await createOrder({
           items: group,
@@ -291,7 +298,7 @@ function CheckoutPageContent() {
           discount: 0,
           tax: groupTax,
           total: groupTotal,
-        });
+        }, idempotencyKey);
 
         if (!response.success) {
           const backendMessage = response.error || 'Failed to create order';

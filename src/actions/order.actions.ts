@@ -89,7 +89,8 @@ export async function getProfileDashboardData(
  * Calls Spring Boot backend /api/orders
  */
 export async function createOrder(
-  data: CheckoutInput
+  data: CheckoutInput,
+  idempotencyKey?: string
 ): Promise<ActionResult<{ orderId: string; orderNumber: string }>> {
   const user = await getCurrentUser();
   if (!user) {
@@ -103,24 +104,27 @@ export async function createOrder(
     KHQR: 'KHQR',
   };
 
-  const result = await orderService.createOrder({
-    items: data.items.map(item => ({
+  const result = await orderService.createOrder(
+    {
+      items: data.items.map(item => ({
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity
-    })),
-    shippingAddressId: data.shippingAddress.id,
-    shippingAddress: {
-      fullName: data.shippingAddress.fullName || `${user.name}`,
-      phone: data.shippingAddress.phone || '',
-      street: data.shippingAddress.street,
-      city: data.shippingAddress.city,
-      state: data.shippingAddress.province || data.shippingAddress.city,
-      zipCode: data.shippingAddress.postalCode,
-      country: 'Cambodia',
+      })),
+      shippingAddressId: data.shippingAddress.id,
+      shippingAddress: {
+        fullName: data.shippingAddress.fullName || `${user.name}`,
+        phone: data.shippingAddress.phone || '',
+        street: data.shippingAddress.street,
+        city: data.shippingAddress.city,
+        state: data.shippingAddress.province || data.shippingAddress.city,
+        zipCode: data.shippingAddress.postalCode,
+        country: 'Cambodia',
+      },
+      paymentMethod: paymentMethodMap[data.paymentData.method] || 'COD',
     },
-    paymentMethod: paymentMethodMap[data.paymentData.method] || 'COD',
-  });
+    idempotencyKey
+  );
 
   if (!result.success) {
     return { success: false, error: result.error ?? 'Failed to create order' };

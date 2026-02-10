@@ -27,9 +27,18 @@ const EMPTY_ORDERS: OrderListResult = {
   pagination: { page: 0, limit: 20, total: 0, totalPages: 0 },
 };
 
-export async function createOrder(data: CreateOrderRequest): Promise<OrderResult> {
+export async function createOrder(
+  data: CreateOrderRequest,
+  idempotencyKey?: string
+): Promise<OrderResult> {
   try {
-    const response = await api.post<OrderApiResponse>('/orders', data);
+    const response = await api.post<OrderApiResponse>('/orders', data, {
+      headers: idempotencyKey
+        ? {
+            'Idempotency-Key': idempotencyKey,
+          }
+        : undefined,
+    });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string; error?: string }>;
