@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidPhoneNumberInput } from '@/lib/phone';
 
 export const loginSchema = z.object({
   email: z
@@ -27,7 +28,7 @@ export const registerSchema = z.object({
   phone: z
     .string()
     .min(1, 'Phone number is required')
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Use international phone format, e.g. +85512345678'),
+    .refine((value) => isValidPhoneNumberInput(value), 'Invalid phone number'),
   password: z
     .string()
     .min(1, 'Password is required')

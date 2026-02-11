@@ -83,6 +83,7 @@ export function PromotionsManagement() {
     () =>
       promotions.map((promotion) => ({
         ...promotion,
+        isExpired: new Date(promotion.endDate).getTime() < Date.now(),
         discountDisplay:
           promotion.type === 'PERCENTAGE'
             ? `${promotion.value}%`
@@ -189,8 +190,16 @@ export function PromotionsManagement() {
                       {new Date(promotion.endDate).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-1 text-xs ${promotion.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
-                        {promotion.isActive ? 'Active' : 'Inactive'}
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs ${
+                          promotion.isExpired
+                            ? 'bg-amber-100 text-amber-800'
+                            : promotion.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {promotion.isExpired ? 'Expired' : promotion.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-4 py-3">

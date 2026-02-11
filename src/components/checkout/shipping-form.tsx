@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input, FormField, Label } from '@/components/ui/input';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { isValidPhoneNumberInput, normalizePhoneToE164 } from '@/lib/phone';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -75,7 +76,11 @@ export function ShippingForm({ savedAddresses = [], onSubmit, isLoading }: Shipp
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email address';
     }
-    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone is required';
+    } else if (!isValidPhoneNumberInput(formData.phone, formData.country)) {
+      newErrors.phone = 'Invalid phone number';
+    }
     if (!formData.street.trim()) newErrors.street = 'Address is required';
     if (!formData.city.trim()) newErrors.city = 'City is required';
     if (!formData.province.trim()) newErrors.province = 'Province is required';
@@ -90,13 +95,23 @@ export function ShippingForm({ savedAddresses = [], onSubmit, isLoading }: Shipp
     if (!isNewAddress && selectedAddressId) {
       const selectedAddress = savedAddresses.find((a) => a.id === selectedAddressId);
       if (selectedAddress) {
-        onSubmit(selectedAddress);
+        const normalizedPhone = normalizePhoneToE164(selectedAddress.phone, selectedAddress.country);
+        if (!normalizedPhone) {
+          setErrors((prev) => ({ ...prev, phone: 'Invalid phone number' }));
+          return;
+        }
+        onSubmit({ ...selectedAddress, phone: normalizedPhone });
         return;
       }
     }
 
     if (validateForm()) {
-      onSubmit(formData);
+      const normalizedPhone = normalizePhoneToE164(formData.phone, formData.country);
+      if (!normalizedPhone) {
+        setErrors((prev) => ({ ...prev, phone: 'Invalid phone number' }));
+        return;
+      }
+      onSubmit({ ...formData, phone: normalizedPhone });
     }
   };
 

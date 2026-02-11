@@ -122,6 +122,7 @@ export async function createOrder(
         country: 'Cambodia',
       },
       paymentMethod: paymentMethodMap[data.paymentData.method] || 'COD',
+      couponCode: data.couponCode,
     },
     idempotencyKey
   );

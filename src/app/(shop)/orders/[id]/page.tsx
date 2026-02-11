@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
-import { getOrderById } from '@/actions/order.actions';
+import { getOrderByNumber } from '@/services/order.service';
 import { OrderDetailClient } from '@/components/orders/order-detail-client';
 import { Order } from '@/types/order';
 
@@ -25,20 +25,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       if (!isAuthenticated) return;
       
       try {
-        const result = await getOrderById(resolvedParams.id);
-        
-        if (!result.success || !result.data) {
+        const orderData = await getOrderByNumber(resolvedParams.id);
+
+        if (!orderData) {
           setNotFound(true);
           return;
         }
-
-        const orderData = result.data;
-        if (!orderData) return;
-
         setOrder(orderData);
       } catch (error) {
         console.error('Failed to fetch order:', error);
-        setNotFound(true);
+        router.push(`/login?callbackUrl=/orders/${resolvedParams.id}`);
       } finally {
         setDataLoading(false);
       }

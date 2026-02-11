@@ -64,11 +64,16 @@ export default function AdminLoyaltyPage() {
   const handleValidate = async () => {
     if (!promoQuery) return;
     setStatus(null);
-    const result = await validatePromotion(promoQuery);
-    setPromoResult(result);
-    if (!result) {
-      setStatus('Promotion code not found or inactive.');
+    const validation = await validatePromotion(promoQuery);
+    setPromoResult(validation.promotion);
+    if (!validation.promotion) {
+      setStatus(validation.error || 'Promotion code not found or inactive.');
     }
+  };
+
+  const isPromoExpired = (promo: Promotion): boolean => {
+    if (!promo.endDate) return false;
+    return new Date(promo.endDate).getTime() < Date.now();
   };
 
   return (
@@ -115,8 +120,14 @@ export default function AdminLoyaltyPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{formatCurrency(promo.minOrderAmount)}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={promo.isActive ? 'success' : 'secondary'}>
-                          {promo.isActive ? 'Active' : 'Paused'}
+                        <Badge
+                          variant={
+                            isPromoExpired(promo)
+                              ? 'secondary'
+                              : (promo.isActive ? 'success' : 'secondary')
+                          }
+                        >
+                          {isPromoExpired(promo) ? 'Expired' : (promo.isActive ? 'Active' : 'Paused')}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">

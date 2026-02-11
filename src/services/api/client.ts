@@ -23,6 +23,7 @@ const PROTECTED_PATH_PREFIXES = [
 type AccessTokenListener = (token: string | null) => void;
 let accessTokenMemory: string | null = null;
 const accessTokenListeners = new Set<AccessTokenListener>();
+let authBootstrapPromise: Promise<void> | null = null;
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -53,6 +54,10 @@ export const subscribeAccessToken = (
 ): (() => void) => {
   accessTokenListeners.add(listener);
   return () => accessTokenListeners.delete(listener);
+};
+
+export const setAuthBootstrapPromise = (promise: Promise<void> | null): void => {
+  authBootstrapPromise = promise;
 };
 
 type JwtPayload = {
@@ -86,7 +91,11 @@ const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  if (authBootstrapPromise && !shouldSkipRefresh(config.url)) {
+    await authBootstrapPromise.catch(() => undefined);
+  }
+
   const token = getAccessToken();
   if (token) {
     config.headers = config.headers ?? {};
@@ -112,6 +121,24 @@ const redirectToLoginIfProtectedPath = (): void => {
   const pathname = window.location.pathname;
   if (isProtectedPath(pathname) && !isPublicPath(pathname)) {
     window.location.href = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
+  }
+};
+
+const clearRefreshTokenBestEffort = (): void => {
+  if (!isBrowser) return;
+  // Best effort client-side cleanup; server-side /auth/refresh failure path already clears HttpOnly cookie.
+  document.cookie = 'refreshToken=; Max-Age=0; path=/api; SameSite=Lax';
+  document.cookie = 'refreshToken=; Max-Age=0; path=/; SameSite=Lax';
+};
+
+const redirectToLoginTerminal = (): void => {
+  if (!isBrowser) return;
+  const pathname = window.location.pathname;
+  const search = window.location.search || '';
+  const callback = `${pathname}${search}`;
+  if (process.env.NODE_ENV === 'test') return;
+  if (!pathname.startsWith('/login')) {
+    window.location.href = `/login?callbackUrl=${encodeURIComponent(callback)}`;
   }
 };
 
@@ -175,7 +202,8 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       removeAccessToken();
-      redirectToLoginIfProtectedPath();
+      clearRefreshTokenBestEffort();
+      redirectToLoginTerminal();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

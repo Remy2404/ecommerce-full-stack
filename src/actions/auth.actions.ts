@@ -3,6 +3,7 @@
 import * as authService from '@/services/auth.service';
 import { loginSchema, registerSchema } from '@/validations/auth';
 import { redirect } from 'next/navigation';
+import { normalizePhoneToE164 } from '@/lib/phone';
 
 import { AuthUser } from '@/types';
 
@@ -74,12 +75,16 @@ export async function registerUser(data: {
   }
 
   const { firstName, lastName, email, phone, password, confirmPassword } = validatedFields.data;
+  const normalizedPhone = normalizePhoneToE164(phone);
+  if (!normalizedPhone) {
+    return { success: false, error: 'Invalid phone number' };
+  }
 
   return await authService.register({
     firstName,
     lastName,
     email,
-    phone,
+    phone: normalizedPhone,
     password,
     confirmPassword,
   });

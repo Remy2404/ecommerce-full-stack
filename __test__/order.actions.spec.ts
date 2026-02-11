@@ -27,7 +27,7 @@ const checkoutInput: CheckoutInput = {
     province: 'PP',
     postalCode: '12000',
     fullName: 'John Doe',
-    phone: '012345678',
+    phone: '0962026409',
   },
   paymentData: { method: 'KHQR' },
   subtotal: 10,
@@ -59,11 +59,11 @@ describe('order.actions createOrder', () => {
       } as never,
     });
 
-    const result = await createOrderAction(checkoutInput, 'idem-action-1');
+    const result = await createOrderAction({ ...checkoutInput, couponCode: 'SAVE10' }, 'idem-action-1');
 
     expect(result.success).toBe(true);
     expect(mockedOrderService.createOrder).toHaveBeenCalledWith(
-      expect.any(Object),
+      expect.objectContaining({ couponCode: 'SAVE10' }),
       'idem-action-1'
     );
   });
@@ -77,4 +77,3 @@ describe('order.actions createOrder', () => {
     expect(mockedOrderService.createOrder).not.toHaveBeenCalled();
   });
 });
-

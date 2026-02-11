@@ -100,7 +100,7 @@ export interface CreateOrderRequest {
   items: OrderItemRequest[];
   paymentMethod: 'COD' | 'CARD' | 'KHQR';
   notes?: string;
-  promoCode?: string;
+  couponCode?: string;
 }
 
 /**
@@ -134,6 +134,7 @@ export interface CheckoutInput {
   discount: number;
   tax: number;
   total: number;
+  couponCode?: string;
 }
 
 // --- UI Logic Types & Results ---

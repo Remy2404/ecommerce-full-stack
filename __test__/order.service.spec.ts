@@ -1,5 +1,6 @@
 import api from '@/services/api';
-import { createOrder } from '@/services/order.service';
+import { createOrder, getOrderByNumber, getUserOrders } from '@/services/order.service';
+import { AxiosError } from 'axios';
 
 jest.mock('@/services/api', () => ({
   __esModule: true,
@@ -12,6 +13,7 @@ jest.mock('@/services/api', () => ({
 
 const mockedApi = api as unknown as {
   post: jest.Mock;
+  get: jest.Mock;
 };
 
 const orderApiResponse = {
@@ -31,9 +33,10 @@ const orderApiResponse = {
 const requestPayload = {
   items: [{ productId: 'p1', quantity: 1 }],
   paymentMethod: 'KHQR' as const,
+  couponCode: 'SAVE10',
   shippingAddress: {
     fullName: 'John Doe',
-    phone: '012345678',
+    phone: '0962026409',
     street: 'Street 1',
     city: 'Phnom Penh',
     zipCode: '12000',
@@ -69,3 +72,50 @@ describe('order.service createOrder', () => {
   });
 });
 
+describe('order.service getUserOrders', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('rethrows on unauthorized so caller can redirect', async () => {
+    const unauthorized = {
+      response: { status: 401 },
+    } as AxiosError;
+    mockedApi.get.mockRejectedValue(unauthorized);
+
+    await expect(getUserOrders(0, 20)).rejects.toBe(unauthorized);
+  });
+
+  it('returns empty orders on non-auth failures', async () => {
+    mockedApi.get.mockRejectedValue(new Error('network'));
+
+    await expect(getUserOrders(0, 20)).resolves.toEqual({
+      orders: [],
+      pagination: { page: 0, limit: 20, total: 0, totalPages: 0 },
+    });
+  });
+});
+
+describe('order.service getOrderByNumber', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns null on 404', async () => {
+    const notFound = {
+      response: { status: 404 },
+    } as AxiosError;
+    mockedApi.get.mockRejectedValue(notFound);
+
+    await expect(getOrderByNumber('ORD-404')).resolves.toBeNull();
+  });
+
+  it('rethrows on unauthorized so caller can redirect', async () => {
+    const unauthorized = {
+      response: { status: 401 },
+    } as AxiosError;
+    mockedApi.get.mockRejectedValue(unauthorized);
+
+    await expect(getOrderByNumber('ORD-401')).rejects.toBe(unauthorized);
+  });
+});

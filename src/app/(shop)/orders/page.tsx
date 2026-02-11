@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
-import { getUserOrders } from '@/actions/order.actions';
+import { getUserOrders } from '@/services/order.service';
 import { OrdersClient } from '@/components/orders/orders-client';
 import { Order } from '@/types/order';
 
@@ -23,12 +23,11 @@ export default function OrdersPage() {
       if (!isAuthenticated) return;
       
       try {
-        const result = await getUserOrders();
-        if (result.success && result.data) {
-          setOrders(result.data);
-        }
+        const result = await getUserOrders(0, 50);
+        setOrders(result.orders);
       } catch (error) {
         console.error('Failed to fetch orders:', error);
+        router.push('/login?callbackUrl=/orders');
       } finally {
         setDataLoading(false);
       }

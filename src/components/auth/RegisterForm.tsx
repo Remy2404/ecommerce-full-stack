@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { GoogleAuthButton } from '@/components/auth/google-auth-button';
 import { register as registerAccount, loginWithGoogle } from '@/services/auth.service';
 import { registerSchema, type RegisterFormData } from '@/validations/auth';
+import { normalizePhoneToE164 } from '@/lib/phone';
 
 type PasswordCheckProps = {
   passed: boolean;
@@ -65,11 +66,20 @@ export default function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
 
+    const normalizedPhone = normalizePhoneToE164(data.phone);
+    if (!normalizedPhone) {
+      setIsLoading(false);
+      toast.error('Registration failed', {
+        description: 'Invalid phone number',
+      });
+      return;
+    }
+
     const result = await registerAccount({
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
-      phone: data.phone,
+      phone: normalizedPhone,
       password: data.password,
       confirmPassword: data.confirmPassword,
     });

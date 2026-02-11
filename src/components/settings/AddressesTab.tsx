@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { createAddress, deleteAddress, getAddresses, setDefaultAddress, updateAddress } from '@/services/address.service';
 import { Address } from '@/types/address';
 import { getErrorMessage } from '@/lib/http-error';
+import { isValidPhoneNumberInput, normalizePhoneToE164 } from '@/lib/phone';
 
 type AddressUpsert = Parameters<typeof createAddress>[0];
 
@@ -52,7 +53,7 @@ export function AddressesTab() {
     if (!form.fullName || !form.phone || !form.street || !form.city || !form.state || !form.postalCode || !form.country) {
       return false;
     }
-    if (!/^[-+()\d\s]{6,}$/.test(form.phone)) return false;
+    if (!isValidPhoneNumberInput(form.phone, form.country)) return false;
     if (form.postalCode.length < 3) return false;
     return true;
   };
@@ -66,12 +67,22 @@ export function AddressesTab() {
     setIsSaving(true);
     try {
       if (editingId) {
-        const payload: Partial<AddressUpsert> = { ...form };
+        const normalizedPhone = normalizePhoneToE164(form.phone, form.country);
+        if (!normalizedPhone) {
+          toast.error('Invalid phone number');
+          return;
+        }
+        const payload: Partial<AddressUpsert> = { ...form, phone: normalizedPhone };
         const updated = await updateAddress(editingId, payload);
         setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
         toast.success('Address updated');
       } else {
-        const payload: AddressUpsert = { ...form };
+        const normalizedPhone = normalizePhoneToE164(form.phone, form.country);
+        if (!normalizedPhone) {
+          toast.error('Invalid phone number');
+          return;
+        }
+        const payload: AddressUpsert = { ...form, phone: normalizedPhone };
         const created = await createAddress(payload);
         setAddresses((prev) => [...prev, created]);
         toast.success('Address saved');

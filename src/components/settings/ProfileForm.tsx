@@ -8,6 +8,8 @@ import { User, UpdateProfileRequest } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Loader2, Shield } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { normalizePhoneToE164 } from '@/lib/phone';
 
 interface ProfileFormProps {
   user: User;
@@ -30,7 +32,17 @@ export function ProfileForm({ user, onSubmit, onAvatarUpload, isLoading }: Profi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.phoneNumber) {
+      onSubmit(formData);
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneToE164(formData.phoneNumber);
+    if (!normalizedPhone) {
+      toast.error('Invalid phone number');
+      return;
+    }
+    onSubmit({ ...formData, phoneNumber: normalizedPhone });
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

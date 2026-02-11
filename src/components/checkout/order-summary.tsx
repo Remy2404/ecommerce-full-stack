@@ -15,6 +15,10 @@ interface OrderSummaryProps {
   shippingFee?: number;
   tax?: number;
   discount?: number;
+  promoCode?: string;
+  promoMessage?: string;
+  onPromoCodeChange?: (value: string) => void;
+  onApplyPromo?: () => void;
   onBack: () => void;
   onConfirm: () => void;
   isLoading?: boolean;
@@ -28,6 +32,10 @@ export function OrderSummary({
   shippingFee = 0,
   tax = 0,
   discount = 0,
+  promoCode = '',
+  promoMessage,
+  onPromoCodeChange,
+  onApplyPromo,
   onBack,
   onConfirm,
   isLoading,
@@ -160,10 +168,15 @@ export function OrderSummary({
         <input
           type="text"
           placeholder="Enter promo code"
+          value={promoCode}
+          onChange={(event) => onPromoCodeChange?.(event.target.value)}
           className="flex-1 h-11 rounded-design border border-border bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <Button variant="outline">Apply</Button>
+        <Button variant="outline" onClick={onApplyPromo} type="button">
+          Apply
+        </Button>
       </div>
+      {promoMessage && <p className="text-sm text-muted-foreground">{promoMessage}</p>}
 
       {/* Buttons */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">

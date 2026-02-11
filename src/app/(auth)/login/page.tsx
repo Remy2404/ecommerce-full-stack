@@ -152,6 +152,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   placeholder="you@example.com"
                   disabled={isLoading}
+                  suppressHydrationWarning
                   className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 pl-10 pr-4 text-sm placeholder:text-gray-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
                 />
               </div>
@@ -170,6 +171,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••"
                   disabled={isLoading}
+                  suppressHydrationWarning
                   className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 pl-10 pr-10 text-sm placeholder:text-gray-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
                 />
                 <button

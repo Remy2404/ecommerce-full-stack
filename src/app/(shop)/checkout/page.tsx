@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, CheckCircle2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +10,7 @@ import { PaymentForm, PaymentData } from '@/components/checkout/payment-form';
 import { OrderSummary } from '@/components/checkout/order-summary';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/cart-context';
-import { createOrder } from '@/actions/order.actions';
+import { cancelOrder as cancelOrderRequest, createOrder as createOrderRequest } from '@/services/order.service';
 import { AuthGuard } from '@/components/providers/auth-guard';
 import { KHQR_COLORS } from '@/constants';
 import { KhqrCard } from '@/components/checkout/khqr-card';
@@ -20,6 +20,8 @@ import { createAddress, getAddresses } from '@/services/address.service';
 import { KHQRResult } from '@/types/payment';
 import { toast } from 'sonner';
 import { SHIPPING_CONFIG } from '@/constants';
+import { validatePromotion } from '@/services/promotion.service';
+import type { Promotion } from '@/types';
 
 export default function CheckoutPage() {
   return (
@@ -49,13 +51,13 @@ function CheckoutPageContent() {
   const [khqrResult, setKhqrResult] = useState<KHQRResult | null>(null);
   const [showKhqrModal, setShowKhqrModal] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | undefined>(undefined);
+  const [appliedPromotion, setAppliedPromotion] = useState<Promotion | null>(null);
+  const [promoMessage, setPromoMessage] = useState<string>('');
   const [khqrOrders, setKhqrOrders] = useState<Array<{ orderId: string; orderNumber: string; total: number }>>([]);
   const [currentKhqrIndex, setCurrentKhqrIndex] = useState(0);
-  const checkoutRequestSeed = useRef<string>(
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()}`
-  );
+  const [isCancellingKhqr, setIsCancellingKhqr] = useState(false);
 
   const openKhqrForOrder = async (order: { orderId: string; orderNumber: string; total: number }) => {
     const khqr = await createKHQR(order.orderId);
@@ -69,6 +71,47 @@ function CheckoutPageContent() {
     setOrderTotal(order.total);
     setShowKhqrModal(true);
     return true;
+  };
+
+  const cancelPendingKhqrOrders = async () => {
+    if (isCancellingKhqr) return;
+
+    setIsCancellingKhqr(true);
+    try {
+      const pendingOrders = khqrOrders.slice(currentKhqrIndex);
+      let cancelledCount = 0;
+
+      for (const pendingOrder of pendingOrders) {
+        const result = await cancelOrderRequest(pendingOrder.orderId);
+        if (result.success) {
+          cancelledCount += 1;
+        }
+      }
+
+      setShowKhqrModal(false);
+      setKhqrResult(null);
+      setKhqrOrders([]);
+      setCurrentKhqrIndex(0);
+
+      if (cancelledCount > 0) {
+        toast.success(`${cancelledCount} pending order(s) cancelled.`);
+      } else {
+        toast.info('Payment closed. No pending orders were cancelled.');
+      }
+    } catch (error) {
+      console.error('Failed to cancel pending KHQR orders:', error);
+      toast.error('Failed to cancel pending orders. Please check your order history.');
+    } finally {
+      setIsCancellingKhqr(false);
+    }
+  };
+
+  const handleCloseKhqrModal = async () => {
+    const confirmed = window.confirm(
+      'Cancel KHQR payment and cancel all pending orders from this checkout?'
+    );
+    if (!confirmed) return;
+    await cancelPendingKhqrOrders();
   };
 
   useEffect(() => {
@@ -258,21 +301,81 @@ function CheckoutPageContent() {
     setCurrentStep('summary');
   };
 
+  const calculatePromotionDiscount = (baseSubtotal: number, promotion?: Promotion | null): number => {
+    if (!promotion) return 0;
+    if (baseSubtotal < (promotion.minOrderAmount || 0)) return 0;
+
+    if (promotion.type === 'PERCENTAGE') {
+      let discount = Number((baseSubtotal * (promotion.value / 100)).toFixed(2));
+      if (promotion.maxDiscount !== undefined) {
+        discount = Math.min(discount, promotion.maxDiscount);
+      }
+      return Math.max(0, discount);
+    }
+
+    if (promotion.type === 'FIXED_AMOUNT') {
+      return Math.max(0, Math.min(baseSubtotal, promotion.value));
+    }
+
+    return 0;
+  };
+
+  const handleApplyPromo = async () => {
+    const normalized = promoCodeInput.trim().toUpperCase();
+    if (!normalized) {
+      setAppliedCouponCode(undefined);
+      setAppliedPromotion(null);
+      setPromoMessage('Enter a promo code first.');
+      return;
+    }
+
+    const validation = await validatePromotion(normalized);
+    const promotion = validation.promotion;
+    if (!promotion) {
+      setAppliedCouponCode(undefined);
+      setAppliedPromotion(null);
+      setPromoMessage(validation.error || 'Invalid promo code.');
+      return;
+    }
+
+    const previewDiscount = calculatePromotionDiscount(subtotal, promotion);
+    if (subtotal < (promotion.minOrderAmount || 0)) {
+      setAppliedCouponCode(undefined);
+      setAppliedPromotion(null);
+      setPromoMessage(`Order must be at least $${promotion.minOrderAmount} for this code.`);
+      return;
+    }
+
+    setAppliedCouponCode(normalized);
+    setAppliedPromotion(promotion);
+    setPromoMessage(
+      previewDiscount > 0
+        ? `Promo applied: ${promotion.code}`
+        : `Promo ${promotion.code} is valid but gives $0 discount for current subtotal.`
+    );
+  };
+
   const handleConfirmOrder = async () => {
     if (!shippingAddress || !paymentData) return;
     
     setIsLoading(true);
+    const checkoutRequestSeed =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
     
     try {
       const shippingFee = subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
-      const discount = 0; // To be implemented with promo codes
+      const discount = calculatePromotionDiscount(subtotal, appliedPromotion);
       const tax = subtotal * 0.1; // 10% tax
       const total = subtotal + shippingFee + tax - discount;
       setOrderTotal(total);
 
       // Group cart by merchant to support checkout with products from multiple stores.
       const groupedItems = items.reduce<Record<string, typeof items>>((acc, item) => {
-        const key = item.merchantId || `single-product-${item.productId}`;
+        // If merchantId is missing (legacy/local cart rows), keep them in one group.
+        // Using productId here would incorrectly split one checkout into many orders.
+        const key = item.merchantId || 'unknown-merchant';
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
         return acc;
@@ -285,19 +388,35 @@ function CheckoutPageContent() {
         const group = itemGroups[groupIndex];
         const groupSubtotal = group.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const groupShippingFee = groupSubtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
+        const groupDiscount = calculatePromotionDiscount(groupSubtotal, appliedPromotion);
         const groupTax = groupSubtotal * 0.1;
-        const groupTotal = groupSubtotal + groupShippingFee + groupTax;
-        const idempotencyKey = `${checkoutRequestSeed.current}:${groupIndex}`;
+        const groupTotal = groupSubtotal + groupShippingFee + groupTax - groupDiscount;
+        const idempotencyKey = `${checkoutRequestSeed}:${groupIndex}`;
 
-        const response = await createOrder({
-          items: group,
-          shippingAddress,
-          paymentData,
-          subtotal: groupSubtotal,
-          deliveryFee: groupShippingFee,
-          discount: 0,
-          tax: groupTax,
-          total: groupTotal,
+        const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD'> = {
+          cash: 'COD',
+          card: 'CARD',
+          KHQR: 'KHQR',
+        };
+
+        const response = await createOrderRequest({
+          items: group.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
+          shippingAddressId: shippingAddress.id,
+          shippingAddress: {
+            fullName: shippingAddress.fullName || `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+            phone: shippingAddress.phone || '',
+            street: shippingAddress.street,
+            city: shippingAddress.city,
+            state: shippingAddress.province || shippingAddress.city,
+            zipCode: shippingAddress.postalCode,
+            country: shippingAddress.country || 'Cambodia',
+          },
+          paymentMethod: paymentMethodMap[paymentData.method] || 'COD',
+          couponCode: appliedCouponCode,
         }, idempotencyKey);
 
         if (!response.success) {
@@ -308,8 +427,8 @@ function CheckoutPageContent() {
         }
 
         createdOrders.push({
-          orderId: response.data.orderId,
-          orderNumber: response.data.orderNumber,
+          orderId: response.order!.id,
+          orderNumber: response.order!.orderNumber,
           total: groupTotal,
         });
       }
@@ -438,6 +557,11 @@ function CheckoutPageContent() {
                     paymentData={paymentData}
                     subtotal={subtotal}
                     shippingFee={subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE}
+                    discount={calculatePromotionDiscount(subtotal, appliedPromotion)}
+                    promoCode={promoCodeInput}
+                    promoMessage={promoMessage}
+                    onPromoCodeChange={setPromoCodeInput}
+                    onApplyPromo={handleApplyPromo}
                     onBack={() => setCurrentStep('payment')}
                     onConfirm={handleConfirmOrder}
                     isLoading={isLoading}
@@ -460,7 +584,8 @@ function CheckoutPageContent() {
               className="bg-background rounded-[2.5rem] p-4 sm:p-8 max-w-[95vw] md:max-w-4xl w-full relative max-h-[95vh] overflow-y-auto soft-scrollbar border border-border shadow-2xl"
             >
               <button 
-                onClick={() => setShowKhqrModal(false)} 
+                onClick={handleCloseKhqrModal}
+                disabled={isCancellingKhqr}
                 className="absolute top-6 right-6 z-20 p-2 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-95"
               >
                 <X className="w-5 h-5" />
@@ -502,6 +627,15 @@ function CheckoutPageContent() {
                     >
                       Open Bakong App
                       <ExternalLink className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl h-12 font-semibold"
+                      onClick={cancelPendingKhqrOrders}
+                      isLoading={isCancellingKhqr}
+                    >
+                      Cancel KHQR Payment
                     </Button>
                     
                     <div className="flex items-center justify-between px-2">

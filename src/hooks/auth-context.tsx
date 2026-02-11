@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  bootstrapRefreshOnce,
   clearPendingTwoFactorToken,
   getCurrentUser,
   getPendingTwoFactorToken,
@@ -18,7 +19,7 @@ import {
 import { getUserProfile } from '@/services/user.service';
 import { type AuthUser, type User } from '@/types/user';
 import { usePathname, useRouter } from 'next/navigation';
-import { getAccessToken, subscribeAccessToken } from '@/services/api';
+import { getAccessToken, setAuthBootstrapPromise, subscribeAccessToken } from '@/services/api';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -55,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingTwoFactorToken, setPendingTwoFactorTokenState] = useState<string | null>(null);
+  const [hasBootstrapped, setHasBootstrapped] = useState(false);
   const refreshInFlightRef = React.useRef<Promise<void> | null>(null);
+  const bootstrapStartedRef = React.useRef(false);
 
   const setPendingTwoFactor = useCallback((tempToken: string) => {
     setPendingTwoFactorToken(tempToken);
@@ -116,6 +119,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearPendingTwoFactor]);
 
   useEffect(() => {
+    if (!hasBootstrapped) {
+      return;
+    }
+
     if (isPublicRoute(pathname)) {
       setIsLoading(false);
       if (!pathname?.startsWith('/2fa')) {
@@ -125,7 +132,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     void refresh();
-  }, [pathname, refresh, clearPendingTwoFactor]);
+  }, [hasBootstrapped, pathname, refresh, clearPendingTwoFactor]);
+
+  useEffect(() => {
+    if (bootstrapStartedRef.current) {
+      return;
+    }
+
+    bootstrapStartedRef.current = true;
+    const bootstrapTask = bootstrapRefreshOnce().then(() => undefined);
+
+    setAuthBootstrapPromise(bootstrapTask);
+    void bootstrapTask.finally(() => {
+      setAuthBootstrapPromise(null);
+      setHasBootstrapped(true);
+    });
+  }, [refresh]);
 
   useEffect(() => {
     return subscribeAccessToken(() => {

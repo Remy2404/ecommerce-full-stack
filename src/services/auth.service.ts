@@ -35,8 +35,28 @@ type MessageResponse = {
 };
 
 const TEMP_2FA_KEY = '2fa_temp_token';
+let bootstrapRefreshAttempted = false;
+let bootstrapRefreshInFlight: Promise<boolean> | null = null;
 
 const isBrowser = typeof window !== 'undefined';
+
+const clearRefreshTokenBestEffort = (): void => {
+  if (!isBrowser) return;
+  // Best effort client-side cleanup; backend refresh-failure path expires HttpOnly cookie.
+  document.cookie = 'refreshToken=; Max-Age=0; path=/api; SameSite=Lax';
+  document.cookie = 'refreshToken=; Max-Age=0; path=/; SameSite=Lax';
+};
+
+const redirectToLoginTerminal = (): void => {
+  if (!isBrowser) return;
+  const pathname = window.location.pathname;
+  const search = window.location.search || '';
+  const callback = `${pathname}${search}`;
+  if (process.env.NODE_ENV === 'test') return;
+  if (!pathname.startsWith('/login')) {
+    window.location.href = `/login?callbackUrl=${encodeURIComponent(callback)}`;
+  }
+};
 
 const mapAuthSummary = (user?: AuthResponse['user']): AuthUser | undefined => {
   if (!user?.id || !user.email) return undefined;
@@ -167,20 +187,47 @@ export async function refreshToken(): Promise<boolean> {
     const token = response.data.token;
     if (!token) {
       removeAccessToken();
+      clearPendingTwoFactorToken();
+      clearRefreshTokenBestEffort();
+      redirectToLoginTerminal();
       return false;
     }
     setAccessToken(token);
     return true;
   } catch {
     removeAccessToken();
+    clearPendingTwoFactorToken();
+    clearRefreshTokenBestEffort();
+    redirectToLoginTerminal();
     return false;
+  }
+}
+
+export async function bootstrapRefreshOnce(): Promise<boolean> {
+  if (bootstrapRefreshAttempted) {
+    return hasValidAccessToken();
+  }
+
+  if (bootstrapRefreshInFlight) {
+    return bootstrapRefreshInFlight;
+  }
+
+  bootstrapRefreshInFlight = (async () => {
+    bootstrapRefreshAttempted = true;
+    return refreshToken();
+  })();
+
+  try {
+    return await bootstrapRefreshInFlight;
+  } finally {
+    bootstrapRefreshInFlight = null;
   }
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = getAccessToken();
 
-  if (!token && !(await refreshToken())) {
+  if (!token && !(await bootstrapRefreshOnce())) {
     return null;
   }
 

@@ -63,7 +63,11 @@ async function fetchOrders(path: string, page = 0, size = 20): Promise<OrderList
         totalPages: data.totalPages,
       },
     };
-  } catch {
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+      throw error;
+    }
     return EMPTY_ORDERS;
   }
 }
@@ -86,8 +90,11 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
     return mapOrder(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+      throw error;
+    }
     if (axiosError.response?.status === 404) return null;
-    return null;
+    throw error;
   }
 }
 

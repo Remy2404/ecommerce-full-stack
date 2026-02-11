@@ -7,6 +7,11 @@ export interface PromotionApplyPayload {
   orderId: string;
 }
 
+export interface PromotionValidationResult {
+  promotion: Promotion | null;
+  error?: string;
+}
+
 export interface PromotionUpsertPayload {
   code: string;
   name: string;
@@ -24,14 +29,17 @@ export interface PromotionUpsertPayload {
   applicableMerchants?: string;
 }
 
-export async function validatePromotion(code: string): Promise<Promotion | null> {
+export async function validatePromotion(code: string): Promise<PromotionValidationResult> {
   try {
     const response = await api.get<PromotionApiResponse>(
       `/promotions/validate?code=${encodeURIComponent(code)}`
     );
-    return mapPromotion(response.data);
-  } catch {
-    return null;
+    return { promotion: mapPromotion(response.data) };
+  } catch (error) {
+    return {
+      promotion: null,
+      error: getErrorMessage(error, 'Promotion code not found or inactive.'),
+    };
   }
 }
 

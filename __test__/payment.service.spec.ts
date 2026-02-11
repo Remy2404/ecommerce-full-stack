@@ -1,5 +1,6 @@
 import api from '@/services/api';
 import { verifyPayment } from '@/services/payment.service';
+import { AxiosError } from 'axios';
 
 jest.mock('@/services/api', () => ({
   __esModule: true,
@@ -30,5 +31,24 @@ describe('payment.service verifyPayment', () => {
 
     expect(mockedApi.post).toHaveBeenCalledWith('/payments/verify/md5/abc-md5');
   });
-});
 
+  it('rethrows unauthorized error so poller can stop and auth flow can redirect', async () => {
+    const unauthorized = new AxiosError('Unauthorized', undefined, undefined, undefined, {
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: {},
+      config: {} as never,
+      data: {},
+    });
+    mockedApi.post.mockRejectedValue(unauthorized);
+
+    await expect(verifyPayment('abc-md5')).rejects.toBe(unauthorized);
+  });
+
+  it('rethrows network errors so poller can stop instead of looping', async () => {
+    const networkError = new AxiosError('Network Error');
+    mockedApi.post.mockRejectedValue(networkError);
+
+    await expect(verifyPayment('abc-md5')).rejects.toBe(networkError);
+  });
+});
