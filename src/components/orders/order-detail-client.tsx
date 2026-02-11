@@ -33,25 +33,56 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
   };
 
   const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered': return 'success';
-      case 'shipped':
-      case 'delivering': return 'warning';
-      case 'processing':
-      case 'preparing':
-      case 'ready':
-      case 'confirmed':
-      case 'pending': return 'secondary';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+    switch (status.toUpperCase()) {
+      case 'DELIVERED':
+        return 'success';
+      case 'DELIVERING':
+      case 'READY':
+        return 'warning';
+      case 'PENDING':
+      case 'CONFIRMED':
+      case 'PREPARING':
+      case 'PAID':
+        return 'secondary';
+      case 'CANCELLED':
+        return 'destructive';
+      default:
+        return 'outline';
     }
   };
 
+  const getPaymentStatusVariant = (paymentStatus: string) => {
+    switch (paymentStatus.toUpperCase()) {
+      case 'PAID':
+      case 'COMPLETED':
+        return 'success';
+      case 'PENDING':
+        return 'secondary';
+      case 'EXPIRED':
+        return 'warning';
+      case 'FAILED':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const normalizedStatus = order.status.toUpperCase();
   const steps = [
     { label: 'Placed', icon: Clock, completed: true, date: order.createdAt },
-    { label: 'Processing', icon: AlertCircle, completed: ['confirmed', 'preparing', 'ready', 'delivering', 'delivered'].includes(order.status.toLowerCase()) },
-    { label: 'Shipped', icon: Truck, completed: ['delivering', 'delivered'].includes(order.status.toLowerCase()) },
-    { label: 'Delivered', icon: CheckCircle2, completed: order.status.toLowerCase() === 'delivered' },
+    {
+      label: 'Confirmed',
+      icon: AlertCircle,
+      completed: ['CONFIRMED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED'].includes(
+        normalizedStatus
+      ),
+    },
+    {
+      label: 'Ready',
+      icon: Truck,
+      completed: ['READY', 'DELIVERING', 'DELIVERED'].includes(normalizedStatus),
+    },
+    { label: 'Delivered', icon: CheckCircle2, completed: normalizedStatus === 'DELIVERED' },
   ];
 
   return (
@@ -218,7 +249,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
                  <Badge 
-                   variant={order.paymentStatus === 'PAID' ? 'success' : 'secondary'} 
+                   variant={getPaymentStatusVariant(order.paymentStatus)} 
                    className="capitalize"
                  >
                    {order.paymentStatus}
@@ -260,14 +291,11 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
           <Card className="bg-primary/5 border-primary/10">
             <CardContent className="pt-6">
-               <h4 className="font-bold mb-2">WingPoints Earned</h4>
-               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">W</div>
-                 <div>
-                   <p className="text-2xl font-bold">+{(Number(order.total) * 10).toFixed(0)}</p>
-                   <p className="text-xs text-muted-foreground">Points will be added after delivery</p>
-                 </div>
-               </div>
+              <h4 className="font-bold mb-2">WingPoints Status</h4>
+              <p className="text-sm text-muted-foreground">
+                Points are awarded and reversed by backend payment and cancellation lifecycle rules.
+                Final points balance is shown on your profile.
+              </p>
             </CardContent>
           </Card>
         </aside>

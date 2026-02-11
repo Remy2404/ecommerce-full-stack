@@ -70,6 +70,32 @@ describe('order.service createOrder', () => {
       headers: undefined,
     });
   });
+
+  it('returns structured error metadata on create order failure', async () => {
+    const rateLimitedError = {
+      response: {
+        status: 429,
+        headers: { 'retry-after': '15' },
+        data: {
+          success: false,
+          error: 'Too many requests',
+          code: 'RATE_LIMITED',
+        },
+      },
+      message: 'Request failed',
+    } as AxiosError;
+    mockedApi.post.mockRejectedValue(rateLimitedError);
+
+    const result = await createOrder(requestPayload, 'idem-key-2');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Too many requests',
+      errorCode: 'RATE_LIMITED',
+      statusCode: 429,
+      retryAfterSeconds: 15,
+    });
+  });
 });
 
 describe('order.service getUserOrders', () => {

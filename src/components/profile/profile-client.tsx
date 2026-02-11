@@ -55,14 +55,21 @@ export function ProfileClient({ user, stats, recentOrders }: ProfileClientProps)
   };
 
   const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered': return 'success';
-      case 'delivering':
-      case 'shipped': return 'warning';
-      case 'processing':
-      case 'pending': return 'secondary';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+    switch (status.toUpperCase()) {
+      case 'DELIVERED':
+        return 'success';
+      case 'DELIVERING':
+      case 'READY':
+        return 'warning';
+      case 'PENDING':
+      case 'CONFIRMED':
+      case 'PREPARING':
+      case 'PAID':
+        return 'secondary';
+      case 'CANCELLED':
+        return 'destructive';
+      default:
+        return 'outline';
     }
   };
 

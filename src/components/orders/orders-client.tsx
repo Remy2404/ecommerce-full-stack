@@ -24,20 +24,22 @@ interface OrdersClientProps {
 }
 
 const statusFilters = [
-  { label: 'All Orders', value: 'all' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Processing', value: 'processing' },
-  { label: 'Shipped', value: 'shipped' },
-  { label: 'Delivered', value: 'delivered' },
-  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'All Orders', value: 'ALL' },
+  { label: 'Pending', value: 'PENDING' },
+  { label: 'Confirmed', value: 'CONFIRMED' },
+  { label: 'Preparing', value: 'PREPARING' },
+  { label: 'Ready', value: 'READY' },
+  { label: 'Delivering', value: 'DELIVERING' },
+  { label: 'Delivered', value: 'DELIVERED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
 ];
 
 export function OrdersClient({ orders }: OrdersClientProps) {
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredOrders = orders.filter((order) => {
-    const matchesStatus = activeFilter === 'all' || order.status.toLowerCase() === activeFilter.toLowerCase();
+    const matchesStatus = activeFilter === 'ALL' || order.status === activeFilter;
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
@@ -50,14 +52,21 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   };
 
   const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered': return 'success';
-      case 'shipped':
-      case 'delivering': return 'warning';
-      case 'processing':
-      case 'pending': return 'secondary';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+    switch (status.toUpperCase()) {
+      case 'DELIVERED':
+        return 'success';
+      case 'DELIVERING':
+      case 'READY':
+        return 'warning';
+      case 'PENDING':
+      case 'CONFIRMED':
+      case 'PREPARING':
+      case 'PAID':
+        return 'secondary';
+      case 'CANCELLED':
+        return 'destructive';
+      default:
+        return 'outline';
     }
   };
 
@@ -191,7 +200,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 </div>
                 <h3 className="text-xl font-semibold">No orders found</h3>
                 <p className="mt-2 text-muted-foreground max-w-xs mx-auto">
-                  {searchQuery || activeFilter !== 'all' 
+                  {searchQuery || activeFilter !== 'ALL' 
                     ? "We couldn't find any orders matching your current filters."
                     : "You haven't placed any orders yet. Start shopping to see your orders here!"}
                 </p>

@@ -22,6 +22,15 @@ import { toast } from 'sonner';
 import { SHIPPING_CONFIG } from '@/constants';
 import { validatePromotion } from '@/services/promotion.service';
 import type { Promotion } from '@/types';
+import {
+  buildCheckoutFingerprint,
+  getOrCreateCheckoutAttemptSeed,
+  clearCheckoutAttemptSeed,
+  groupItemsByMerchantDeterministic,
+  buildCheckoutIdempotencyKey,
+} from '@/lib/checkout-attempt';
+
+type CheckoutCreatedOrder = { orderId: string; orderNumber: string; total: number };
 
 export default function CheckoutPage() {
   return (
@@ -55,11 +64,19 @@ function CheckoutPageContent() {
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | undefined>(undefined);
   const [appliedPromotion, setAppliedPromotion] = useState<Promotion | null>(null);
   const [promoMessage, setPromoMessage] = useState<string>('');
-  const [khqrOrders, setKhqrOrders] = useState<Array<{ orderId: string; orderNumber: string; total: number }>>([]);
+  const [khqrOrders, setKhqrOrders] = useState<CheckoutCreatedOrder[]>([]);
+  const [createdCheckoutOrders, setCreatedCheckoutOrders] = useState<CheckoutCreatedOrder[]>([]);
+  const [partialCheckoutMessage, setPartialCheckoutMessage] = useState('');
   const [currentKhqrIndex, setCurrentKhqrIndex] = useState(0);
   const [isCancellingKhqr, setIsCancellingKhqr] = useState(false);
 
-  const openKhqrForOrder = async (order: { orderId: string; orderNumber: string; total: number }) => {
+  const clearCheckoutAttemptState = () => {
+    clearCheckoutAttemptSeed();
+    setCreatedCheckoutOrders([]);
+    setPartialCheckoutMessage('');
+  };
+
+  const openKhqrForOrder = async (order: CheckoutCreatedOrder) => {
     const khqr = await createKHQR(order.orderId);
     if (!khqr) {
       return false;
@@ -92,6 +109,7 @@ function CheckoutPageContent() {
       setKhqrResult(null);
       setKhqrOrders([]);
       setCurrentKhqrIndex(0);
+      clearCheckoutAttemptState();
 
       if (cancelledCount > 0) {
         toast.success(`${cancelledCount} pending order(s) cancelled.`);
@@ -112,6 +130,18 @@ function CheckoutPageContent() {
     );
     if (!confirmed) return;
     await cancelPendingKhqrOrders();
+  };
+
+  const handleResumeKhqr = async () => {
+    const nextOrder = khqrOrders[currentKhqrIndex];
+    if (!nextOrder) return;
+
+    const opened = await openKhqrForOrder(nextOrder);
+    if (!opened) {
+      toast.error('Unable to resume KHQR payment right now. Please try again.');
+      return;
+    }
+    setPartialCheckoutMessage('');
   };
 
   useEffect(() => {
@@ -320,6 +350,19 @@ function CheckoutPageContent() {
     return 0;
   };
 
+  const getPromotionRejectionMessage = (errorCode?: string, fallback?: string) => {
+    const normalizedCode = (errorCode || '').toUpperCase();
+    if (normalizedCode.includes('EXPIRED')) return 'This coupon has expired.';
+    if (normalizedCode.includes('PER_USER') || normalizedCode.includes('ALREADY_USED')) {
+      return 'This coupon has already been used on your account.';
+    }
+    if (normalizedCode.includes('USAGE_LIMIT')) return 'This coupon has reached its usage limit.';
+    if (normalizedCode.includes('INVALID') || normalizedCode.includes('NOT_FOUND')) {
+      return 'This coupon is invalid.';
+    }
+    return fallback || 'Promotion code not found or inactive.';
+  };
+
   const handleApplyPromo = async () => {
     const normalized = promoCodeInput.trim().toUpperCase();
     if (!normalized) {
@@ -334,7 +377,7 @@ function CheckoutPageContent() {
     if (!promotion) {
       setAppliedCouponCode(undefined);
       setAppliedPromotion(null);
-      setPromoMessage(validation.error || 'Invalid promo code.');
+      setPromoMessage(getPromotionRejectionMessage(validation.errorCode, validation.error));
       return;
     }
 
@@ -350,87 +393,109 @@ function CheckoutPageContent() {
     setAppliedPromotion(promotion);
     setPromoMessage(
       previewDiscount > 0
-        ? `Promo applied: ${promotion.code}`
-        : `Promo ${promotion.code} is valid but gives $0 discount for current subtotal.`
+        ? `Promo applied as estimate: ${promotion.code}. Final discount is confirmed at checkout.`
+        : `Promo ${promotion.code} is valid but currently estimates $0 discount. Final totals are confirmed at checkout.`
     );
   };
 
   const handleConfirmOrder = async () => {
     if (!shippingAddress || !paymentData) return;
-    
+
     setIsLoading(true);
-    const checkoutRequestSeed =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random()}`;
-    
+    setPartialCheckoutMessage('');
+
     try {
       const shippingFee = subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
       const discount = calculatePromotionDiscount(subtotal, appliedPromotion);
       const tax = subtotal * 0.1; // 10% tax
-      const total = subtotal + shippingFee + tax - discount;
-      setOrderTotal(total);
+      const estimatedTotal = subtotal + shippingFee + tax - discount;
+      setOrderTotal(estimatedTotal);
 
-      // Group cart by merchant to support checkout with products from multiple stores.
-      const groupedItems = items.reduce<Record<string, typeof items>>((acc, item) => {
-        // If merchantId is missing (legacy/local cart rows), keep them in one group.
-        // Using productId here would incorrectly split one checkout into many orders.
-        const key = item.merchantId || 'unknown-merchant';
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(item);
-        return acc;
-      }, {});
-      const itemGroups = Object.values(groupedItems);
+      const checkoutFingerprint = buildCheckoutFingerprint({
+        items: items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          merchantId: item.merchantId,
+        })),
+        shippingAddressId: shippingAddress.id,
+        paymentMethod: paymentData.method,
+        couponCode: appliedCouponCode,
+      });
+      const checkoutAttemptSeed = getOrCreateCheckoutAttemptSeed(checkoutFingerprint);
 
-      const createdOrders: Array<{ orderId: string; orderNumber: string; total: number }> = [];
+      const merchantGroups = groupItemsByMerchantDeterministic(items);
+      const createdOrders: CheckoutCreatedOrder[] = [];
+      const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD'> = {
+        cash: 'COD',
+        card: 'CARD',
+        KHQR: 'KHQR',
+      };
 
-      for (let groupIndex = 0; groupIndex < itemGroups.length; groupIndex++) {
-        const group = itemGroups[groupIndex];
-        const groupSubtotal = group.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const groupShippingFee = groupSubtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE;
-        const groupDiscount = calculatePromotionDiscount(groupSubtotal, appliedPromotion);
-        const groupTax = groupSubtotal * 0.1;
-        const groupTotal = groupSubtotal + groupShippingFee + groupTax - groupDiscount;
-        const idempotencyKey = `${checkoutRequestSeed}:${groupIndex}`;
-
-        const paymentMethodMap: Record<string, 'KHQR' | 'COD' | 'CARD'> = {
-          cash: 'COD',
-          card: 'CARD',
-          KHQR: 'KHQR',
-        };
-
-        const response = await createOrderRequest({
-          items: group.map((item) => ({
+      for (let groupIndex = 0; groupIndex < merchantGroups.length; groupIndex++) {
+        const group = merchantGroups[groupIndex].items;
+        const idempotencyKey = buildCheckoutIdempotencyKey(checkoutAttemptSeed, groupIndex);
+        const response = await createOrderRequest(
+          {
+            items: group.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
           })),
-          shippingAddressId: shippingAddress.id,
-          shippingAddress: {
-            fullName: shippingAddress.fullName || `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
-            phone: shippingAddress.phone || '',
-            street: shippingAddress.street,
-            city: shippingAddress.city,
-            state: shippingAddress.province || shippingAddress.city,
-            zipCode: shippingAddress.postalCode,
-            country: shippingAddress.country || 'Cambodia',
+            shippingAddressId: shippingAddress.id,
+            shippingAddress: {
+              fullName: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+              phone: shippingAddress.phone || '',
+              street: shippingAddress.street,
+              city: shippingAddress.city,
+              state: shippingAddress.province || shippingAddress.city,
+              zipCode: shippingAddress.postalCode,
+              country: shippingAddress.country || 'Cambodia',
+            },
+            paymentMethod: paymentMethodMap[paymentData.method] || 'COD',
+            couponCode: appliedCouponCode,
           },
-          paymentMethod: paymentMethodMap[paymentData.method] || 'COD',
-          couponCode: appliedCouponCode,
-        }, idempotencyKey);
+          idempotencyKey
+        );
 
         if (!response.success) {
           const backendMessage = response.error || 'Failed to create order';
-          console.error('Order creation failed:', backendMessage);
-          toast.error(`Order creation failed: ${backendMessage}`);
+          const retryHint =
+            response.statusCode === 429
+              ? ` Retry after ${response.retryAfterSeconds ?? 60}s.`
+              : '';
+
+          if (appliedCouponCode && response.errorCode) {
+            setPromoMessage(getPromotionRejectionMessage(response.errorCode, backendMessage));
+          }
+
+          if (createdOrders.length > 0) {
+            setCreatedCheckoutOrders(createdOrders);
+            setOrderNumbers(createdOrders.map((order) => order.orderNumber));
+            setOrderNumber(createdOrders[0].orderNumber);
+            setOrderId(createdOrders[0].orderId);
+            setPartialCheckoutMessage(
+              'Some orders were already created. Retry will safely resume without duplicates using the same checkout attempt.'
+            );
+            toast.error(`Checkout partially completed: ${backendMessage}.${retryHint}`);
+            return;
+          }
+
+          toast.error(`Order creation failed: ${backendMessage}.${retryHint}`);
+          return;
+        }
+
+        if (!response.order) {
+          toast.error('Order creation response was incomplete. Please retry safely.');
           return;
         }
 
         createdOrders.push({
-          orderId: response.order!.id,
-          orderNumber: response.order!.orderNumber,
-          total: groupTotal,
+          orderId: response.order.id,
+          orderNumber: response.order.orderNumber,
+          total: response.order.total,
         });
+        setCreatedCheckoutOrders([...createdOrders]);
       }
 
       if (createdOrders.length === 0) {
@@ -438,10 +503,21 @@ function CheckoutPageContent() {
         return;
       }
 
+      setCreatedCheckoutOrders(createdOrders);
       setOrderNumbers(createdOrders.map((o) => o.orderNumber));
       setOrderNumber(createdOrders[0].orderNumber);
       setOrderId(createdOrders[0].orderId);
-      
+      setPartialCheckoutMessage('');
+
+      if (appliedCouponCode) {
+        const backendTotal = createdOrders.reduce((sum, order) => sum + order.total, 0);
+        if (Math.abs(backendTotal - estimatedTotal) > 0.01) {
+          setPromoMessage(
+            `Coupon ${appliedCouponCode} was revalidated at checkout. Final backend total is $${backendTotal.toFixed(2)}.`
+          );
+        }
+      }
+
       if (paymentData.method === 'KHQR') {
         try {
           setKhqrOrders(createdOrders);
@@ -449,15 +525,24 @@ function CheckoutPageContent() {
           const opened = await openKhqrForOrder(createdOrders[0]);
           if (opened) {
             return;
-          } else {
-            toast.error('Failed to generate KHQR. Please contact support.');
           }
+
+          setPartialCheckoutMessage(
+            'Orders were created, but KHQR could not be generated. Retry will resume safely and you can also complete payment from order history.'
+          );
+          toast.error('Orders were created, but KHQR could not be generated. Please retry safely.');
+          return;
         } catch (err) {
           console.error('KHQR generation error:', err);
+          setPartialCheckoutMessage(
+            'Orders were created, but payment QR generation failed. Retry will resume safely and you can use order history as fallback.'
+          );
           toast.error('An error occurred while generating payment QR.');
+          return;
         }
       }
 
+      clearCheckoutAttemptState();
       clearCart();
       setIsComplete(true);
     } catch (error) {
@@ -516,6 +601,24 @@ function CheckoutPageContent() {
             <CheckoutStepperMobile currentStep={currentStep} />
           </div>
 
+          {partialCheckoutMessage && (
+            <div className="mb-6 rounded-design-lg border border-warning/40 bg-warning/10 p-4">
+              <p className="text-sm font-medium text-foreground">{partialCheckoutMessage}</p>
+              {createdCheckoutOrders.length > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Created orders: {createdCheckoutOrders.map((order) => order.orderNumber).join(', ')}
+                </p>
+              )}
+              {!showKhqrModal && khqrOrders[currentKhqrIndex] && (
+                <div className="mt-3">
+                  <Button type="button" variant="outline" size="sm" onClick={handleResumeKhqr}>
+                    Resume KHQR Payment
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Step Content */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -557,9 +660,11 @@ function CheckoutPageContent() {
                     paymentData={paymentData}
                     subtotal={subtotal}
                     shippingFee={subtotal >= SHIPPING_CONFIG.FREE_THRESHOLD ? 0 : SHIPPING_CONFIG.DEFAULT_FEE}
+                    tax={subtotal * 0.1}
                     discount={calculatePromotionDiscount(subtotal, appliedPromotion)}
                     promoCode={promoCodeInput}
                     promoMessage={promoMessage}
+                    totalsAreEstimate
                     onPromoCodeChange={setPromoCodeInput}
                     onApplyPromo={handleApplyPromo}
                     onBack={() => setCurrentStep('payment')}
@@ -692,15 +797,24 @@ function CheckoutPageContent() {
                     }
 
                     setShowKhqrModal(false);
-                    clearCart();
-                    setIsComplete(true);
-                    toast.error('Payment received, but next KHQR could not be generated. Remaining orders are in your order history.');
+                    setKhqrResult(null);
+                    setPartialCheckoutMessage(
+                      'Payment was received for one order, but the next KHQR could not be generated. Retry will resume safely and remaining orders are in your order history.'
+                    );
+                    toast.error('Payment received, but next KHQR could not be generated. Retry will safely resume.');
                     return;
                   }
 
                   setShowKhqrModal(false);
+                  setKhqrResult(null);
+                  clearCheckoutAttemptState();
                   clearCart();
                   setIsComplete(true);
+                }}
+                onTerminalFailure={(message) => {
+                  setPartialCheckoutMessage(
+                    `Payment verification ended with a terminal state: ${message}. No duplicate orders were created.`
+                  );
                 }}
               />
             </motion.div>

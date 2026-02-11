@@ -1,5 +1,5 @@
 import api from './api';
-import { getErrorMessage } from '@/lib/http-error';
+import { getErrorMessage, parseHttpError } from '@/lib/http-error';
 import { mapPromotion, type Promotion, type PromotionApiResponse } from '@/types';
 
 export interface PromotionApplyPayload {
@@ -10,6 +10,8 @@ export interface PromotionApplyPayload {
 export interface PromotionValidationResult {
   promotion: Promotion | null;
   error?: string;
+  errorCode?: string;
+  statusCode?: number;
 }
 
 export interface PromotionUpsertPayload {
@@ -36,9 +38,12 @@ export async function validatePromotion(code: string): Promise<PromotionValidati
     );
     return { promotion: mapPromotion(response.data) };
   } catch (error) {
+    const parsed = parseHttpError(error, 'Promotion code not found or inactive.');
     return {
       promotion: null,
-      error: getErrorMessage(error, 'Promotion code not found or inactive.'),
+      error: parsed.message,
+      errorCode: parsed.errorCode,
+      statusCode: parsed.statusCode,
     };
   }
 }

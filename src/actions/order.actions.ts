@@ -39,14 +39,11 @@ export async function getUserDashboardStats(): Promise<
 
   const result = await orderService.getUserOrders(0, 1);
 
-  // Points are calculated based on order count (mock)
-  const points = result.pagination.total * 10;
-
   return {
     success: true,
     data: {
       orderCount: result.pagination.total,
-      points,
+      points: 0,
       memberSince: 'Member',
     },
   };
@@ -76,7 +73,7 @@ export async function getProfileDashboardData(
     data: {
       stats: {
         orderCount,
-        points: orderCount * 10,
+        points: 0,
         memberSince: 'Member',
       },
       recentOrders: result.orders,

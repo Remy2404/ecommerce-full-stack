@@ -14,7 +14,7 @@ export async function getWingPointsBalance(): Promise<WingPoints | null> {
       id: response.data.userId,
       userId: response.data.userId,
       balance: response.data.balance,
-      lifetimeEarned: response.data.balance,
+      lifetimeEarned: 0,
       lifetimeSpent: 0,
       updatedAt: now,
     });

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { ProfileClient } from '@/components/profile/profile-client';
 import { getProfileDashboardData } from '@/actions/order.actions';
+import { getWingPointsBalance } from '@/services/wing-points.service';
 import type { Order } from '@/types/order';
 
 export default function ProfilePage() {
@@ -24,13 +25,18 @@ export default function ProfilePage() {
       if (!isAuthenticated) return;
       
       try {
-        const result = await getProfileDashboardData(5);
+        const [result, wingPoints] = await Promise.all([
+          getProfileDashboardData(5),
+          getWingPointsBalance(),
+        ]);
         if (result.success && result.data) {
           setStats({
             orderCount: result.data.stats.orderCount || 0,
-            points: result.data.stats.points || 0,
+            points: wingPoints?.balance ?? 0,
           });
           setRecentOrders(result.data.recentOrders || []);
+        } else if (wingPoints) {
+          setStats((prev) => ({ ...prev, points: wingPoints.balance }));
         }
       } catch (error) {
         console.error('Failed to fetch profile data:', error);

@@ -1,5 +1,5 @@
 import api from './api';
-import axios from 'axios';
+import { toHttpError } from '@/lib/http-error';
 import { 
   KHQRResult, 
   KHQRVerificationResponse, 
@@ -29,13 +29,9 @@ export async function createKHQR(orderId: string): Promise<KHQRResult | null> {
 export async function verifyPayment(md5: string): Promise<KHQRVerificationResponse | null> {
   try {
     const response = await api.post<KHQRVerificationApiResponse>(`/payments/verify/md5/${md5}`);
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
-    if (axios.isAxiosError(error) && (!error.response || error.response.status === 401 || error.response.status === 403)) {
-      throw error;
-    }
-    console.error('Failed to verify payment:', error);
-    return null;
+    throw toHttpError(error, 'Failed to verify payment');
   }
 }
 

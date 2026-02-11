@@ -1,6 +1,7 @@
 import api from '@/services/api';
 import { verifyPayment } from '@/services/payment.service';
 import { AxiosError } from 'axios';
+import { HttpError } from '@/lib/http-error';
 
 jest.mock('@/services/api', () => ({
   __esModule: true,
@@ -42,13 +43,34 @@ describe('payment.service verifyPayment', () => {
     });
     mockedApi.post.mockRejectedValue(unauthorized);
 
-    await expect(verifyPayment('abc-md5')).rejects.toBe(unauthorized);
+    await expect(verifyPayment('abc-md5')).rejects.toMatchObject({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   });
 
-  it('rethrows network errors so poller can stop instead of looping', async () => {
+  it('propagates structured 429 metadata for retry-aware polling', async () => {
+    const rateLimited = {
+      response: {
+        status: 429,
+        headers: { 'retry-after': '20' },
+        data: { success: false, error: 'Too many requests', code: 'RATE_LIMITED' },
+      },
+      message: 'Request failed',
+    } as AxiosError;
+    mockedApi.post.mockRejectedValue(rateLimited);
+
+    await expect(verifyPayment('abc-md5')).rejects.toMatchObject({
+      statusCode: 429,
+      errorCode: 'RATE_LIMITED',
+      retryAfterSeconds: 20,
+    });
+  });
+
+  it('rethrows network errors as HttpError for terminal handling', async () => {
     const networkError = new AxiosError('Network Error');
     mockedApi.post.mockRejectedValue(networkError);
 
-    await expect(verifyPayment('abc-md5')).rejects.toBe(networkError);
+    await expect(verifyPayment('abc-md5')).rejects.toBeInstanceOf(HttpError);
   });
 });

@@ -17,6 +17,7 @@ interface OrderSummaryProps {
   discount?: number;
   promoCode?: string;
   promoMessage?: string;
+  totalsAreEstimate?: boolean;
   onPromoCodeChange?: (value: string) => void;
   onApplyPromo?: () => void;
   onBack: () => void;
@@ -34,6 +35,7 @@ export function OrderSummary({
   discount = 0,
   promoCode = '',
   promoMessage,
+  totalsAreEstimate = false,
   onPromoCodeChange,
   onApplyPromo,
   onBack,
@@ -156,12 +158,17 @@ export function OrderSummary({
           )}
           <div className="border-t border-border pt-2 mt-2">
             <div className="flex justify-between text-lg font-semibold">
-              <span>Total</span>
+              <span>{totalsAreEstimate ? 'Estimated Total' : 'Total'}</span>
               <span>{formatPrice(total)}</span>
             </div>
           </div>
         </div>
       </div>
+      {totalsAreEstimate && (
+        <p className="text-xs text-muted-foreground">
+          Final totals and discounts are confirmed by the backend during order creation.
+        </p>
+      )}
 
       {/* Promo Code */}
       <div className="flex gap-2">

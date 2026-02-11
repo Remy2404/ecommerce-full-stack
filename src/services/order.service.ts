@@ -1,5 +1,6 @@
 import api from './api';
 import { AxiosError } from 'axios';
+import { parseHttpError } from '@/lib/http-error';
 import {
   type CreateOrderRequest,
   mapOrder,
@@ -41,9 +42,14 @@ export async function createOrder(
     });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string; error?: string }>;
-    const message = axiosError.response?.data?.error || axiosError.response?.data?.message;
-    return { success: false, error: message || 'Failed to create order' };
+    const parsed = parseHttpError(error, 'Failed to create order');
+    return {
+      success: false,
+      error: parsed.message,
+      errorCode: parsed.errorCode,
+      statusCode: parsed.statusCode,
+      retryAfterSeconds: parsed.retryAfterSeconds,
+    };
   }
 }
 
@@ -105,10 +111,13 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
     });
     return { success: true, order: mapOrder(response.data) };
   } catch (error) {
-    const axiosError = error as AxiosError<{ message?: string }>;
+    const parsed = parseHttpError(error, 'Failed to update order status');
     return {
       success: false,
-      error: axiosError.response?.data?.message || 'Failed to update order status',
+      error: parsed.message,
+      errorCode: parsed.errorCode,
+      statusCode: parsed.statusCode,
+      retryAfterSeconds: parsed.retryAfterSeconds,
     };
   }
 }

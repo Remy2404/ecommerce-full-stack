@@ -143,6 +143,9 @@ export interface OrderResult {
   success: boolean;
   order?: Order;
   error?: string;
+  errorCode?: string;
+  statusCode?: number;
+  retryAfterSeconds?: number;
 }
 
 export interface OrderListResult {
