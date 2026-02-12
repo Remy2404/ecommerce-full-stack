@@ -97,21 +97,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleAddToCart = () => {
-    addItem({
+  const handleAddToCart = async () => {
+    const added = await addItem({
       productId: product.id,
-      merchantId: product.merchantId,
       variantId: selectedVariant?.id,
-      name: product.name,
-      price: currentPrice,
-      image: product.images[0] || '/placeholder.jpg',
       quantity,
-      variantName: selectedVariant?.name,
-      maxStock: currentStock,
     });
-    
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+
+    if (added) {
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    }
   };
 
   return (

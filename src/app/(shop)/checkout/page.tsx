@@ -434,14 +434,11 @@ function CheckoutPageContent() {
 
       for (let groupIndex = 0; groupIndex < merchantGroups.length; groupIndex++) {
         const group = merchantGroups[groupIndex].items;
+        const merchantId = group[0]?.merchantId || undefined;
         const idempotencyKey = buildCheckoutIdempotencyKey(checkoutAttemptSeed, groupIndex);
         const response = await createOrderRequest(
           {
-            items: group.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-          })),
+            merchantId,
             shippingAddressId: shippingAddress.id,
             shippingAddress: {
               fullName: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),

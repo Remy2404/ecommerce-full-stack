@@ -134,10 +134,17 @@ const clearRefreshTokenBestEffort = (): void => {
 const redirectToLoginTerminal = (): void => {
   if (!isBrowser) return;
   const pathname = window.location.pathname;
-  const search = window.location.search || '';
-  const callback = `${pathname}${search}`;
   if (process.env.NODE_ENV === 'test') return;
-  if (!pathname.startsWith('/login')) {
+  const isPublicAuth =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/verify-email') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/2fa');
+  if (!isPublicAuth) {
+    const search = window.location.search || '';
+    const callback = `${pathname}${search}`;
     window.location.href = `/login?callbackUrl=${encodeURIComponent(callback)}`;
   }
 };
@@ -148,7 +155,11 @@ const shouldSkipRefresh = (requestUrl?: string): boolean => {
     requestUrl.includes('/auth/login') ||
     requestUrl.includes('/auth/register') ||
     requestUrl.includes('/auth/refresh') ||
-    requestUrl.includes('/auth/verify-2fa')
+    requestUrl.includes('/auth/verify-2fa') ||
+    requestUrl.includes('/auth/verify-email') ||
+    requestUrl.includes('/auth/forgot-password') ||
+    requestUrl.includes('/auth/reset-password') ||
+    requestUrl.includes('/auth/resend-verification')
   );
 };
 

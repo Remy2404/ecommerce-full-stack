@@ -50,10 +50,17 @@ const clearRefreshTokenBestEffort = (): void => {
 const redirectToLoginTerminal = (): void => {
   if (!isBrowser) return;
   const pathname = window.location.pathname;
-  const search = window.location.search || '';
-  const callback = `${pathname}${search}`;
   if (process.env.NODE_ENV === 'test') return;
-  if (!pathname.startsWith('/login')) {
+  const isPublicAuth =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/verify-email') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/2fa');
+  if (!isPublicAuth) {
+    const search = window.location.search || '';
+    const callback = `${pathname}${search}`;
     window.location.href = `/login?callbackUrl=${encodeURIComponent(callback)}`;
   }
 };
@@ -189,7 +196,6 @@ export async function refreshToken(): Promise<boolean> {
       removeAccessToken();
       clearPendingTwoFactorToken();
       clearRefreshTokenBestEffort();
-      redirectToLoginTerminal();
       return false;
     }
     setAccessToken(token);
@@ -198,7 +204,6 @@ export async function refreshToken(): Promise<boolean> {
     removeAccessToken();
     clearPendingTwoFactorToken();
     clearRefreshTokenBestEffort();
-    redirectToLoginTerminal();
     return false;
   }
 }

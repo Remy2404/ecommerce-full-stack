@@ -18,6 +18,14 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/auth-context';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -47,7 +55,6 @@ export function Navbar() {
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
@@ -194,97 +201,82 @@ export function Navbar() {
 
               {/* User Menu */}
               {user ? (
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="relative"
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative"
+                    >
+                      {user.avatarUrl && !imageError ? (
+                        <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                          <Image
+                            src={user.avatarUrl}
+                            alt={user.name || 'User avatar'}
+                            fill
+                            className="object-cover"
+                            onError={() => setImageError(true)}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+                          {user.name && user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={8}
+                    className="w-56 max-w-[calc(100vw-1rem)] rounded-design border border-border bg-popover p-2 shadow-float"
                   >
-                    {user.avatarUrl && !imageError ? (
-                      <div className="relative h-8 w-8 overflow-hidden rounded-full">
-                        <Image
-                          src={user.avatarUrl}
-                          alt={user.name || 'User avatar'}
-                          fill
-                          className="object-cover"
-                          onError={() => setImageError(true)}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                        {user.name && user.name.charAt(0).toUpperCase()}
-                      </div>
+                    <DropdownMenuLabel className="mb-1 border-b border-border px-3 py-2">
+                      <p className="truncate text-sm font-medium" title={user.name ?? ''}>
+                        {user.name}
+                      </p>
+                      <p className="truncate text-xs font-normal text-muted-foreground" title={user.email ?? ''}>
+                        {user.email}
+                      </p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem asChild className="rounded-design-sm px-3 py-2">
+                      <Link href="/profile">
+                        <UserCircle className="h-4 w-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === 'ADMIN' && (
+                      <DropdownMenuItem asChild className="rounded-design-sm px-3 py-2">
+                        <Link href="/admin">
+                          <LayoutGrid className="h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
                     )}
-                  </Button>
-
-                  <AnimatePresence>
-                    {isUserMenuOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        />
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-design border border-border bg-popover p-2 shadow-float"
-                        >
-                          <div className="border-b border-border px-3 py-2 mb-2">
-                            <p className="text-sm font-medium">{user.name}</p>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
-                          </div>
-                          <Link
-                            href="/profile"
-                            className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            <UserCircle className="h-4 w-4" />
-                            My Profile
-                          </Link>
-                          {user.role === 'ADMIN' && (
-                            <Link
-                              href="/admin"
-                              className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              <LayoutGrid className="h-4 w-4" />
-                              Admin Dashboard
-                            </Link>
-                          )}
-                          <Link
-                            href="/orders"
-                            className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            <Package className="h-4 w-4" />
-                            My Orders
-                          </Link>
-                          <Link
-                            href="/settings"
-                            className="flex items-center gap-2 rounded-design-sm px-3 py-2 text-sm transition-colors hover:bg-accent"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            <Settings className="h-4 w-4" />
-                            Settings
-                          </Link>
-                          <button
-                            className="flex w-full items-center gap-2 rounded-design-sm px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
-                            onClick={async () => {
-                              setIsUserMenuOpen(false);
-                              await logout();
-                            }}
-                          >
-                            <LogOut className="h-4 w-4" />
-                            Sign Out
-                          </button>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </div>
+                    <DropdownMenuItem asChild className="rounded-design-sm px-3 py-2">
+                      <Link href="/orders">
+                        <Package className="h-4 w-4" />
+                        My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-design-sm px-3 py-2">
+                      <Link href="/settings">
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="my-1" />
+                    <DropdownMenuItem
+                      className="rounded-design-sm px-3 py-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                      onSelect={async (event) => {
+                        event.preventDefault();
+                        await logout();
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <div className="hidden sm:flex sm:items-center sm:gap-2">
                   <Button variant="ghost" size="sm" asChild>

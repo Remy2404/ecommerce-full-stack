@@ -13,13 +13,9 @@ export default function WishlistPage() {
   const { addItem: addToCart } = useCart();
 
   const handleAddToCart = (item: WishlistItem) => {
-    addToCart({
+    void addToCart({
       productId: item.productId,
-      name: item.name,
-      price: item.price,
-      image: item.image,
       quantity: 1,
-      maxStock: item.stock,
     });
   };
 

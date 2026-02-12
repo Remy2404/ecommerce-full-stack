@@ -9,7 +9,7 @@ import { useCart } from '@/hooks/cart-context';
 import { SHIPPING_CONFIG } from '@/constants';
 
 export default function CartPage() {
-  const { items, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, itemCount, subtotal, updateQuantity, removeItem, clearCart } = useCart();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -52,7 +52,7 @@ export default function CartPage() {
         <div>
           <h1 className="text-3xl font-bold">Shopping Cart</h1>
           <p className="mt-1 text-muted-foreground">
-            {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
+            {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
           </p>
         </div>
         <Button 
@@ -82,7 +82,7 @@ export default function CartPage() {
                   <div className="flex gap-4 p-4 sm:p-6">
                     {/* Product Image */}
                     <Link 
-                      href={`/products/${item.productId}`}
+                      href={`/products/${item.slug || item.productId}`}
                       className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-design bg-muted sm:h-32 sm:w-32"
                     >
                       <Image
@@ -98,7 +98,7 @@ export default function CartPage() {
                       <div className="flex justify-between">
                         <div>
                           <Link 
-                            href={`/products/${item.productId}`}
+                            href={`/products/${item.slug || item.productId}`}
                             className="font-medium hover:text-primary transition-colors line-clamp-2"
                           >
                             {item.name}

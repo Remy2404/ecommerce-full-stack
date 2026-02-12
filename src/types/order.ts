@@ -97,7 +97,8 @@ export interface OrderItemRequest {
 export interface CreateOrderRequest {
   shippingAddressId?: string;
   shippingAddress?: OrderShippingAddress;
-  items: OrderItemRequest[];
+  items?: OrderItemRequest[];
+  merchantId?: string;
   paymentMethod: 'COD' | 'CARD' | 'KHQR';
   notes?: string;
   couponCode?: string;

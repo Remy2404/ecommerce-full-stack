@@ -8,11 +8,13 @@ export interface CartItemApiResponse {
   id: string;
   cartId?: string;
   productId: string;
+  merchantId?: string | null;
   productName: string;
   productImage: string | null;
   productSlug: string;
   variantId: string | null;
   variantName: string | null;
+  availableStock?: number;
   price: number;
   quantity: number;
   subtotal: number;
@@ -35,11 +37,13 @@ export interface CartItem {
   id: string;
   cartId: string;
   productId: string;
+  merchantId?: string | null;
   productName: string;
   productImage: string | null;
   productSlug: string;
   variantId: string | null;
   variantName: string | null;
+  availableStock?: number;
   price: number;
   quantity: number;
   subtotal: number;
@@ -83,11 +87,13 @@ export function mapCartItem(raw: CartItemApiResponse): CartItem {
     id: raw.id,
     cartId: raw.cartId || '',
     productId: raw.productId,
+    merchantId: raw.merchantId ?? null,
     productName: raw.productName,
     productImage: raw.productImage,
     productSlug: raw.productSlug,
     variantId: raw.variantId,
     variantName: raw.variantName,
+    availableStock: typeof raw.availableStock === 'number' ? raw.availableStock : undefined,
     price: Number(raw.price),
     quantity: raw.quantity,
     subtotal: Number(raw.subtotal),

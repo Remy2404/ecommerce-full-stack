@@ -103,11 +103,6 @@ export async function createOrder(
 
   const result = await orderService.createOrder(
     {
-      items: data.items.map(item => ({
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: item.quantity
-      })),
       shippingAddressId: data.shippingAddress.id,
       shippingAddress: {
         fullName: data.shippingAddress.fullName || `${user.name}`,
