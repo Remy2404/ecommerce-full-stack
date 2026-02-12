@@ -17,7 +17,13 @@ export interface NotificationApiResponse {
 
 // --- Frontend Domain Models ---
 
-export type NotificationType = 'ORDER_STATUS' | 'PROMOTION' | 'ACCOUNT' | 'SYSTEM';
+export type NotificationType =
+  | 'ORDER'
+  | 'ORDER_STATUS'
+  | 'PAYMENT'
+  | 'PROMOTION'
+  | 'ACCOUNT'
+  | 'SYSTEM';
 
 export interface Notification {
   id: string;
@@ -34,7 +40,12 @@ export interface Notification {
 
 export function mapNotification(raw: NotificationApiResponse): Notification {
   const validType: NotificationType =
-    raw.type === 'ORDER_STATUS' || raw.type === 'PROMOTION' || raw.type === 'ACCOUNT' || raw.type === 'SYSTEM'
+    raw.type === 'ORDER' ||
+    raw.type === 'ORDER_STATUS' ||
+    raw.type === 'PAYMENT' ||
+    raw.type === 'PROMOTION' ||
+    raw.type === 'ACCOUNT' ||
+    raw.type === 'SYSTEM'
       ? raw.type
       : 'SYSTEM';
   return {

@@ -7,6 +7,7 @@ import { MobileNav } from "@/components/common/mobile-nav";
 import { AuthProvider } from "@/hooks/auth-context";
 import { CartProvider } from "@/hooks/cart-context";
 import { WishlistProvider } from "@/hooks/wishlist-context";
+import { NotificationProvider } from "@/hooks/notification-context";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "sonner";
 import { GoogleOAuthProviderWrapper } from "@/components/providers/google-oauth-provider";
@@ -84,20 +85,22 @@ export default function RootLayout({
         <GoogleOAuthProviderWrapper>
           <AppQueryProvider>
             <AuthProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <div className="flex min-h-screen flex-col">
-                    <Navbar />
-                    <main className="flex-1">
-                      <RouteSecurityGate>{children}</RouteSecurityGate>
-                    </main>
-                    <Footer />
-                    <MobileNav />
-                    <CartDrawer />
-                    <Toaster position="top-right" richColors closeButton />
-                  </div>
-                </WishlistProvider>
-              </CartProvider>
+              <NotificationProvider>
+                <CartProvider>
+                  <WishlistProvider>
+                    <div className="flex min-h-screen flex-col">
+                      <Navbar />
+                      <main className="flex-1">
+                        <RouteSecurityGate>{children}</RouteSecurityGate>
+                      </main>
+                      <Footer />
+                      <MobileNav />
+                      <CartDrawer />
+                      <Toaster position="top-right" richColors closeButton />
+                    </div>
+                  </WishlistProvider>
+                </CartProvider>
+              </NotificationProvider>
             </AuthProvider>
           </AppQueryProvider>
         </GoogleOAuthProviderWrapper>
