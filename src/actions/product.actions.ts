@@ -3,6 +3,9 @@
 import * as productService from '@/services/product.service';
 import * as categoryService from '@/services/category.service';
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export interface ProductResult {
   id: string;
   name: string;
@@ -31,6 +34,21 @@ export interface GetProductsParams {
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'rating' | 'popular';
 }
 
+async function resolveCategoryId(category?: string): Promise<string | undefined> {
+  const normalized = category?.trim();
+  if (!normalized) return undefined;
+  if (UUID_PATTERN.test(normalized)) return normalized;
+
+  const categories = await categoryService.getCategories();
+  const match = categories.find(
+    (candidate) =>
+      candidate.slug.toLowerCase() === normalized.toLowerCase() ||
+      candidate.id === normalized
+  );
+
+  return match?.id;
+}
+
 /**
  * Get products with filtering and pagination
  * Calls Spring Boot backend /api/products
@@ -47,10 +65,23 @@ export async function getProducts(params: GetProductsParams = {}) {
     sortBy = 'newest',
   } = params;
 
+  const resolvedCategoryId = await resolveCategoryId(category);
+  if (category && !resolvedCategoryId) {
+    return {
+      products: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
+  }
+
   const result = await productService.getProducts({
     page: page - 1, // Spring Boot uses 0-indexed pages
     size: limit,
-    category,
+    categoryId: resolvedCategoryId,
     featured,
     minPrice,
     maxPrice,

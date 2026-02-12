@@ -46,13 +46,18 @@ const EMPTY_PAGE: Pagination = {
   totalPages: 0,
 };
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export async function getProducts(params: ProductFilterParams = {}): Promise<ProductListResult> {
   try {
     const queryParams = new URLSearchParams();
     if (params.page !== undefined) queryParams.set('page', String(params.page));
     if (params.size !== undefined) queryParams.set('size', String(params.size));
     if (params.categoryId) queryParams.set('categoryId', params.categoryId);
-    if (!params.categoryId && params.category) queryParams.set('categoryId', params.category);
+    if (!params.categoryId && params.category && UUID_PATTERN.test(params.category)) {
+      queryParams.set('categoryId', params.category);
+    }
     if (params.searchQuery) queryParams.set('searchQuery', params.searchQuery);
     if (!params.searchQuery && params.search) queryParams.set('searchQuery', params.search);
     if (params.minPrice !== undefined) queryParams.set('minPrice', String(params.minPrice));

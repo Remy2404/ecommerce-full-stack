@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -53,13 +53,44 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const { itemCount: cartItemCount, isHydrated: isCartHydrated } = useCart();
   const { itemCount: wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isAdminRoute = pathname.startsWith('/admin');
+
+  const openSearchModal = () => {
+    const currentSearch = pathname === '/products' ? (searchParams.get('search') || '') : '';
+    setSearchInput(currentSearch);
+    setIsSearchOpen(true);
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const params = pathname === '/products'
+      ? new URLSearchParams(searchParams.toString())
+      : new URLSearchParams();
+
+    const normalizedQuery = searchInput.trim();
+
+    if (normalizedQuery) {
+      params.set('search', normalizedQuery);
+    } else {
+      params.delete('search');
+    }
+
+    params.delete('page');
+
+    const query = params.toString();
+    router.push(query ? `/products?${query}` : '/products');
+    setIsSearchOpen(false);
+    setIsMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     if (isAdminRoute) return;
@@ -156,7 +187,7 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsSearchOpen(true)}
+                onClick={openSearchModal}
                 className="hidden sm:flex"
               >
                 <Search className="h-5 w-5" />
@@ -388,15 +419,17 @@ export function Navbar() {
               className="fixed left-1/2 top-24 z-50 w-full max-w-2xl -translate-x-1/2 px-4"
             >
               <div className="rounded-design-lg bg-background p-4 shadow-dramatic">
-                <div className="relative">
+                <form onSubmit={handleSearchSubmit} className="relative">
                   <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Search products..."
                     autoFocus
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
                     className="w-full rounded-design border-0 bg-muted py-4 pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
                   />
-                </div>
+                </form>
               </div>
             </motion.div>
           </>

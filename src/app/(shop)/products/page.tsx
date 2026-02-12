@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BentoGrid } from '@/components/products/bento-grid';
+import { ProductSearch } from '@/components/products/product-search';
 import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { SortSelect } from '@/components/products/sort-select';
 import { getProducts, getCategories } from '@/actions/product.actions';
@@ -19,11 +20,22 @@ interface ProductsPageProps {
     page?: string;
     minPrice?: string;
     maxPrice?: string;
+    search?: string;
   }>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
+  const withSearchParam = (href: string) => {
+    if (!params.search) return href;
+
+    const [path, query = ''] = href.split('?');
+    const nextParams = new URLSearchParams(query);
+    nextParams.set('search', params.search);
+
+    const nextQuery = nextParams.toString();
+    return nextQuery ? `${path}?${nextQuery}` : path;
+  };
 
   // Fetch products and categories from database
   const [productsData, categories] = await Promise.all([
@@ -33,6 +45,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       sale: params.sale === 'true' ? true : undefined,
       minPrice: params.minPrice ? parseFloat(params.minPrice) : undefined,
       maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
+      search: params.search?.trim() || undefined,
       sortBy: (params.sort as 'newest' | 'price_asc' | 'price_desc' | 'rating') || 'newest',
       page: parseInt(params.page || '1'),
       limit: 50,
@@ -74,6 +87,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   ? 'Great deals on high-quality products'
                   : 'Browse our complete collection of premium products'}
           </p>
+          <div className="mt-6 max-w-2xl">
+            <ProductSearch defaultValue={params.search || ''} />
+          </div>
         </div>
       </section>
 
@@ -90,7 +106,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 <ul className="space-y-2">
                   <li>
                     <Link
-                      href="/products"
+                      href={withSearchParam('/products')}
                       className={`block rounded-design px-3 py-2 text-sm transition-colors ${!params.category ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                     >
                       All Products
@@ -99,7 +115,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   {categories.map((category) => (
                     <li key={category.id}>
                       <Link
-                        href={`/products?category=${category.slug}`}
+                        href={withSearchParam(`/products?category=${category.slug}`)}
                         className={`flex items-center gap-2 rounded-design px-3 py-2 text-sm transition-colors ${params.category === category.slug ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                       >
                         <DynamicIcon name={(category as { icon?: string }).icon || 'Package'} size={16} />
@@ -117,25 +133,25 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 </h3>
                 <div className="space-y-2">
                   <Link
-                    href="/products?maxPrice=50"
+                    href={withSearchParam('/products?maxPrice=50')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     Under $50
                   </Link>
                   <Link
-                    href="/products?minPrice=50&maxPrice=100"
+                    href={withSearchParam('/products?minPrice=50&maxPrice=100')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     $50 - $100
                   </Link>
                   <Link
-                    href="/products?minPrice=100&maxPrice=200"
+                    href={withSearchParam('/products?minPrice=100&maxPrice=200')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     $100 - $200
                   </Link>
                   <Link
-                    href="/products?minPrice=200"
+                    href={withSearchParam('/products?minPrice=200')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     Over $200
@@ -150,19 +166,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 </h3>
                 <div className="space-y-2">
                   <Link
-                    href="/products?sort=newest"
+                    href={withSearchParam('/products?sort=newest')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     New Arrivals
                   </Link>
                   <Link
-                    href="/products?featured=true"
+                    href={withSearchParam('/products?featured=true')}
                     className={`block rounded-design px-3 py-2 text-sm transition-colors ${params.featured === 'true' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                   >
                     Featured
                   </Link>
                   <Link
-                    href="/products?sale=true"
+                    href={withSearchParam('/products?sale=true')}
                     className="block rounded-design px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     On Sale
@@ -178,6 +194,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Showing {formattedProducts.length} of {productsData.pagination.total} products
+                {params.search ? ` for "${params.search}"` : ''}
               </p>
               <div className="flex items-center gap-2">
                 <SortSelect defaultValue={params.sort || 'newest'} />
@@ -190,7 +207,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             {/* Empty State */}
             {formattedProducts.length === 0 && (
               <div className="py-16 text-center">
-                <p className="text-lg text-muted-foreground">No products found</p>
+                <p className="text-lg text-muted-foreground">
+                  {params.search ? `No products found for "${params.search}"` : 'No products found'}
+                </p>
                 <Button variant="outline" className="mt-4" asChild>
                   <Link href="/products">Clear Filters</Link>
                 </Button>
