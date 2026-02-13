@@ -92,6 +92,7 @@ Create a `.env.local` file in the root directory and configure the following var
 | :--- | :--- |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Client ID from the Google Cloud Console for OAuth. |
 | `NEXT_PUBLIC_API_URL` | The base URL of your backend API (e.g., `http://localhost:8080`). |
+| `BACKEND_API_ORIGIN` | Optional backend origin (e.g., `https://api.example.com`) used by Next.js `/api` proxy in production. |
 | `NEXT_PUBLIC_APP_URL` | The base URL of your application (e.g., `http://localhost:3000`). |
 
 ### Installation
