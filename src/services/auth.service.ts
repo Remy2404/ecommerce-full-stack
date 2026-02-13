@@ -6,6 +6,11 @@ import api, {
   removeAccessToken,
   setAccessToken,
 } from './api';
+import {
+  clearAuthSessionHint,
+  hasAuthSessionHint,
+  markAuthSessionHint,
+} from './auth-session-hint';
 import { getErrorMessage } from '@/lib/http-error';
 import { normalizeUserRole } from '@/lib/roles';
 import type {
@@ -45,24 +50,7 @@ const clearRefreshTokenBestEffort = (): void => {
   // Best effort client-side cleanup; backend refresh-failure path expires HttpOnly cookie.
   document.cookie = 'refreshToken=; Max-Age=0; path=/api; SameSite=Lax';
   document.cookie = 'refreshToken=; Max-Age=0; path=/; SameSite=Lax';
-};
-
-const redirectToLoginTerminal = (): void => {
-  if (!isBrowser) return;
-  const pathname = window.location.pathname;
-  if (process.env.NODE_ENV === 'test') return;
-  const isPublicAuth =
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/register') ||
-    pathname.startsWith('/verify-email') ||
-    pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/2fa');
-  if (!isPublicAuth) {
-    const search = window.location.search || '';
-    const callback = `${pathname}${search}`;
-    window.location.href = `/login?callbackUrl=${encodeURIComponent(callback)}`;
-  }
+  clearAuthSessionHint();
 };
 
 const mapAuthSummary = (user?: AuthResponse['user']): AuthUser | undefined => {
@@ -108,6 +96,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     }
 
     setAccessToken(token);
+    markAuthSessionHint();
     clearPendingTwoFactorToken();
     return { success: true, token, user: mapAuthSummary(user) };
   } catch (error) {
@@ -131,6 +120,7 @@ export async function completeTwoFactorLogin(
     }
 
     setAccessToken(token);
+    markAuthSessionHint();
     clearPendingTwoFactorToken();
     return { success: true, token, user: mapAuthSummary(user) };
   } catch (error) {
@@ -167,6 +157,7 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
     }
 
     setAccessToken(token);
+    markAuthSessionHint();
     clearPendingTwoFactorToken();
     return { success: true, token, user: mapAuthSummary(user) };
   } catch (error) {
@@ -185,10 +176,15 @@ export async function logout(): Promise<void> {
   } finally {
     removeAccessToken();
     clearPendingTwoFactorToken();
+    clearRefreshTokenBestEffort();
   }
 }
 
 export async function refreshToken(): Promise<boolean> {
+  if (!isBrowser || !hasAuthSessionHint()) {
+    return false;
+  }
+
   try {
     const response = await api.post<AuthResponse>('/auth/refresh');
     const token = response.data.token;
@@ -199,6 +195,7 @@ export async function refreshToken(): Promise<boolean> {
       return false;
     }
     setAccessToken(token);
+    markAuthSessionHint();
     return true;
   } catch {
     removeAccessToken();
@@ -209,6 +206,11 @@ export async function refreshToken(): Promise<boolean> {
 }
 
 export async function bootstrapRefreshOnce(): Promise<boolean> {
+  if (!isBrowser || !hasAuthSessionHint()) {
+    bootstrapRefreshAttempted = true;
+    return false;
+  }
+
   if (bootstrapRefreshAttempted) {
     return hasValidAccessToken();
   }
@@ -230,6 +232,10 @@ export async function bootstrapRefreshOnce(): Promise<boolean> {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  if (!isBrowser) {
+    return null;
+  }
+
   const token = getAccessToken();
 
   if (!token && !(await bootstrapRefreshOnce())) {
@@ -287,6 +293,7 @@ export async function verifyEmailAndAutoLogin(token: string): Promise<AuthResult
     }
 
     setAccessToken(response.data.token);
+    markAuthSessionHint();
     clearPendingTwoFactorToken();
     return {
       success: true,
@@ -332,6 +339,7 @@ export async function changePassword(data: ChangePasswordRequest): Promise<AuthR
   try {
     await api.post<MessageResponse>('/auth/change-password', data);
     removeAccessToken();
+    clearRefreshTokenBestEffort();
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error, 'Password change failed') };

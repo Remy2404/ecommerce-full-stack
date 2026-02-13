@@ -1,4 +1,9 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import {
+  clearAuthSessionHint,
+  hasAuthSessionHint,
+  markAuthSessionHint,
+} from '../auth-session-hint';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
@@ -129,6 +134,7 @@ const clearRefreshTokenBestEffort = (): void => {
   // Best effort client-side cleanup; server-side /auth/refresh failure path already clears HttpOnly cookie.
   document.cookie = 'refreshToken=; Max-Age=0; path=/api; SameSite=Lax';
   document.cookie = 'refreshToken=; Max-Age=0; path=/; SameSite=Lax';
+  clearAuthSessionHint();
 };
 
 const redirectToLoginTerminal = (): void => {
@@ -182,6 +188,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (!hasAuthSessionHint()) {
+      removeAccessToken();
+      clearRefreshTokenBestEffort();
+      redirectToLoginIfProtectedPath();
+      return Promise.reject(error);
+    }
+
     if (isRefreshing) {
       return new Promise((resolve) => {
         subscribeRefresh((token) => {
@@ -207,6 +220,7 @@ api.interceptors.response.use(
       }
 
       setAccessToken(refreshedToken);
+      markAuthSessionHint();
       publishRefresh(refreshedToken);
 
       originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
